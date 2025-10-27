@@ -215,6 +215,45 @@ export async function getStops(lat, lon, radius = 500) {
 }
 
 /**
+ * Get a specific stop by its GTFS ID with departure times
+ * @param {string} gtfsId - The GTFS ID of the stop (e.g., "Viro:7820134-1")
+ * @returns {Promise<Object|null>} Stop object with departures, or null if not found
+ */
+export async function getStopById(gtfsId) {
+  const graphqlQuery = `
+    query GetStop($id: String!) {
+      stop(id: $id) {
+        gtfsId
+        name
+        code
+        lat
+        lon
+        stoptimesWithoutPatterns(numberOfDepartures: 5) {
+          scheduledArrival
+          scheduledDeparture
+          headsign
+          trip {
+            route {
+              shortName
+              longName
+              gtfsId
+            }
+          }
+        }
+      }
+    }
+  `;
+
+  try {
+    const data = await query(graphqlQuery, { id: gtfsId });
+    return data.stop;
+  } catch (error) {
+    console.error(`Error fetching stop ${gtfsId}:`, error);
+    return null;
+  }
+}
+
+/**
  * Plan a journey from origin to destination
  */
 export async function planJourney(from, to, numItineraries = 3) {

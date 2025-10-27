@@ -207,9 +207,12 @@ function StopFinder({ isDarkMode, selectedStop: highlightedStop }) {
     // Load initial stops (will be updated when location arrives)
     loadStops(center.lat, center.lon, currentZoom);
 
-    // Cleanup: stop watching when component unmounts
+    // Cleanup: stop watching and clear timeout when component unmounts
     return () => {
       stopWatching();
+      if (moveTimeoutRef.current) {
+        clearTimeout(moveTimeoutRef.current);
+      }
     };
   }, []);
 
@@ -305,7 +308,31 @@ function StopFinder({ isDarkMode, selectedStop: highlightedStop }) {
 
   const handleMapMove = (lat, lon, zoom) => {
     setCurrentZoom(zoom);
-    loadStops(lat, lon, zoom);
+
+    // Clear any pending timeout
+    if (moveTimeoutRef.current) {
+      clearTimeout(moveTimeoutRef.current);
+    }
+
+    // Check if we've moved significantly since last load
+    const lastPos = lastMovePositionRef.current;
+    if (lastPos) {
+      const latDiff = Math.abs(lat - lastPos.lat);
+      const lonDiff = Math.abs(lon - lastPos.lon);
+      const zoomDiff = Math.abs(zoom - lastPos.zoom);
+
+      // Thresholds: 0.01° = ~1.1km, zoom change of 1 level
+      // Only reload if we've moved significantly OR zoomed
+      if (latDiff < 0.01 && lonDiff < 0.01 && zoomDiff < 1) {
+        return; // Movement too small, skip reload
+      }
+    }
+
+    // Debounce: wait 500ms after map stops moving before loading
+    moveTimeoutRef.current = setTimeout(() => {
+      lastMovePositionRef.current = { lat, lon, zoom };
+      loadStops(lat, lon, zoom);
+    }, 500);
   };
 
   const handleLocationUpdate = (lat, lon) => {
@@ -613,7 +640,7 @@ function StopFinder({ isDarkMode, selectedStop: highlightedStop }) {
               position={[stop.adjustedLat, stop.adjustedLon]}
               icon={markerIcon}
             >
-              <Popup maxWidth={300}>
+              <Popup maxWidth={300} autoPan={false} closeOnClick={false}>
                 <div className="p-2">
                   <div className="flex items-start justify-between gap-2 mb-2">
                     <div>

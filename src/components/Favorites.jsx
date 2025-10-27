@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useFavorites } from '../hooks/useFavorites';
-import { getNearbyStops } from '../services/digitransit';
+import { getStopById } from '../services/digitransit';
 import CountdownTimer from './CountdownTimer';
 
 function Favorites({ onNavigateToMap }) {
@@ -17,23 +17,18 @@ function Favorites({ onNavigateToMap }) {
     setError(null);
 
     try {
-      // Fetch departures for each favorite stop
-      // We'll use the stop's coordinates to get nearby stops (which includes that stop with departures)
+      // Fetch departures for each favorite stop by querying the specific stop ID
       const stopsData = await Promise.all(
         favorites.map(async (favorite) => {
           try {
-            // Get stops at this location (should return the stop with departures)
-            const nearbyStops = await getNearbyStops(favorite.lat, favorite.lon, 50);
-
-            // Find the exact stop by gtfsId
-            const stopWithDepartures = nearbyStops.find(
-              stop => stop.gtfsId === favorite.gtfsId
-            );
+            // Query the specific stop by its gtfsId
+            const stopWithDepartures = await getStopById(favorite.gtfsId);
 
             if (stopWithDepartures) {
               return stopWithDepartures;
             } else {
-              // If exact stop not found, return favorite with empty departures
+              // If stop not found (API error or stop removed), return favorite with empty departures
+              console.warn(`Stop ${favorite.gtfsId} (${favorite.name}) not found`);
               return {
                 ...favorite,
                 stoptimesWithoutPatterns: [],
