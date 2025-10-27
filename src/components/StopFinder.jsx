@@ -85,17 +85,27 @@ function RouteLineWithArrows({ positions, color, headsign, routeName, stopCount 
   const map = useMap();
   const decoratorRef = useRef(null);
   const polylineRef = useRef(null);
+  const shadowRef = useRef(null);
 
   useEffect(() => {
     if (!map || positions.length === 0) {
       return;
     }
 
-    // Create polyline
+    // Create shadow/outline polyline (wider, white/dark)
+    const shadow = L.polyline(positions, {
+      color: '#FFFFFF',
+      weight: 7,
+      opacity: 0.9,
+    }).addTo(map);
+
+    shadowRef.current = shadow;
+
+    // Create main polyline on top
     const polyline = L.polyline(positions, {
       color: color,
       weight: 4,
-      opacity: 0.7,
+      opacity: 0.9,
     }).addTo(map);
 
     polylineRef.current = polyline;
@@ -138,6 +148,9 @@ function RouteLineWithArrows({ positions, color, headsign, routeName, stopCount 
       }
       if (polylineRef.current) {
         map.removeLayer(polylineRef.current);
+      }
+      if (shadowRef.current) {
+        map.removeLayer(shadowRef.current);
       }
     };
   }, [map, positions, color, headsign, routeName, stopCount]);
@@ -431,7 +444,8 @@ function StopFinder() {
             : pattern.stops.map(stop => [stop.lat, stop.lon]);
 
           // Use different colors for different directions
-          const colors = ['#0066CC', '#10B981', '#F59E0B', '#EF4444'];
+          // Direction 0: Blue, Direction 1: Yellow (Ukraine colors 🇺🇦)
+          const colors = ['#0066CC', '#FBBF24', '#10B981', '#F59E0B'];
           // Handle negative, null, or undefined directionIds
           const dirId = (pattern.directionId >= 0) ? pattern.directionId : 0;
           const lineColor = colors[dirId % colors.length];
@@ -458,7 +472,8 @@ function StopFinder() {
           if (stopToPatterns.has(stop.gtfsId)) {
             const patterns = stopToPatterns.get(stop.gtfsId);
             // Use the color of the first pattern at this stop
-            const colors = ['#0066CC', '#10B981', '#F59E0B', '#EF4444'];
+            // Direction 0: Blue, Direction 1: Yellow (Ukraine colors 🇺🇦)
+            const colors = ['#0066CC', '#FBBF24', '#10B981', '#F59E0B'];
             const dirId = (patterns[0].directionId >= 0) ? patterns[0].directionId : 0;
             iconColor = colors[dirId % colors.length];
           } else if (isNearby) {
@@ -484,7 +499,8 @@ function StopFinder() {
                     <div className="mb-3 p-2 bg-blue-50 rounded border border-blue-200">
                       <p className="font-semibold text-xs text-gray-700 mb-1">Routes at this stop:</p>
                       {stopToPatterns.get(stop.gtfsId).map((pattern, patternIdx) => {
-                        const colors = ['#0066CC', '#10B981', '#F59E0B', '#EF4444'];
+                        // Direction 0: Blue, Direction 1: Yellow (Ukraine colors 🇺🇦)
+                        const colors = ['#0066CC', '#FBBF24', '#10B981', '#F59E0B'];
                         const dirId = (pattern.directionId >= 0) ? pattern.directionId : 0;
                         const lineColor = colors[dirId % colors.length];
                         return (

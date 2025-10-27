@@ -440,19 +440,92 @@ export async function getStopsByRoutes(routeShortNames) {
     const routePatterns = [];
 
     selectedRoutes.forEach(route => {
-      // Group patterns by directionId to avoid duplicates
+      // Group patterns by direction - try to detect opposite directions
       const patternsByDirection = new Map();
 
-      route.patterns?.forEach(pattern => {
-        // Use 0 as default if directionId is negative, null, or undefined
-        const dir = (pattern.directionId >= 0) ? pattern.directionId : 0;
+      // Helper function to check if two patterns are going in opposite directions
+      const areOppositeDirections = (pattern1, pattern2) => {
+        const stops1 = pattern1.stops.map(s => s.gtfsId);
+        const stops2 = pattern2.stops.map(s => s.gtfsId);
 
-        // Only keep the first pattern for each direction (longest route usually)
+        // Check if stops overlap significantly in reverse order
+        const minLength = Math.min(stops1.length, stops2.length);
+        const checkLength = Math.floor(minLength * 0.5); // Check 50% of stops
+
+        if (checkLength < 3) return false; // Need at least 3 stops to compare
+
+        let reverseMatches = 0;
+        for (let i = 0; i < checkLength; i++) {
+          // Compare stops from the beginning of pattern1 with stops from the end of pattern2
+          if (stops1[i] === stops2[stops2.length - 1 - i]) {
+            reverseMatches++;
+          }
+        }
+
+        // If at least 60% of checked stops match in reverse, it's the opposite direction
+        return (reverseMatches / checkLength) >= 0.6;
+      };
+
+      route.patterns?.forEach(pattern => {
+        if (!pattern.stops || pattern.stops.length === 0) return;
+
+        // Use directionId if valid (>= 0), otherwise try to infer from route geometry
+        let dir = (pattern.directionId >= 0) ? pattern.directionId : null;
+
+        if (dir === null) {
+          // Invalid directionId - try to detect by comparing with existing patterns
+          let foundDirection = false;
+
+          for (const [existingDir, existingPattern] of patternsByDirection.entries()) {
+            if (areOppositeDirections(pattern, existingPattern)) {
+              // This pattern goes opposite to the existing one
+              dir = existingDir === 0 ? 1 : 0;
+              foundDirection = true;
+              break;
+            } else {
+              // Check if it's the same direction (similar route)
+              const stops1 = pattern.stops.map(s => s.gtfsId);
+              const stops2 = existingPattern.stops.map(s => s.gtfsId);
+              const minLength = Math.min(stops1.length, stops2.length);
+              const checkLength = Math.floor(minLength * 0.5);
+
+              let sameDirectionMatches = 0;
+              for (let i = 0; i < checkLength; i++) {
+                if (stops1[i] === stops2[i]) {
+                  sameDirectionMatches++;
+                }
+              }
+
+              // If at least 60% match in same order, it's the same direction
+              if (checkLength >= 3 && (sameDirectionMatches / checkLength) >= 0.6) {
+                dir = existingDir;
+                foundDirection = true;
+                break;
+              }
+            }
+          }
+
+          // If still not assigned, assign next available direction (0 or 1)
+          if (dir === null) {
+            dir = patternsByDirection.has(0) ? 1 : 0;
+          }
+        }
+
+        // Only keep the longest pattern for each direction
         if (!patternsByDirection.has(dir) ||
             (pattern.stops?.length || 0) > (patternsByDirection.get(dir).stops?.length || 0)) {
           patternsByDirection.set(dir, pattern);
         }
       });
+
+      console.log(`Route ${route.shortName}: Found ${patternsByDirection.size} directions`,
+        Array.from(patternsByDirection.entries()).map(([dir, p]) => ({
+          dir,
+          headsign: p.headsign,
+          stops: p.stops.length,
+          firstStop: p.stops[0]?.name,
+          lastStop: p.stops[p.stops.length - 1]?.name
+        })));
 
       // Process unique direction patterns
       patternsByDirection.forEach((pattern, directionId) => {
