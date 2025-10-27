@@ -14,6 +14,7 @@ export function useGeolocation() {
   });
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [watching, setWatching] = useState(false);
 
   const getLocation = () => {
     if (!navigator.geolocation) {
@@ -45,5 +46,36 @@ export function useGeolocation() {
     );
   };
 
-  return { location, error, loading, getLocation };
+  // Watch for location changes
+  useEffect(() => {
+    if (!navigator.geolocation || !watching) return;
+
+    const watchId = navigator.geolocation.watchPosition(
+      (position) => {
+        setLocation({
+          lat: position.coords.latitude,
+          lon: position.coords.longitude,
+          accuracy: position.coords.accuracy,
+        });
+        setError(null);
+      },
+      (err) => {
+        setError(err.message);
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 30000, // Accept cached position up to 30s old
+      }
+    );
+
+    return () => {
+      navigator.geolocation.clearWatch(watchId);
+    };
+  }, [watching]);
+
+  const startWatching = () => setWatching(true);
+  const stopWatching = () => setWatching(false);
+
+  return { location, error, loading, getLocation, startWatching, stopWatching, watching };
 }

@@ -1,13 +1,20 @@
 import { useState, useEffect } from 'react';
 import { useGeolocation } from '../hooks/useGeolocation';
 import { useNearbyStops } from '../hooks/useNearbyStops';
-import { formatArrivalTime, formatDistance } from '../utils/timeFormatter';
+import { formatDistance } from '../utils/timeFormatter';
 import { getSetting } from '../utils/settings';
+import CountdownTimer from './CountdownTimer';
 
 function NearMe() {
-  const { location, error: locationError, loading: locationLoading, getLocation } = useGeolocation();
+  const { location, error: locationError, loading: locationLoading, getLocation, startWatching } = useGeolocation();
   const { stops, loading: stopsLoading, error: stopsError, fetchNearbyStops } = useNearbyStops();
-  const [hasSearched, setHasSearched] = useState(false);
+  const [hasSearched, setHasSearched] = useState(true); // Start as true for auto-trigger
+
+  // Auto-start on mount
+  useEffect(() => {
+    getLocation();
+    startWatching();
+  }, []);
 
   const handleFindNearby = () => {
     getLocation();
@@ -27,24 +34,17 @@ function NearMe() {
 
   return (
     <div className="p-4 h-full overflow-y-auto">
-      {/* Big "Near Me" Button */}
-      {!hasSearched && (
+      {/* Big "Near Me" Button - only show if not searched and not loading */}
+      {!hasSearched && !loading && (
         <button
           onClick={handleFindNearby}
           disabled={loading}
           className="w-full bg-primary text-white font-bold py-6 px-8 rounded-2xl shadow-xl hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-xl"
         >
-          {loading ? (
-            <span className="flex items-center justify-center gap-3">
-              <span className="animate-spin">⌛</span>
-              Finding your location...
-            </span>
-          ) : (
-            <span className="flex items-center justify-center gap-3">
-              <span className="text-2xl">📍</span>
-              Near Me - Find Next Buses
-            </span>
-          )}
+          <span className="flex items-center justify-center gap-3">
+            <span className="text-2xl">📍</span>
+            Near Me - Find Next Buses
+          </span>
         </button>
       )}
 
@@ -62,7 +62,7 @@ function NearMe() {
       )}
 
       {/* Loading State */}
-      {loading && hasSearched && (
+      {loading && (
         <div className="mt-4 text-center text-gray-600">
           <div className="text-4xl mb-2 animate-bounce">🚏</div>
           <div>Searching for nearby stops...</div>
@@ -115,7 +115,7 @@ function NearMe() {
                         </div>
                       </div>
                       <div className="font-semibold text-gray-800">
-                        {formatArrivalTime(departure.scheduledArrival)}
+                        <CountdownTimer scheduledArrival={departure.scheduledArrival} />
                       </div>
                     </div>
                   ))}

@@ -4,8 +4,8 @@ import L from 'leaflet';
 import 'leaflet-polylinedecorator';
 import { useGeolocation } from '../hooks/useGeolocation';
 import { getNearbyStops, getStopsByRoutes } from '../services/digitransit';
-import { formatArrivalTime } from '../utils/timeFormatter';
 import { getSetting } from '../utils/settings';
+import CountdownTimer from './CountdownTimer';
 import 'leaflet/dist/leaflet.css';
 
 // Fix for default marker icons in React Leaflet
@@ -159,7 +159,7 @@ function RouteLineWithArrows({ positions, color, headsign, routeName, stopCount 
 }
 
 function StopFinder() {
-  const { location, getLocation } = useGeolocation();
+  const { location, getLocation, startWatching, stopWatching, watching } = useGeolocation();
   const [stops, setStops] = useState([]);
   const [nearbyStopIds, setNearbyStopIds] = useState(new Set());
   const [loading, setLoading] = useState(false);
@@ -171,15 +171,48 @@ function StopFinder() {
   const [routeStops, setRouteStops] = useState([]);
   const [routePatterns, setRoutePatterns] = useState([]);
   const [loadingRoutes, setLoadingRoutes] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState(null);
+  const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(true);
 
   // Default to Tartu center
   const defaultCenter = { lat: 58.3776, lon: 26.7290 };
   const center = location.lat ? location : defaultCenter;
 
-  // Load stops around the center on mount
+  // Load stops around the center on mount and auto-request location
   useEffect(() => {
+    // Auto-request location on startup and start watching for movement
+    getLocation();
+    startWatching();
+
+    // Load initial stops (will be updated when location arrives)
     loadStops(center.lat, center.lon, currentZoom);
+
+    // Cleanup: stop watching when component unmounts
+    return () => {
+      stopWatching();
+    };
   }, []);
+
+  // Update stops when location is received
+  useEffect(() => {
+    if (location.lat && location.lon) {
+      loadStops(location.lat, location.lon, currentZoom, true);
+    }
+  }, [location.lat, location.lon]);
+
+  // Auto-refresh departure times every 30 seconds
+  useEffect(() => {
+    if (!autoRefreshEnabled) return;
+
+    const interval = setInterval(() => {
+      // Refresh stops data silently (without showing loading indicator)
+      const currentLat = location.lat || center.lat;
+      const currentLon = location.lon || center.lon;
+      loadStops(currentLat, currentLon, currentZoom);
+    }, 30000); // 30 seconds
+
+    return () => clearInterval(interval);
+  }, [autoRefreshEnabled, location, center, currentZoom]);
 
   // Calculate radius based on zoom level
   const getRadiusForZoom = (zoom) => {
@@ -220,11 +253,23 @@ function StopFinder() {
 
       setStops(allStops);
       setNearbyStopIds(nearbyIds);
+      setLastUpdated(Date.now());
     } catch (err) {
       console.error('Error loading stops:', err);
       setError(err.message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Manual refresh function
+  const handleRefresh = () => {
+    // Clear nearby stops cache to force fresh data
+    const nearbyRadius = getSetting('nearbyRadius') || 500;
+    if (location.lat && location.lon) {
+      loadStops(location.lat, location.lon, currentZoom);
+    } else {
+      loadStops(center.lat, center.lon, currentZoom);
     }
   };
 
@@ -388,6 +433,35 @@ function StopFinder() {
     setRoutePatterns([]);
   };
 
+  // Format time ago
+  const [timeAgo, setTimeAgo] = useState('');
+
+  useEffect(() => {
+    const updateTimeAgo = () => {
+      if (!lastUpdated) {
+        setTimeAgo('');
+        return;
+      }
+      const seconds = Math.floor((Date.now() - lastUpdated) / 1000);
+      if (seconds < 60) {
+        setTimeAgo(`${seconds}s ago`);
+      } else {
+        const minutes = Math.floor(seconds / 60);
+        if (minutes < 60) {
+          setTimeAgo(`${minutes}m ago`);
+        } else {
+          const hours = Math.floor(minutes / 60);
+          setTimeAgo(`${hours}h ago`);
+        }
+      }
+    };
+
+    updateTimeAgo();
+    const interval = setInterval(updateTimeAgo, 1000); // Update every second
+
+    return () => clearInterval(interval);
+  }, [lastUpdated]);
+
   // Load all stops for selected routes
   useEffect(() => {
     const loadRouteStops = async () => {
@@ -536,7 +610,7 @@ function StopFinder() {
                             </span>
                           </div>
                           <span className="font-semibold text-xs">
-                            {formatArrivalTime(departure.scheduledArrival)}
+                            <CountdownTimer scheduledArrival={departure.scheduledArrival} />
                           </span>
                         </div>
                       ))}
@@ -558,10 +632,13 @@ function StopFinder() {
           <button
             onClick={handleFindMyLocation}
             disabled={loading}
-            className="flex-1 bg-white shadow-lg rounded-lg px-4 py-3 font-medium text-sm hover:bg-gray-50 transition-colors disabled:opacity-50 flex items-center gap-2 justify-center"
+            className="flex-1 bg-white shadow-lg rounded-lg px-4 py-3 font-medium text-sm hover:bg-gray-50 transition-colors disabled:opacity-50 flex items-center gap-2 justify-center relative"
           >
             <span className="text-lg">📍</span>
             Find My Location
+            {watching && (
+              <span className="absolute top-1 right-1 w-2 h-2 bg-green-500 rounded-full animate-pulse" title="Tracking location"></span>
+            )}
           </button>
           <button
             onClick={() => setShowRouteFilter(!showRouteFilter)}
@@ -569,6 +646,37 @@ function StopFinder() {
           >
             <span className="text-lg">🚌</span>
             Filter {selectedRoutes.size > 0 ? `(${selectedRoutes.size})` : ''}
+          </button>
+        </div>
+
+        {/* Refresh controls */}
+        <div className="bg-white shadow-lg rounded-lg px-3 py-2 flex items-center justify-between gap-2">
+          <button
+            onClick={handleRefresh}
+            disabled={loading}
+            className="flex items-center gap-1.5 text-xs font-medium text-gray-700 hover:text-primary transition-colors disabled:opacity-50"
+          >
+            <svg className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+            Refresh
+          </button>
+
+          {timeAgo && (
+            <span className="text-xs text-gray-500">
+              Updated {timeAgo}
+            </span>
+          )}
+
+          <button
+            onClick={() => setAutoRefreshEnabled(!autoRefreshEnabled)}
+            className={`text-xs px-2 py-1 rounded transition-colors ${
+              autoRefreshEnabled
+                ? 'bg-green-100 text-green-700 hover:bg-green-200'
+                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+            }`}
+          >
+            Auto {autoRefreshEnabled ? 'ON' : 'OFF'}
           </button>
         </div>
 
