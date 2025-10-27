@@ -4,6 +4,11 @@ import react from '@vitejs/plugin-react'
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
+  base: '/Tartubus/', // GitHub Pages will serve from https://ekats.github.io/Tartubus/
+  build: {
+    outDir: 'dist',
+    sourcemap: false,
+  },
   server: {
     proxy: {
       // Proxy API requests to bypass CORS in development

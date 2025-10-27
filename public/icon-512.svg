@@ -1,0 +1,15 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <rect width="512" height="512" fill="#0066CC" rx="85"/>
+  <g transform="translate(256, 256)">
+    <!-- Bus icon -->
+    <rect x="-110" y="-130" width="220" height="190" rx="20" fill="white"/>
+    <rect x="-95" y="-115" width="80" height="70" rx="10" fill="#0066CC"/>
+    <rect x="15" y="-115" width="80" height="70" rx="10" fill="#0066CC"/>
+    <circle cx="-55" cy="45" r="22" fill="#0066CC"/>
+    <circle cx="55" cy="45" r="22" fill="#0066CC"/>
+    <rect x="-110" y="60" width="55" height="20" rx="10" fill="white"/>
+    <rect x="55" y="60" width="55" height="20" rx="10" fill="white"/>
+    <!-- Route number -->
+    <text x="0" y="15" font-size="85" font-weight="bold" fill="#0066CC" text-anchor="middle" font-family="sans-serif">T</text>
+  </g>
+</svg>
