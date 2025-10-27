@@ -1,9 +1,13 @@
+import { useTranslation } from 'react-i18next';
+
 function BottomNav({ activeView, onViewChange }) {
+  const { t } = useTranslation();
+
   const navItems = [
-    { id: 'nearme', icon: '📍', label: 'Near Me' },
-    { id: 'map', icon: '🗺️', label: 'Map' },
-    { id: 'favorites', icon: '⭐', label: 'Favorites' },
-    { id: 'settings', icon: '⚙️', label: 'Settings' },
+    { id: 'nearme', icon: '📍', label: t('tabs.nearMe') },
+    { id: 'map', icon: '🗺️', label: t('tabs.map') },
+    { id: 'favorites', icon: '⭐', label: t('tabs.favorites') },
+    { id: 'settings', icon: '⚙️', label: t('tabs.settings') },
   ];
 
   return (

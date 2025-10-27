@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet-polylinedecorator';
@@ -174,6 +175,7 @@ function RouteLineWithArrows({ positions, color, headsign, routeName, stopCount 
 }
 
 function StopFinder({ isDarkMode, selectedStop: highlightedStop }) {
+  const { t } = useTranslation();
   const { location, getLocation, startWatching, stopWatching, watching } = useGeolocation();
   const { isFavorite, toggleFavorite } = useFavorites();
   const [stops, setStops] = useState([]);
@@ -726,20 +728,20 @@ function StopFinder({ isDarkMode, selectedStop: highlightedStop }) {
           className={`bg-white dark:bg-gray-800 shadow-lg rounded-lg px-4 py-3 font-medium text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex items-center gap-2 justify-center border border-gray-200 dark:border-gray-700 ${selectedRoutes.size > 0 ? 'ring-2 ring-primary dark:ring-blue-400' : ''}`}
         >
           <span className="text-lg">🚌</span>
-          Filter Routes {selectedRoutes.size > 0 ? `(${selectedRoutes.size})` : ''}
+          {t('map.filterRoutes')} {selectedRoutes.size > 0 ? `(${selectedRoutes.size})` : ''}
         </button>
 
         {/* Route filter dropdown */}
         {showRouteFilter && (
           <div className="bg-white dark:bg-gray-800 shadow-lg rounded-lg p-4 max-h-64 overflow-y-auto border border-gray-200 dark:border-gray-700">
             <div className="flex items-center justify-between mb-3">
-              <h3 className="font-semibold text-sm text-gray-800 dark:text-gray-200">Filter by Route</h3>
+              <h3 className="font-semibold text-sm text-gray-800 dark:text-gray-200">{t('map.filterRoutes')}</h3>
               {selectedRoutes.size > 0 && (
                 <button
                   onClick={clearFilters}
                   className="text-xs text-primary dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium"
                 >
-                  Clear all
+                  {t('map.clearFilters')}
                 </button>
               )}
             </div>
@@ -786,12 +788,12 @@ function StopFinder({ isDarkMode, selectedStop: highlightedStop }) {
           </div>
         )}
 
-        {/* Stop count */}
-        {!loading && stops.length > 0 && (
+        {/* Stop count - only show if filtered or limited */}
+        {!loading && stops.length > 0 && (selectedRoutes.size > 0 || stopsLimitExceeded) && (
           <div className="bg-white dark:bg-gray-800 shadow-lg rounded-lg px-4 py-2 text-xs text-gray-600 dark:text-gray-300 text-center border border-gray-200 dark:border-gray-700">
-            Showing {filteredStops.length} of {stops.length} stops
-            {selectedRoutes.size > 0 && ` (filtered)`}
-            {stopsLimitExceeded && ` - Limited to ${maxStops}`}
+            {t('map.showingStops', { shown: filteredStops.length, total: stops.length })}
+            {selectedRoutes.size > 0 && ` (${t('map.filtered')})`}
+            {stopsLimitExceeded && ` - ${t('map.limitedTo', { max: maxStops })}`}
           </div>
         )}
       </div>

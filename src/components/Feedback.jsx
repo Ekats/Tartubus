@@ -1,7 +1,9 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import emailjs from '@emailjs/browser';
 
 function Feedback() {
+  const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
   const [sending, setSending] = useState(false);
   const [message, setMessage] = useState('');
@@ -18,14 +20,14 @@ function Feedback() {
         import.meta.env.VITE_EMAILJS_PUBLIC_KEY
       );
 
-      setMessage('✅ Feedback sent! Thank you!');
+      setMessage(`✅ ${t('settings.feedbackSent')}`);
       setTimeout(() => {
         setIsOpen(false);
         setMessage('');
       }, 2000);
     } catch (error) {
       console.error('Failed to send feedback:', error);
-      setMessage('❌ Failed to send. Please try again.');
+      setMessage(`❌ ${t('settings.feedbackFailed')}`);
     } finally {
       setSending(false);
     }
@@ -34,15 +36,15 @@ function Feedback() {
   if (!isOpen) {
     return (
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 border border-gray-200 dark:border-gray-700">
-        <h2 className="text-xl font-bold mb-2 text-gray-800 dark:text-gray-100">Feedback</h2>
+        <h2 className="text-xl font-bold mb-2 text-gray-800 dark:text-gray-100">{t('settings.feedback')}</h2>
         <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-          Help us improve Tartu Bussid! Share your thoughts, report bugs, or suggest features.
+          {t('settings.feedbackDescription')}
         </p>
         <button
           onClick={() => setIsOpen(true)}
           className="w-full bg-blue-500 hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-lg transition-colors"
         >
-          Send Feedback
+          {t('settings.sendFeedback')}
         </button>
       </div>
     );
@@ -51,7 +53,7 @@ function Feedback() {
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 border border-gray-200 dark:border-gray-700">
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100">Send Feedback</h2>
+        <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100">{t('settings.sendFeedback')}</h2>
         <button
           onClick={() => setIsOpen(false)}
           className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
@@ -63,33 +65,33 @@ function Feedback() {
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label htmlFor="user_name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Name (optional)
+            {t('settings.name')} ({t('settings.optional')})
           </label>
           <input
             type="text"
             name="user_name"
             id="user_name"
             className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-gray-100"
-            placeholder="Your name"
+            placeholder={t('settings.namePlaceholder')}
           />
         </div>
 
         <div>
           <label htmlFor="user_email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Email (optional)
+            {t('settings.email')} ({t('settings.optional')})
           </label>
           <input
             type="email"
             name="user_email"
             id="user_email"
             className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-gray-100"
-            placeholder="your@email.com"
+            placeholder={t('settings.emailPlaceholder')}
           />
         </div>
 
         <div>
           <label htmlFor="message" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Message <span className="text-red-500">*</span>
+            {t('settings.message')} <span className="text-red-500">*</span>
           </label>
           <textarea
             name="message"
@@ -97,7 +99,7 @@ function Feedback() {
             rows="4"
             required
             className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-gray-100 resize-none"
-            placeholder="Share your feedback, report a bug, or suggest a feature..."
+            placeholder={t('settings.messagePlaceholder')}
           />
         </div>
 
@@ -113,14 +115,14 @@ function Feedback() {
             disabled={sending}
             className="flex-1 bg-blue-500 hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {sending ? 'Sending...' : 'Send Feedback'}
+            {sending ? t('settings.sending') : t('settings.sendFeedback')}
           </button>
           <button
             type="button"
             onClick={() => setIsOpen(false)}
             className="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
           >
-            Cancel
+            {t('settings.cancel')}
           </button>
         </div>
       </form>

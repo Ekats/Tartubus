@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useFavorites } from '../hooks/useFavorites';
 import { getStopById } from '../services/digitransit';
 import CountdownTimer from './CountdownTimer';
 
 function Favorites({ onNavigateToMap }) {
+  const { t } = useTranslation();
   const { favorites, removeFavorite, clearAllFavorites } = useFavorites();
   const [stopsWithDepartures, setStopsWithDepartures] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -95,9 +97,9 @@ function Favorites({ onNavigateToMap }) {
       <div className="flex items-center justify-center h-full text-gray-500 dark:text-gray-400 dark:bg-gray-900 px-4">
         <div className="text-center max-w-sm">
           <div className="text-6xl mb-4">⭐</div>
-          <div className="text-xl font-semibold mb-2">No Favorite Stops</div>
+          <div className="text-xl font-semibold mb-2">{t('favorites.noFavorites')}</div>
           <div className="text-sm">
-            Add stops to your favorites from the Near Me tab or Map view by clicking the star icon.
+            {t('favorites.addFromMap')}
           </div>
         </div>
       </div>

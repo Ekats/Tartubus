@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useGeolocation } from '../hooks/useGeolocation';
 import { useNearbyStops } from '../hooks/useNearbyStops';
 import { useFavorites } from '../hooks/useFavorites';
@@ -8,11 +9,12 @@ import { reverseGeocode } from '../utils/geocoding';
 import CountdownTimer from './CountdownTimer';
 
 function NearMe({ onNavigateToMap }) {
+  const { t } = useTranslation();
   const { location, error: locationError, loading: locationLoading, getLocation, startWatching } = useGeolocation();
   const { stops, loading: stopsLoading, error: stopsError, fetchNearbyStops } = useNearbyStops();
   const { isFavorite, toggleFavorite } = useFavorites();
   const [hasSearched, setHasSearched] = useState(true); // Start as true for auto-trigger
-  const [address, setAddress] = useState('Loading location...');
+  const [address, setAddress] = useState(t('nearMe.requestingLocation'));
 
   // Auto-start on mount
   useEffect(() => {
@@ -40,7 +42,7 @@ function NearMe({ onNavigateToMap }) {
         if (addr) {
           setAddress(addr);
         } else {
-          setAddress('Location found');
+          setAddress(t('nearMe.noLocation'));
         }
       });
     }
@@ -78,7 +80,7 @@ function NearMe({ onNavigateToMap }) {
           <div className="flex items-center gap-2 text-blue-900 dark:text-blue-100">
             <span className="text-lg">📍</span>
             <div>
-              <div className="text-xs font-semibold text-blue-600 dark:text-blue-400 uppercase tracking-wide">Your Location</div>
+              <div className="text-xs font-semibold text-blue-600 dark:text-blue-400 uppercase tracking-wide">{t('nearMe.currentLocation')}</div>
               <div className="text-sm font-medium">{address}</div>
             </div>
           </div>
@@ -116,14 +118,14 @@ function NearMe({ onNavigateToMap }) {
       {stops.length > 0 && (
         <div className="mt-6 space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100">Nearby Stops</h2>
+            <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100">{t('nearMe.title')}</h2>
             <button
               onClick={handleFindNearby}
               className="text-primary dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium flex items-center gap-2"
               disabled={loading}
             >
               <span className={loading ? 'animate-spin' : ''}>🔄</span>
-              {loading ? 'Refreshing...' : 'Refresh'}
+              {loading ? t('nearMe.refreshing') : t('nearMe.refresh')}
             </button>
           </div>
 
@@ -137,7 +139,7 @@ function NearMe({ onNavigateToMap }) {
                 <div className="flex-1">
                   <h3 className="font-bold text-lg text-gray-800 dark:text-gray-100">{stop.name}</h3>
                   <div className="text-sm text-gray-500 dark:text-gray-400">
-                    Stop {stop.code} • {formatDistance(stop.distance)} away
+                    {t('map.stop')} {stop.code} • {t('nearMe.distance', { distance: Math.round(stop.distance) })}
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
@@ -189,7 +191,7 @@ function NearMe({ onNavigateToMap }) {
                   ))}
                 </div>
               ) : (
-                <div className="text-sm text-gray-500 dark:text-gray-400 py-2">No upcoming departures</div>
+                <div className="text-sm text-gray-500 dark:text-gray-400 py-2">{t('nearMe.noDepartures')}</div>
               )}
             </div>
           ))}
