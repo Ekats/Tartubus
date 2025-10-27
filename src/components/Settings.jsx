@@ -180,7 +180,7 @@ function Settings() {
             </div>
           </div>
           <a
-            href="ko-fi.com/ekats"
+            href="https://ko-fi.com/ekats"
             target="_blank"
             rel="noopener noreferrer"
             className="block w-full bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-white font-bold py-3 px-6 rounded-lg transition-all transform hover:scale-105 text-center shadow-lg"
