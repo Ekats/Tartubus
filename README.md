@@ -1,3 +1,5 @@
+[![Stand With Ukraine](https://raw.githubusercontent.com/vshymanskyy/StandWithUkraine/main/banner2-direct.svg)](https://vshymanskyy.github.io/StandWithUkraine/)
+
 # Tartu Bussid - Live Bus Tracker
 
 A privacy-focused, modern live bus tracking app for Tartu, Estonia. Built to be faster and more intuitive than peatus.ee.
@@ -102,4 +104,6 @@ MIT License - see LICENSE file for details
 
 ---
 
-**Built with ❤️ for Tartu**
+**Built with ❤️ for Tartu** 🇪🇪
+
+*Route colors (blue & yellow) chosen in solidarity with Ukraine* 🇺🇦

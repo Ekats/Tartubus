@@ -299,10 +299,12 @@ function decodePolyline(encoded) {
 }
 
 // Cache expiration times
-// Route geometry and stops almost never change - cache for 1 year
+// Route geometry - cache for 1 year (rarely changes)
 const ROUTE_CACHE_DURATION = 365 * 24 * 60 * 60 * 1000;
-// Nearby stops include departure times, so cache for shorter period (5 minutes)
-const STOPS_CACHE_DURATION = 5 * 60 * 1000;
+// Departure times - cache for 2 minutes (fresh enough, provides offline resilience)
+const STOPS_CACHE_DURATION = 2 * 60 * 1000; // 2 minutes
+// Limit number of cached location queries (keep 20 most recent for good offline UX)
+const MAX_STOPS_CACHE_ENTRIES = 20;
 
 /**
  * Get cached data from localStorage with expiration check
@@ -342,6 +344,71 @@ function getCachedRouteData(cacheKey) {
 }
 
 /**
+ * Clear old cache entries to free up space
+ */
+function clearOldCacheEntries() {
+  try {
+    const now = Date.now();
+    const keysToRemove = [];
+    const stopsCacheEntries = [];
+
+    // Find all expired cache entries and collect stops entries
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+
+      // Only process our cache keys (route_ and stops_ prefixed)
+      if (key && (key.startsWith('route_') || key.startsWith('stops_'))) {
+        try {
+          const cached = localStorage.getItem(key);
+          if (cached) {
+            const { timestamp } = JSON.parse(cached);
+            const age = now - timestamp;
+            const isRouteCache = key.startsWith('route_');
+            const maxAge = isRouteCache ? ROUTE_CACHE_DURATION : STOPS_CACHE_DURATION;
+
+            // Remove if older than cache duration
+            if (age > maxAge) {
+              keysToRemove.push(key);
+            } else if (!isRouteCache) {
+              // Track valid stops cache entries for LRU eviction
+              stopsCacheEntries.push({ key, timestamp });
+            }
+          }
+        } catch (e) {
+          // If we can't parse it, remove it
+          keysToRemove.push(key);
+        }
+      }
+    }
+
+    // LRU: If we have too many stops cache entries, remove oldest ones
+    if (stopsCacheEntries.length > MAX_STOPS_CACHE_ENTRIES) {
+      // Sort by timestamp (oldest first)
+      stopsCacheEntries.sort((a, b) => a.timestamp - b.timestamp);
+
+      // Remove oldest entries beyond the limit
+      const toRemove = stopsCacheEntries.length - MAX_STOPS_CACHE_ENTRIES;
+      for (let i = 0; i < toRemove; i++) {
+        keysToRemove.push(stopsCacheEntries[i].key);
+      }
+    }
+
+    // Remove all marked entries
+    keysToRemove.forEach(key => {
+      localStorage.removeItem(key);
+    });
+
+    if (keysToRemove.length > 0) {
+      console.log(`🧹 Cleaned ${keysToRemove.length} cache entries (expired or over limit)`);
+    }
+    return keysToRemove.length;
+  } catch (error) {
+    console.warn('Error cleaning cache:', error);
+    return 0;
+  }
+}
+
+/**
  * Save data to localStorage cache
  */
 function setCachedData(cacheKey, data) {
@@ -352,7 +419,28 @@ function setCachedData(cacheKey, data) {
     };
     localStorage.setItem(cacheKey, JSON.stringify(cacheEntry));
   } catch (error) {
-    console.warn('Error writing cache:', error);
+    // If quota exceeded, try cleaning old cache and retry once
+    if (error.name === 'QuotaExceededError') {
+      console.warn('⚠️ Storage quota exceeded, cleaning old cache...');
+      const cleaned = clearOldCacheEntries();
+
+      if (cleaned > 0) {
+        // Try again after cleaning
+        try {
+          localStorage.setItem(cacheKey, JSON.stringify({
+            data,
+            timestamp: Date.now()
+          }));
+          console.log('✅ Cache write succeeded after cleanup');
+        } catch (retryError) {
+          console.warn('❌ Cache write failed even after cleanup. App will continue without caching this data.');
+        }
+      } else {
+        console.warn('❌ No old cache to clean. App will continue without caching this data.');
+      }
+    } else {
+      console.warn('Error writing cache:', error);
+    }
   }
 }
 
@@ -367,9 +455,10 @@ function setCachedRouteData(cacheKey, data) {
  * Get cached nearby stops data
  */
 function getCachedNearbyStops(lat, lon, radius) {
-  // Round coordinates to avoid cache misses from tiny location differences
-  const roundedLat = Math.round(lat * 1000) / 1000;
-  const roundedLon = Math.round(lon * 1000) / 1000;
+  // Round coordinates to ~1km grid to reduce cache entries
+  // (0.01 degrees ≈ 1.1km at Tartu's latitude)
+  const roundedLat = Math.round(lat * 100) / 100;
+  const roundedLon = Math.round(lon * 100) / 100;
   const cacheKey = `stops_${roundedLat}_${roundedLon}_${radius}`;
   return getCachedData(cacheKey, STOPS_CACHE_DURATION, 'stops');
 }
@@ -378,8 +467,9 @@ function getCachedNearbyStops(lat, lon, radius) {
  * Save nearby stops data to cache
  */
 function setCachedNearbyStops(lat, lon, radius, data) {
-  const roundedLat = Math.round(lat * 1000) / 1000;
-  const roundedLon = Math.round(lon * 1000) / 1000;
+  // Round coordinates to ~1km grid to reduce cache entries
+  const roundedLat = Math.round(lat * 100) / 100;
+  const roundedLon = Math.round(lon * 100) / 100;
   const cacheKey = `stops_${roundedLat}_${roundedLon}_${radius}`;
   setCachedData(cacheKey, data);
 }
