@@ -52,6 +52,19 @@ function NearMe({ onNavigateToMap }) {
     }
   }, [location.lat, location.lon, hasSearched]);
 
+  // Auto-refresh departure times every 30 seconds
+  useEffect(() => {
+    if (!location.lat || !location.lon) return;
+
+    const interval = setInterval(() => {
+      const radius = getSetting('nearbyRadius') || 500;
+      // Refresh without force (use cache if available < 2 min old)
+      fetchNearbyStops(location.lat, location.lon, radius, false);
+    }, 30000); // 30 seconds
+
+    return () => clearInterval(interval);
+  }, [location.lat, location.lon]);
+
   const loading = locationLoading || stopsLoading;
   const error = locationError || stopsError;
 

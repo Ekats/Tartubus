@@ -1,0 +1,131 @@
+import { useState } from 'react';
+import emailjs from '@emailjs/browser';
+
+function Feedback() {
+  const [isOpen, setIsOpen] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [message, setMessage] = useState('');
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setSending(true);
+
+    try {
+      await emailjs.sendForm(
+        import.meta.env.VITE_EMAILJS_SERVICE_ID,
+        import.meta.env.VITE_EMAILJS_TEMPLATE_ID,
+        e.target,
+        import.meta.env.VITE_EMAILJS_PUBLIC_KEY
+      );
+
+      setMessage('✅ Feedback sent! Thank you!');
+      setTimeout(() => {
+        setIsOpen(false);
+        setMessage('');
+      }, 2000);
+    } catch (error) {
+      console.error('Failed to send feedback:', error);
+      setMessage('❌ Failed to send. Please try again.');
+    } finally {
+      setSending(false);
+    }
+  };
+
+  if (!isOpen) {
+    return (
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 border border-gray-200 dark:border-gray-700">
+        <h2 className="text-xl font-bold mb-2 text-gray-800 dark:text-gray-100">Feedback</h2>
+        <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+          Help us improve Tartu Bussid! Share your thoughts, report bugs, or suggest features.
+        </p>
+        <button
+          onClick={() => setIsOpen(true)}
+          className="w-full bg-blue-500 hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-lg transition-colors"
+        >
+          Send Feedback
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 border border-gray-200 dark:border-gray-700">
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100">Send Feedback</h2>
+        <button
+          onClick={() => setIsOpen(false)}
+          className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
+        >
+          ✕
+        </button>
+      </div>
+
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div>
+          <label htmlFor="user_name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            Name (optional)
+          </label>
+          <input
+            type="text"
+            name="user_name"
+            id="user_name"
+            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-gray-100"
+            placeholder="Your name"
+          />
+        </div>
+
+        <div>
+          <label htmlFor="user_email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            Email (optional)
+          </label>
+          <input
+            type="email"
+            name="user_email"
+            id="user_email"
+            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-gray-100"
+            placeholder="your@email.com"
+          />
+        </div>
+
+        <div>
+          <label htmlFor="message" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            Message <span className="text-red-500">*</span>
+          </label>
+          <textarea
+            name="message"
+            id="message"
+            rows="4"
+            required
+            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-gray-100 resize-none"
+            placeholder="Share your feedback, report a bug, or suggest a feature..."
+          />
+        </div>
+
+        {message && (
+          <div className={`text-sm font-medium ${message.startsWith('✅') ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+            {message}
+          </div>
+        )}
+
+        <div className="flex gap-3">
+          <button
+            type="submit"
+            disabled={sending}
+            className="flex-1 bg-blue-500 hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {sending ? 'Sending...' : 'Send Feedback'}
+          </button>
+          <button
+            type="button"
+            onClick={() => setIsOpen(false)}
+            className="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+          >
+            Cancel
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+}
+
+export default Feedback;

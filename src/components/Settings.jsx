@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { getSettings, updateSetting } from '../utils/settings';
+import Feedback from './Feedback';
 
 function Settings() {
   const [settings, setSettings] = useState(getSettings());
@@ -116,6 +117,9 @@ function Settings() {
             ))}
           </div>
         </div>
+
+        {/* Feedback Section */}
+        <Feedback />
 
         {/* Info Section */}
         <div className="bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-lg p-4">

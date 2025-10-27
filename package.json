@@ -9,6 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@emailjs/browser": "^4.4.1",
     "date-fns": "^4.1.0",
     "leaflet": "^1.9.4",
     "leaflet-polylinedecorator": "^1.6.0",
