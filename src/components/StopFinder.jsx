@@ -3,6 +3,7 @@ import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap, useMapEvents 
 import L from 'leaflet';
 import 'leaflet-polylinedecorator';
 import { useGeolocation } from '../hooks/useGeolocation';
+import { useFavorites } from '../hooks/useFavorites';
 import { getNearbyStops, getStopsByRoutes } from '../services/digitransit';
 import { getSetting } from '../utils/settings';
 import CountdownTimer from './CountdownTimer';
@@ -174,6 +175,7 @@ function RouteLineWithArrows({ positions, color, headsign, routeName, stopCount 
 
 function StopFinder({ isDarkMode, selectedStop: highlightedStop }) {
   const { location, getLocation, startWatching, stopWatching, watching } = useGeolocation();
+  const { isFavorite, toggleFavorite } = useFavorites();
   const [stops, setStops] = useState([]);
   const [nearbyStopIds, setNearbyStopIds] = useState(new Set());
   const [loading, setLoading] = useState(false);
@@ -189,6 +191,8 @@ function StopFinder({ isDarkMode, selectedStop: highlightedStop }) {
   const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(true);
   const [locationMessage, setLocationMessage] = useState(null);
   const mapRef = useRef(null);
+  const moveTimeoutRef = useRef(null);
+  const lastMovePositionRef = useRef(null);
 
   // Default to Tartu center
   const defaultCenter = { lat: 58.3776, lon: 26.7290 };
@@ -232,13 +236,13 @@ function StopFinder({ isDarkMode, selectedStop: highlightedStop }) {
 
     const interval = setInterval(() => {
       // Refresh stops data silently (without showing loading indicator)
-      const currentLat = location.lat || center.lat;
-      const currentLon = location.lon || center.lon;
+      const currentLat = location.lat || defaultCenter.lat;
+      const currentLon = location.lon || defaultCenter.lon;
       loadStops(currentLat, currentLon, currentZoom);
     }, 30000); // 30 seconds
 
     return () => clearInterval(interval);
-  }, [autoRefreshEnabled, location, center, currentZoom]);
+  }, [autoRefreshEnabled, location.lat, location.lon, currentZoom]);
 
   // Calculate radius based on zoom level
   const getRadiusForZoom = (zoom) => {
@@ -611,8 +615,25 @@ function StopFinder({ isDarkMode, selectedStop: highlightedStop }) {
             >
               <Popup maxWidth={300}>
                 <div className="p-2">
-                  <h3 className="font-bold text-lg mb-1">{stop.name}</h3>
-                  <p className="text-sm text-gray-600 mb-2">Stop {stop.code}</p>
+                  <div className="flex items-start justify-between gap-2 mb-2">
+                    <div>
+                      <h3 className="font-bold text-lg mb-1">{stop.name}</h3>
+                      <p className="text-sm text-gray-600">Stop {stop.code}</p>
+                    </div>
+                    <button
+                      onClick={() => toggleFavorite(stop)}
+                      className={`p-2 rounded-lg transition-colors ${
+                        isFavorite(stop.gtfsId)
+                          ? 'text-yellow-500 hover:text-yellow-600'
+                          : 'text-gray-400 hover:text-yellow-500'
+                      }`}
+                      title={isFavorite(stop.gtfsId) ? 'Remove from favorites' : 'Add to favorites'}
+                    >
+                      <svg className="w-6 h-6" fill={isFavorite(stop.gtfsId) ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+                      </svg>
+                    </button>
+                  </div>
 
                   {/* Show route directions if filtered */}
                   {stopToPatterns.has(stop.gtfsId) && (

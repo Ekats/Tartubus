@@ -2,6 +2,7 @@ import { useState } from 'react'
 import Header from './components/Header'
 import NearMe from './components/NearMe'
 import StopFinder from './components/StopFinder'
+import Favorites from './components/Favorites'
 import BottomNav from './components/BottomNav'
 import Settings from './components/Settings'
 import { useDarkMode } from './hooks/useDarkMode'
@@ -21,15 +22,10 @@ function App() {
       case 'map':
         return <StopFinder isDarkMode={isDarkMode} selectedStop={selectedStop} />
       case 'favorites':
-        return (
-          <div className="flex items-center justify-center h-full text-gray-500 dark:text-gray-400 dark:bg-gray-900">
-            <div className="text-center">
-              <div className="text-6xl mb-4">⭐</div>
-              <div className="text-xl font-semibold">Favorites</div>
-              <div className="text-sm mt-2">Coming soon...</div>
-            </div>
-          </div>
-        )
+        return <Favorites onNavigateToMap={(stop) => {
+          setSelectedStop(stop)
+          setActiveView('map')
+        }} />
       case 'settings':
         return <Settings />
       default:

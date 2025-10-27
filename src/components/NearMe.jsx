@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useGeolocation } from '../hooks/useGeolocation';
 import { useNearbyStops } from '../hooks/useNearbyStops';
+import { useFavorites } from '../hooks/useFavorites';
 import { formatDistance } from '../utils/timeFormatter';
 import { getSetting } from '../utils/settings';
 import { reverseGeocode } from '../utils/geocoding';
@@ -9,6 +10,7 @@ import CountdownTimer from './CountdownTimer';
 function NearMe({ onNavigateToMap }) {
   const { location, error: locationError, loading: locationLoading, getLocation, startWatching } = useGeolocation();
   const { stops, loading: stopsLoading, error: stopsError, fetchNearbyStops } = useNearbyStops();
+  const { isFavorite, toggleFavorite } = useFavorites();
   const [hasSearched, setHasSearched] = useState(true); // Start as true for auto-trigger
   const [address, setAddress] = useState('Loading location...');
 
@@ -140,6 +142,19 @@ function NearMe({ onNavigateToMap }) {
                 </div>
                 <div className="flex items-center gap-2">
                   <button
+                    onClick={() => toggleFavorite(stop)}
+                    className={`rounded-full p-2 transition-colors ${
+                      isFavorite(stop.gtfsId)
+                        ? 'text-yellow-500 hover:text-yellow-600 dark:text-yellow-400 dark:hover:text-yellow-500'
+                        : 'text-gray-400 hover:text-yellow-500 dark:text-gray-500 dark:hover:text-yellow-400'
+                    }`}
+                    title={isFavorite(stop.gtfsId) ? 'Remove from favorites' : 'Add to favorites'}
+                  >
+                    <svg className="h-6 w-6" fill={isFavorite(stop.gtfsId) ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+                    </svg>
+                  </button>
+                  <button
                     onClick={() => onNavigateToMap(stop)}
                     className="bg-blue-500 hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700 text-white rounded-full p-2 transition-colors"
                     title="Show on map"
@@ -148,7 +163,6 @@ function NearMe({ onNavigateToMap }) {
                       <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
                     </svg>
                   </button>
-                  <span className="text-2xl">🚏</span>
                 </div>
               </div>
 
