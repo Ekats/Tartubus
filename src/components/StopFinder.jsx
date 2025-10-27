@@ -41,13 +41,26 @@ const stopIcon = createStopIcon('#6B7280'); // Gray for regular stops (not on fi
 const nearbyStopIcon = createStopIcon('#6B7280'); // Gray for nearby stops when no filter
 
 // Component to update map view when location changes
-function LocationMarker({ position, onLocationUpdate }) {
+function LocationMarker({ position, onLocationUpdate, mapRef }) {
   const map = useMap();
+  const hasZoomedRef = useRef(false);
+
+  // Store map reference
+  useEffect(() => {
+    if (mapRef) {
+      mapRef.current = map;
+    }
+  }, [map, mapRef]);
 
   useEffect(() => {
     if (position) {
-      map.setView([position.lat, position.lon], 15);
-      // Load stops around new location
+      // Only zoom to location on first update, not continuous tracking updates
+      if (!hasZoomedRef.current) {
+        map.setView([position.lat, position.lon], 15);
+        hasZoomedRef.current = true;
+      }
+
+      // Load stops around new location (but don't zoom)
       if (onLocationUpdate) {
         onLocationUpdate(position.lat, position.lon);
       }
@@ -173,6 +186,8 @@ function StopFinder({ isDarkMode }) {
   const [loadingRoutes, setLoadingRoutes] = useState(false);
   const [lastUpdated, setLastUpdated] = useState(null);
   const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(true);
+  const [locationMessage, setLocationMessage] = useState(null);
+  const mapRef = useRef(null);
 
   // Default to Tartu center
   const defaultCenter = { lat: 58.3776, lon: 26.7290 };
@@ -282,8 +297,23 @@ function StopFinder({ isDarkMode }) {
     loadStops(lat, lon, currentZoom, true);
   };
 
-  const handleFindMyLocation = () => {
-    getLocation();
+  const handleToggleLocationTracking = () => {
+    if (watching) {
+      stopWatching();
+      setLocationMessage('Location tracking stopped');
+    } else {
+      getLocation();
+      startWatching();
+      setLocationMessage('Location tracking started');
+
+      // Center map on current location if available
+      if (location.lat && location.lon && mapRef.current) {
+        mapRef.current.setView([location.lat, location.lon], 15);
+      }
+    }
+
+    // Auto-hide message after 2 seconds
+    setTimeout(() => setLocationMessage(null), 2000);
   };
 
   // Add offset to prevent overlapping markers - deterministic based on stop ID
@@ -509,7 +539,7 @@ function StopFinder({ isDarkMode }) {
         <MapEventHandler onMapMove={handleMapMove} />
 
         {/* User location marker */}
-        {location.lat && <LocationMarker position={location} onLocationUpdate={handleLocationUpdate} />}
+        {location.lat && <LocationMarker position={location} onLocationUpdate={handleLocationUpdate} mapRef={mapRef} />}
 
         {/* Route lines with direction arrows */}
         {routePatterns.map((pattern, idx) => {
@@ -626,60 +656,15 @@ function StopFinder({ isDarkMode }) {
         })}
       </MapContainer>
 
-      {/* Floating controls */}
+      {/* Top controls - Route filter */}
       <div className="absolute top-4 left-4 right-4 z-[1000] flex flex-col gap-2">
-        {/* Control buttons row */}
-        <div className="flex gap-2">
-          <button
-            onClick={handleFindMyLocation}
-            disabled={loading}
-            className="flex-1 bg-white dark:bg-gray-800 shadow-lg rounded-lg px-4 py-3 font-medium text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50 flex items-center gap-2 justify-center relative border border-gray-200 dark:border-gray-700"
-          >
-            <span className="text-lg">📍</span>
-            Find My Location
-            {watching && (
-              <span className="absolute top-1 right-1 w-2 h-2 bg-green-500 rounded-full animate-pulse" title="Tracking location"></span>
-            )}
-          </button>
-          <button
-            onClick={() => setShowRouteFilter(!showRouteFilter)}
-            className={`bg-white dark:bg-gray-800 shadow-lg rounded-lg px-4 py-3 font-medium text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex items-center gap-2 justify-center border border-gray-200 dark:border-gray-700 ${selectedRoutes.size > 0 ? 'ring-2 ring-primary dark:ring-blue-400' : ''}`}
-          >
-            <span className="text-lg">🚌</span>
-            Filter {selectedRoutes.size > 0 ? `(${selectedRoutes.size})` : ''}
-          </button>
-        </div>
-
-        {/* Refresh controls */}
-        <div className="bg-white dark:bg-gray-800 shadow-lg rounded-lg px-3 py-2 flex items-center justify-between gap-2 border border-gray-200 dark:border-gray-700">
-          <button
-            onClick={handleRefresh}
-            disabled={loading}
-            className="flex items-center gap-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-blue-400 transition-colors disabled:opacity-50"
-          >
-            <svg className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-            </svg>
-            Refresh
-          </button>
-
-          {timeAgo && (
-            <span className="text-xs text-gray-500 dark:text-gray-400">
-              Updated {timeAgo}
-            </span>
-          )}
-
-          <button
-            onClick={() => setAutoRefreshEnabled(!autoRefreshEnabled)}
-            className={`text-xs px-2 py-1 rounded transition-colors ${
-              autoRefreshEnabled
-                ? 'bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-400 hover:bg-green-200 dark:hover:bg-green-900/60'
-                : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600'
-            }`}
-          >
-            Auto {autoRefreshEnabled ? 'ON' : 'OFF'}
-          </button>
-        </div>
+        <button
+          onClick={() => setShowRouteFilter(!showRouteFilter)}
+          className={`bg-white dark:bg-gray-800 shadow-lg rounded-lg px-4 py-3 font-medium text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex items-center gap-2 justify-center border border-gray-200 dark:border-gray-700 ${selectedRoutes.size > 0 ? 'ring-2 ring-primary dark:ring-blue-400' : ''}`}
+        >
+          <span className="text-lg">🚌</span>
+          Filter Routes {selectedRoutes.size > 0 ? `(${selectedRoutes.size})` : ''}
+        </button>
 
         {/* Route filter dropdown */}
         {showRouteFilter && (
@@ -746,6 +731,32 @@ function StopFinder({ isDarkMode }) {
             {stopsLimitExceeded && ` - Limited to ${maxStops}`}
           </div>
         )}
+      </div>
+
+      {/* Bottom right - Location control */}
+      <div className="absolute bottom-6 right-4 z-[1000] flex flex-col items-end gap-2">
+        {/* Toast message */}
+        {locationMessage && (
+          <div className="bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 px-4 py-2 rounded-lg shadow-lg text-sm font-medium animate-fade-in">
+            {locationMessage}
+          </div>
+        )}
+
+        <button
+          onClick={handleToggleLocationTracking}
+          disabled={loading}
+          className={`w-12 h-12 rounded-full shadow-lg flex items-center justify-center transition-all disabled:opacity-50 ${
+            watching
+              ? 'bg-green-500 hover:bg-green-600 text-white'
+              : 'bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-gray-700'
+          }`}
+          title={watching ? 'Click to stop tracking' : 'Click to start tracking'}
+        >
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+          </svg>
+        </button>
       </div>
     </div>
   );
