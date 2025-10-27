@@ -3,12 +3,14 @@ import { useGeolocation } from '../hooks/useGeolocation';
 import { useNearbyStops } from '../hooks/useNearbyStops';
 import { formatDistance } from '../utils/timeFormatter';
 import { getSetting } from '../utils/settings';
+import { reverseGeocode } from '../utils/geocoding';
 import CountdownTimer from './CountdownTimer';
 
-function NearMe() {
+function NearMe({ onNavigateToMap }) {
   const { location, error: locationError, loading: locationLoading, getLocation, startWatching } = useGeolocation();
   const { stops, loading: stopsLoading, error: stopsError, fetchNearbyStops } = useNearbyStops();
   const [hasSearched, setHasSearched] = useState(true); // Start as true for auto-trigger
+  const [address, setAddress] = useState('Loading location...');
 
   // Auto-start on mount
   useEffect(() => {
@@ -17,9 +19,30 @@ function NearMe() {
   }, []);
 
   const handleFindNearby = () => {
-    getLocation();
-    setHasSearched(true);
+    // If we already have location, just refresh the stops
+    if (location.lat && location.lon) {
+      const radius = getSetting('nearbyRadius') || 500;
+      // Force refresh to bypass cache and get fresh departure times
+      fetchNearbyStops(location.lat, location.lon, radius, true);
+    } else {
+      // Otherwise, get location first
+      getLocation();
+      setHasSearched(true);
+    }
   };
+
+  // Fetch address when location is available
+  useEffect(() => {
+    if (location.lat && location.lon) {
+      reverseGeocode(location.lat, location.lon).then(addr => {
+        if (addr) {
+          setAddress(addr);
+        } else {
+          setAddress('Location found');
+        }
+      });
+    }
+  }, [location.lat, location.lon]);
 
   // Fetch stops when location is available
   useEffect(() => {
@@ -34,6 +57,19 @@ function NearMe() {
 
   return (
     <div className="p-4 h-full overflow-y-auto dark:bg-gray-900">
+      {/* Your Location Display */}
+      {location.lat && location.lon && (
+        <div className="mb-4 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
+          <div className="flex items-center gap-2 text-blue-900 dark:text-blue-100">
+            <span className="text-lg">📍</span>
+            <div>
+              <div className="text-xs font-semibold text-blue-600 dark:text-blue-400 uppercase tracking-wide">Your Location</div>
+              <div className="text-sm font-medium">{address}</div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Big "Near Me" Button - only show if not searched and not loading */}
       {!hasSearched && !loading && (
         <button
@@ -61,24 +97,18 @@ function NearMe() {
         </div>
       )}
 
-      {/* Loading State */}
-      {loading && (
-        <div className="mt-4 text-center text-gray-600 dark:text-gray-400">
-          <div className="text-4xl mb-2 animate-bounce">🚏</div>
-          <div>Searching for nearby stops...</div>
-        </div>
-      )}
-
       {/* Nearby Stops List */}
-      {!loading && stops.length > 0 && (
+      {stops.length > 0 && (
         <div className="mt-6 space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100">Nearby Stops</h2>
             <button
               onClick={handleFindNearby}
-              className="text-primary dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium"
+              className="text-primary dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium flex items-center gap-2"
+              disabled={loading}
             >
-              🔄 Refresh
+              <span className={loading ? 'animate-spin' : ''}>🔄</span>
+              {loading ? 'Refreshing...' : 'Refresh'}
             </button>
           </div>
 
@@ -95,7 +125,18 @@ function NearMe() {
                     Stop {stop.code} • {formatDistance(stop.distance)} away
                   </div>
                 </div>
-                <span className="text-2xl">🚏</span>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => onNavigateToMap(stop)}
+                    className="bg-blue-500 hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700 text-white rounded-full p-2 transition-colors"
+                    title="Show on map"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
+                    </svg>
+                  </button>
+                  <span className="text-2xl">🚏</span>
+                </div>
               </div>
 
               {/* Departures */}
@@ -125,6 +166,14 @@ function NearMe() {
               )}
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Loading State - only show when no stops yet */}
+      {loading && stops.length === 0 && (
+        <div className="mt-4 text-center text-gray-600 dark:text-gray-400">
+          <div className="text-4xl mb-2 animate-bounce">🚏</div>
+          <div>Searching for nearby stops...</div>
         </div>
       )}
 

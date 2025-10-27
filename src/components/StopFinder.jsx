@@ -39,6 +39,7 @@ const createStopIcon = (color) => {
 
 const stopIcon = createStopIcon('#6B7280'); // Gray for regular stops (not on filtered routes)
 const nearbyStopIcon = createStopIcon('#6B7280'); // Gray for nearby stops when no filter
+const selectedStopIcon = createStopIcon('#EF4444'); // Red for selected stop from Near Me
 
 // Component to update map view when location changes
 function LocationMarker({ position, onLocationUpdate, mapRef }) {
@@ -171,7 +172,7 @@ function RouteLineWithArrows({ positions, color, headsign, routeName, stopCount 
   return null;
 }
 
-function StopFinder({ isDarkMode }) {
+function StopFinder({ isDarkMode, selectedStop: highlightedStop }) {
   const { location, getLocation, startWatching, stopWatching, watching } = useGeolocation();
   const [stops, setStops] = useState([]);
   const [nearbyStopIds, setNearbyStopIds] = useState(new Set());
@@ -214,6 +215,16 @@ function StopFinder({ isDarkMode }) {
       loadStops(location.lat, location.lon, currentZoom, true);
     }
   }, [location.lat, location.lon]);
+
+  // Center map on highlighted stop when navigating from Near Me
+  useEffect(() => {
+    if (highlightedStop && mapRef.current) {
+      // Center on stop and zoom in
+      mapRef.current.setView([highlightedStop.lat, highlightedStop.lon], 16);
+      // Set as selected stop to show popup
+      setSelectedStop(highlightedStop);
+    }
+  }, [highlightedStop]);
 
   // Auto-refresh departure times every 30 seconds
   useEffect(() => {
@@ -570,11 +581,15 @@ function StopFinder({ isDarkMode }) {
         {/* Stop markers with offset to prevent overlap */}
         {filteredStops.map((stop, idx) => {
           const isNearby = nearbyStopIds.has(stop.gtfsId);
+          const isHighlighted = highlightedStop && stop.gtfsId === highlightedStop.gtfsId;
 
           // Determine marker color based on route patterns
           let iconColor = '#6B7280'; // Default gray
 
-          if (stopToPatterns.has(stop.gtfsId)) {
+          // Highlighted stop from Near Me gets red color (highest priority)
+          if (isHighlighted) {
+            iconColor = '#EF4444'; // Red for highlighted stop
+          } else if (stopToPatterns.has(stop.gtfsId)) {
             const patterns = stopToPatterns.get(stop.gtfsId);
             // Use the color of the first pattern at this stop
             // Direction 0: Blue, Direction 1: Yellow (Ukraine colors 🇺🇦)

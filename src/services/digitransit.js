@@ -5,38 +5,53 @@ const GRAPHQL_API_URL = `${API_BASE}/routing/v2/finland/gtfs/v1`;
 const API_KEY = import.meta.env.VITE_DIGITRANSIT_API_KEY;
 
 /**
- * Generic GraphQL query function
+ * Generic GraphQL query function with timeout
  */
-async function query(graphqlQuery, variables = {}) {
+async function query(graphqlQuery, variables = {}, timeout = 20000) {
   try {
     const requestBody = {
       query: graphqlQuery,
       variables,
     };
 
-    const response = await fetch(GRAPHQL_API_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'digitransit-subscription-key': API_KEY,
-      },
-      body: JSON.stringify(requestBody),
-    });
+    // Create abort controller for timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeout);
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('API request failed:', response.status, response.statusText, errorText);
-      throw new Error(`API request failed: ${response.status} ${response.statusText} - ${errorText}`);
+    try {
+      const response = await fetch(GRAPHQL_API_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'digitransit-subscription-key': API_KEY,
+        },
+        body: JSON.stringify(requestBody),
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('API request failed:', response.status, response.statusText, errorText);
+        throw new Error(`API request failed: ${response.status} ${response.statusText} - ${errorText}`);
+      }
+
+      const result = await response.json();
+
+      if (result.errors) {
+        console.error('GraphQL errors:', result.errors);
+        throw new Error(`GraphQL errors: ${JSON.stringify(result.errors)}`);
+      }
+
+      return result.data;
+    } catch (error) {
+      clearTimeout(timeoutId);
+      if (error.name === 'AbortError') {
+        throw new Error('Request timeout - please check your internet connection and try again');
+      }
+      throw error;
     }
-
-    const result = await response.json();
-
-    if (result.errors) {
-      console.error('GraphQL errors:', result.errors);
-      throw new Error(`GraphQL errors: ${JSON.stringify(result.errors)}`);
-    }
-
-    return result.data;
   } catch (error) {
     console.error('Digitransit API error:', error);
     throw error;
@@ -45,13 +60,36 @@ async function query(graphqlQuery, variables = {}) {
 
 /**
  * Get nearby stops with next departures
+ * @param {number} lat - Latitude
+ * @param {number} lon - Longitude
+ * @param {number} radius - Search radius in meters
+ * @param {boolean} forceRefresh - If true, bypass cache and fetch fresh data
  */
-export async function getNearbyStops(lat, lon, radius = 500) {
-  // Check cache first
-  const cachedStops = getCachedNearbyStops(lat, lon, radius);
-  if (cachedStops) {
-    return cachedStops;
+export async function getNearbyStops(lat, lon, radius = 500, forceRefresh = false) {
+  // Calculate cache key once
+  const roundedLat = Math.round(lat * 100) / 100;
+  const roundedLon = Math.round(lon * 100) / 100;
+  const cacheKey = `stops_${roundedLat}_${roundedLon}_${radius}`;
+
+  // Check fresh cache first (unless force refresh is requested)
+  if (!forceRefresh) {
+    const cachedStops = getCachedNearbyStops(lat, lon, radius);
+    if (cachedStops) {
+      return cachedStops;
+    }
+  } else {
+    console.log('🔄 Force refresh requested, bypassing cache');
   }
+
+  // Check if there's already a request in flight for this location
+  if (inFlightRequests.has(cacheKey)) {
+    console.log(`⏳ Request already in flight for ${cacheKey}, waiting...`);
+    return inFlightRequests.get(cacheKey);
+  }
+
+  // Try to get stale cache as fallback (in case of network errors)
+  const staleCache = getStaleCache(cacheKey);
+  console.log(`🔍 Fetching fresh data for ${cacheKey}, stale cache available: ${!!staleCache}`);
 
   const graphqlQuery = `
     query GetNearbyStops($lat: Float!, $lon: Float!, $radius: Int!) {
@@ -84,31 +122,56 @@ export async function getNearbyStops(lat, lon, radius = 500) {
     }
   `;
 
-  try {
-    const data = await query(graphqlQuery, { lat, lon, radius });
+  // Create the request promise
+  const requestPromise = (async () => {
+    try {
+      const data = await query(graphqlQuery, { lat, lon, radius });
 
-    const stops = data.stopsByRadius?.edges || [];
+      const stops = data.stopsByRadius?.edges || [];
 
-    // Filter for Tartu stops only (Viro: prefix)
-    const tartuStops = stops.filter(edge => {
-      const gtfsId = edge.node.stop.gtfsId || '';
-      return gtfsId.startsWith('Viro:');
-    });
+      // Filter for Tartu stops only (Viro: prefix)
+      const tartuStops = stops.filter(edge => {
+        const gtfsId = edge.node.stop.gtfsId || '';
+        return gtfsId.startsWith('Viro:');
+      });
 
-    const result = tartuStops.map(edge => ({
-      ...edge.node.stop,
-      distance: edge.node.distance,
-    }));
+      const result = tartuStops.map(edge => ({
+        ...edge.node.stop,
+        distance: edge.node.distance,
+      }));
 
-    // Cache the result
-    setCachedNearbyStops(lat, lon, radius, result);
+      // Cache the result
+      setCachedNearbyStops(lat, lon, radius, result);
 
-    return result;
+      // Remove from in-flight tracking
+      inFlightRequests.delete(cacheKey);
 
-  } catch (error) {
-    console.error('Error fetching nearby stops:', error);
-    throw error;
-  }
+      return result;
+
+    } catch (error) {
+      // Remove from in-flight tracking
+      inFlightRequests.delete(cacheKey);
+
+      console.error('Error fetching nearby stops:', error);
+
+      // If we have stale cache, return it instead of failing
+      if (staleCache) {
+        console.warn('⚠️ Using stale cache data due to network error', {
+          staleStopsCount: staleCache.length,
+          error: error.message
+        });
+        return staleCache;
+      }
+
+      console.error('❌ No stale cache available, throwing error');
+      throw error;
+    }
+  })();
+
+  // Store the promise so duplicate requests can wait for it
+  inFlightRequests.set(cacheKey, requestPromise);
+
+  return requestPromise;
 }
 
 /**
@@ -306,6 +369,9 @@ const STOPS_CACHE_DURATION = 2 * 60 * 1000; // 2 minutes
 // Limit number of cached location queries (keep 20 most recent for good offline UX)
 const MAX_STOPS_CACHE_ENTRIES = 20;
 
+// In-flight request tracking to prevent duplicate requests
+const inFlightRequests = new Map();
+
 /**
  * Get cached data from localStorage with expiration check
  */
@@ -326,12 +392,40 @@ function getCachedData(cacheKey, cacheDuration, cacheType = 'route') {
       console.log(`✅ Using cached ${cacheType} data (age: ${ageDisplay})`);
       return data;
     } else {
-      // Cache expired, remove it
-      localStorage.removeItem(cacheKey);
+      // Cache expired but don't remove it yet - might be useful as fallback
+      console.log(`⏰ Cache expired for ${cacheType}, will fetch fresh data`);
       return null;
     }
   } catch (error) {
     console.warn(`Error reading ${cacheType} cache:`, error);
+    return null;
+  }
+}
+
+/**
+ * Get stale cache data (expired but still in localStorage) as fallback
+ */
+function getStaleCache(cacheKey) {
+  try {
+    const cached = localStorage.getItem(cacheKey);
+    if (!cached) {
+      console.log(`📦 No stale cache found for ${cacheKey}`);
+      return null;
+    }
+
+    const { data, timestamp } = JSON.parse(cached);
+    const age = Date.now() - timestamp;
+    const ageMinutes = Math.round(age / 60000);
+
+    if (data && Array.isArray(data)) {
+      console.log(`📦 Found stale cache (age: ${ageMinutes}m, ${data.length} stops) - will use as fallback if needed`);
+      return data;
+    } else {
+      console.warn(`📦 Stale cache exists but data is invalid:`, typeof data);
+      return null;
+    }
+  } catch (error) {
+    console.warn(`📦 Error reading stale cache:`, error);
     return null;
   }
 }

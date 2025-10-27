@@ -9,13 +9,17 @@ import { useDarkMode } from './hooks/useDarkMode'
 function App() {
   const [activeView, setActiveView] = useState('nearme')
   const { isDarkMode, toggleDarkMode } = useDarkMode()
+  const [selectedStop, setSelectedStop] = useState(null)
 
   const renderView = () => {
     switch (activeView) {
       case 'nearme':
-        return <NearMe />
+        return <NearMe onNavigateToMap={(stop) => {
+          setSelectedStop(stop)
+          setActiveView('map')
+        }} />
       case 'map':
-        return <StopFinder isDarkMode={isDarkMode} />
+        return <StopFinder isDarkMode={isDarkMode} selectedStop={selectedStop} />
       case 'favorites':
         return (
           <div className="flex items-center justify-center h-full text-gray-500 dark:text-gray-400 dark:bg-gray-900">
