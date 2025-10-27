@@ -4,19 +4,21 @@ import NearMe from './components/NearMe'
 import StopFinder from './components/StopFinder'
 import BottomNav from './components/BottomNav'
 import Settings from './components/Settings'
+import { useDarkMode } from './hooks/useDarkMode'
 
 function App() {
   const [activeView, setActiveView] = useState('nearme')
+  const { isDarkMode, toggleDarkMode } = useDarkMode()
 
   const renderView = () => {
     switch (activeView) {
       case 'nearme':
         return <NearMe />
       case 'map':
-        return <StopFinder />
+        return <StopFinder isDarkMode={isDarkMode} />
       case 'favorites':
         return (
-          <div className="flex items-center justify-center h-full text-gray-500">
+          <div className="flex items-center justify-center h-full text-gray-500 dark:text-gray-400 dark:bg-gray-900">
             <div className="text-center">
               <div className="text-6xl mb-4">⭐</div>
               <div className="text-xl font-semibold">Favorites</div>
@@ -32,8 +34,8 @@ function App() {
   }
 
   return (
-    <div className="w-full h-full flex flex-col bg-gray-50">
-      <Header />
+    <div className="w-full h-full flex flex-col bg-gray-50 dark:bg-gray-900 transition-colors">
+      <Header isDarkMode={isDarkMode} toggleDarkMode={toggleDarkMode} />
       <div className="flex-1 overflow-hidden">
         {renderView()}
       </div>

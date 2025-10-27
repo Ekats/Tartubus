@@ -158,7 +158,7 @@ function RouteLineWithArrows({ positions, color, headsign, routeName, stopCount 
   return null;
 }
 
-function StopFinder() {
+function StopFinder({ isDarkMode }) {
   const { location, getLocation, startWatching, stopWatching, watching } = useGeolocation();
   const [stops, setStops] = useState([]);
   const [nearbyStopIds, setNearbyStopIds] = useState(new Set());
@@ -502,6 +502,7 @@ function StopFinder() {
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           maxZoom={19}
           maxNativeZoom={18}
+          className={isDarkMode ? 'map-tiles-dark' : ''}
         />
 
         {/* Map event handler */}
@@ -632,7 +633,7 @@ function StopFinder() {
           <button
             onClick={handleFindMyLocation}
             disabled={loading}
-            className="flex-1 bg-white shadow-lg rounded-lg px-4 py-3 font-medium text-sm hover:bg-gray-50 transition-colors disabled:opacity-50 flex items-center gap-2 justify-center relative"
+            className="flex-1 bg-white dark:bg-gray-800 shadow-lg rounded-lg px-4 py-3 font-medium text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50 flex items-center gap-2 justify-center relative border border-gray-200 dark:border-gray-700"
           >
             <span className="text-lg">📍</span>
             Find My Location
@@ -642,7 +643,7 @@ function StopFinder() {
           </button>
           <button
             onClick={() => setShowRouteFilter(!showRouteFilter)}
-            className={`bg-white shadow-lg rounded-lg px-4 py-3 font-medium text-sm hover:bg-gray-50 transition-colors flex items-center gap-2 justify-center ${selectedRoutes.size > 0 ? 'ring-2 ring-primary' : ''}`}
+            className={`bg-white dark:bg-gray-800 shadow-lg rounded-lg px-4 py-3 font-medium text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex items-center gap-2 justify-center border border-gray-200 dark:border-gray-700 ${selectedRoutes.size > 0 ? 'ring-2 ring-primary dark:ring-blue-400' : ''}`}
           >
             <span className="text-lg">🚌</span>
             Filter {selectedRoutes.size > 0 ? `(${selectedRoutes.size})` : ''}
@@ -650,11 +651,11 @@ function StopFinder() {
         </div>
 
         {/* Refresh controls */}
-        <div className="bg-white shadow-lg rounded-lg px-3 py-2 flex items-center justify-between gap-2">
+        <div className="bg-white dark:bg-gray-800 shadow-lg rounded-lg px-3 py-2 flex items-center justify-between gap-2 border border-gray-200 dark:border-gray-700">
           <button
             onClick={handleRefresh}
             disabled={loading}
-            className="flex items-center gap-1.5 text-xs font-medium text-gray-700 hover:text-primary transition-colors disabled:opacity-50"
+            className="flex items-center gap-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-blue-400 transition-colors disabled:opacity-50"
           >
             <svg className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -663,7 +664,7 @@ function StopFinder() {
           </button>
 
           {timeAgo && (
-            <span className="text-xs text-gray-500">
+            <span className="text-xs text-gray-500 dark:text-gray-400">
               Updated {timeAgo}
             </span>
           )}
@@ -672,8 +673,8 @@ function StopFinder() {
             onClick={() => setAutoRefreshEnabled(!autoRefreshEnabled)}
             className={`text-xs px-2 py-1 rounded transition-colors ${
               autoRefreshEnabled
-                ? 'bg-green-100 text-green-700 hover:bg-green-200'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                ? 'bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-400 hover:bg-green-200 dark:hover:bg-green-900/60'
+                : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600'
             }`}
           >
             Auto {autoRefreshEnabled ? 'ON' : 'OFF'}
@@ -682,13 +683,13 @@ function StopFinder() {
 
         {/* Route filter dropdown */}
         {showRouteFilter && (
-          <div className="bg-white shadow-lg rounded-lg p-4 max-h-64 overflow-y-auto">
+          <div className="bg-white dark:bg-gray-800 shadow-lg rounded-lg p-4 max-h-64 overflow-y-auto border border-gray-200 dark:border-gray-700">
             <div className="flex items-center justify-between mb-3">
-              <h3 className="font-semibold text-sm">Filter by Route</h3>
+              <h3 className="font-semibold text-sm text-gray-800 dark:text-gray-200">Filter by Route</h3>
               {selectedRoutes.size > 0 && (
                 <button
                   onClick={clearFilters}
-                  className="text-xs text-primary hover:text-blue-700 font-medium"
+                  className="text-xs text-primary dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium"
                 >
                   Clear all
                 </button>
@@ -701,8 +702,8 @@ function StopFinder() {
                   onClick={() => toggleRoute(route)}
                   className={`px-3 py-2 rounded-md text-sm font-bold transition-colors ${
                     selectedRoutes.has(route)
-                      ? 'bg-primary text-white'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      ? 'bg-primary dark:bg-blue-600 text-white'
+                      : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
                   }`}
                 >
                   {route}
@@ -714,21 +715,21 @@ function StopFinder() {
 
         {/* Error message */}
         {error && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-700">
+          <div className="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg p-3 text-sm text-red-700 dark:text-red-400">
             {error}
           </div>
         )}
 
         {/* Loading indicator for map stops */}
         {loading && (
-          <div className="bg-white shadow-lg rounded-lg px-4 py-3 text-sm text-gray-600 text-center">
+          <div className="bg-white dark:bg-gray-800 shadow-lg rounded-lg px-4 py-3 text-sm text-gray-600 dark:text-gray-300 text-center border border-gray-200 dark:border-gray-700">
             Loading stops...
           </div>
         )}
 
         {/* Loading indicator for route data */}
         {loadingRoutes && (
-          <div className="bg-blue-50 border border-blue-200 shadow-lg rounded-lg px-4 py-3 text-sm text-blue-700 text-center flex items-center justify-center gap-2">
+          <div className="bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 shadow-lg rounded-lg px-4 py-3 text-sm text-blue-700 dark:text-blue-400 text-center flex items-center justify-center gap-2">
             <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
@@ -739,7 +740,7 @@ function StopFinder() {
 
         {/* Stop count */}
         {!loading && stops.length > 0 && (
-          <div className="bg-white shadow-lg rounded-lg px-4 py-2 text-xs text-gray-600 text-center">
+          <div className="bg-white dark:bg-gray-800 shadow-lg rounded-lg px-4 py-2 text-xs text-gray-600 dark:text-gray-300 text-center border border-gray-200 dark:border-gray-700">
             Showing {filteredStops.length} of {stops.length} stops
             {selectedRoutes.size > 0 && ` (filtered)`}
             {stopsLimitExceeded && ` - Limited to ${maxStops}`}

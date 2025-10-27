@@ -7,7 +7,7 @@ function BottomNav({ activeView, onViewChange }) {
   ];
 
   return (
-    <nav className="bg-white border-t border-gray-200 shadow-lg">
+    <nav className="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 shadow-lg transition-colors">
       <div className="flex items-center justify-around">
         {navItems.map((item) => (
           <button
@@ -15,8 +15,8 @@ function BottomNav({ activeView, onViewChange }) {
             onClick={() => onViewChange(item.id)}
             className={`flex-1 flex flex-col items-center py-3 transition-colors ${
               activeView === item.id
-                ? 'text-primary'
-                : 'text-gray-500 hover:text-gray-700'
+                ? 'text-primary dark:text-blue-400'
+                : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
             }`}
           >
             <span className="text-2xl mb-1">{item.icon}</span>
