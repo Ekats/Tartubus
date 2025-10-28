@@ -96,6 +96,7 @@ function LocationMarker({ position, onLocationUpdate, mapRef }) {
 // Component to handle map events (zoom, pan, click)
 function MapEventHandler({ onMapMove, onMapClick }) {
   const dragStartRef = useRef(null);
+  const isDraggingRef = useRef(false);
   const map = useMapEvents({
     moveend: () => {
       const center = map.getCenter();
@@ -109,10 +110,22 @@ function MapEventHandler({ onMapMove, onMapClick }) {
     },
     dragstart: (e) => {
       // Track when dragging starts
-      dragStartRef.current = { lat: e.latlng.lat, lng: e.latlng.lng };
+      // Leaflet's dragstart doesn't always have latlng, use map center as fallback
+      const center = map.getCenter();
+      dragStartRef.current = { lat: center.lat, lng: center.lng };
+      isDraggingRef.current = true;
+    },
+    dragend: () => {
+      // Mark that dragging has ended
+      isDraggingRef.current = false;
     },
     click: (e) => {
       // Only trigger click if we weren't dragging
+      if (isDraggingRef.current) {
+        // Still dragging or just finished dragging, ignore this click
+        return;
+      }
+
       // Check if we moved significantly during the interaction
       if (dragStartRef.current) {
         const latDiff = Math.abs(e.latlng.lat - dragStartRef.current.lat);
@@ -246,6 +259,7 @@ function StopFinder({ isDarkMode, selectedStop: highlightedStop, locationSelecti
   const moveTimeoutRef = useRef(null);
   const lastMovePositionRef = useRef(null);
   const filterMenuRef = useRef(null);
+  const openMarkerRef = useRef(null); // Track currently open marker
 
   // Default to Tartu center
   const defaultCenter = { lat: 58.3776, lon: 26.7290 };
@@ -685,7 +699,12 @@ function StopFinder({ isDarkMode, selectedStop: highlightedStop, locationSelecti
 
   // Handler for map clicks - close popups and filter
   const handleMapClick = () => {
-    // Close any open popups by clearing selected stop
+    // Close any open popup using the marker ref
+    if (openMarkerRef.current) {
+      openMarkerRef.current.closePopup();
+      openMarkerRef.current = null;
+    }
+    // Clear selected stop
     setSelectedStop(null);
     // Close filter menu
     setShowRouteFilter(false);
@@ -812,13 +831,25 @@ function StopFinder({ isDarkMode, selectedStop: highlightedStop, locationSelecti
               position={[stop.adjustedLat, stop.adjustedLon]}
               icon={markerIcon}
               eventHandlers={{
-                click: () => {
+                click: (e) => {
+                  // Prevent event from bubbling to map
+                  L.DomEvent.stopPropagation(e);
+                  // Close previous popup if any
+                  if (openMarkerRef.current && openMarkerRef.current !== e.target) {
+                    openMarkerRef.current.closePopup();
+                  }
+                  // Open the popup immediately using Leaflet's API
+                  e.target.openPopup();
+                  // Track this marker as open
+                  openMarkerRef.current = e.target;
                   setSelectedStop(stop);
                 },
               }}
             >
-              {selectedStop?.gtfsId === stop.gtfsId && (
-                <Popup maxWidth={300} autoPan={false} closeOnClick={false} onClose={() => setSelectedStop(null)}>
+              <Popup maxWidth={300} autoPan={false} closeOnClick={false} onClose={() => {
+                setSelectedStop(null);
+                openMarkerRef.current = null;
+              }}>
                 <div className="p-2">
                   <div className="flex items-start justify-between gap-2 mb-2">
                     <div>
