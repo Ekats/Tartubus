@@ -21,13 +21,20 @@
     "refreshing": "Värskendamine...",
     "refresh": "Värskenda",
     "currentLocation": "Praegune asukoht",
+    "manualLocation": "Käsitsi määratud asukoht",
+    "setLocation": "Määra asukoht",
+    "useGPS": "Kasuta GPS-i",
+    "setLocationTitle": "Määra asukoht",
+    "setLocationDescription": "Vali asukoht kaardil, kus soovid lähedalolevaid peatusi näha.",
+    "pickOnMap": "Vali kaardil",
     "viewOnMap": "Vaata kaardil",
     "minutes": "min",
     "upcomingStops": "Järgmised peatused:",
     "showMore": "Näita veel",
     "showLess": "Näita vähem",
     "showAll": "Näita kõiki",
-    "moreStops": "veel {{count}} peatust"
+    "moreStops": "veel {{count}} peatust",
+    "cancel": "Tühista"
   },
   "map": {
     "title": "Kaart",
@@ -46,7 +53,12 @@
     "routesAtStop": "Selle peatuse liinid:",
     "autoRefresh": "Automaatne värskendamine",
     "lastUpdated": "Viimati uuendatud",
-    "ago": "tagasi"
+    "ago": "tagasi",
+    "selectLocation": "Vali asukoht",
+    "tapOnMap": "Vajuta kaardile, et valida asukoht",
+    "locationSelected": "Asukoht valitud",
+    "selectedLocation": "Valitud asukoht",
+    "apply": "Rakenda"
   },
   "favorites": {
     "title": "Lemmikpeatused",

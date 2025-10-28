@@ -1,19 +1,38 @@
 const CACHE_NAME = 'tartu-bussid-v1';
+
+// Detect base path from service worker location
+const getBasePath = () => {
+  const swPath = self.location.pathname;
+  return swPath.substring(0, swPath.lastIndexOf('/') + 1);
+};
+
+const BASE_PATH = getBasePath();
+
 const urlsToCache = [
-  '/',
-  '/index.html',
-  '/manifest.json',
-  '/icon-192.png',
-  '/icon-512.png',
+  `${BASE_PATH}`,
+  `${BASE_PATH}index.html`,
+  `${BASE_PATH}manifest.json`,
+  `${BASE_PATH}icon-192.png`,
+  `${BASE_PATH}icon-512.png`,
 ];
 
 // Install event - cache essential files
 self.addEventListener('install', (event) => {
+  console.log('Service Worker installing with base path:', BASE_PATH);
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then((cache) => {
-        console.log('Opened cache');
-        return cache.addAll(urlsToCache);
+        console.log('Opened cache, caching:', urlsToCache);
+        // Cache files individually to see which one fails
+        return Promise.all(
+          urlsToCache.map(url =>
+            cache.add(url).catch(err => {
+              console.warn(`Failed to cache ${url}:`, err);
+              // Don't fail the entire install if one file fails
+              return Promise.resolve();
+            })
+          )
+        );
       })
   );
   self.skipWaiting();

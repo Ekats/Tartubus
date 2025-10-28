@@ -7,6 +7,7 @@ import { useGeolocation } from '../hooks/useGeolocation';
 import { useFavorites } from '../hooks/useFavorites';
 import { getNearbyStops, getStopsByRoutes, getNextStopName } from '../services/digitransit';
 import { getSetting } from '../utils/settings';
+import { reverseGeocode } from '../utils/geocoding';
 import CountdownTimer from './CountdownTimer';
 import 'leaflet/dist/leaflet.css';
 
@@ -42,6 +43,19 @@ const createStopIcon = (color) => {
 const stopIcon = createStopIcon('#6B7280'); // Gray for regular stops (not on filtered routes)
 const nearbyStopIcon = createStopIcon('#6B7280'); // Gray for nearby stops when no filter
 const selectedStopIcon = createStopIcon('#EF4444'); // Red for selected stop from Near Me
+
+// Custom location pin icon for manual location selection
+const locationPinIcon = new L.Icon({
+  iconUrl: 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(`
+    <svg width="40" height="50" viewBox="0 0 40 50" xmlns="http://www.w3.org/2000/svg">
+      <path d="M20 0C11.716 0 5 6.716 5 15c0 8.284 15 35 15 35s15-26.716 15-35C35 6.716 28.284 0 20 0z" fill="#2563EB" stroke="white" stroke-width="2"/>
+      <circle cx="20" cy="15" r="6" fill="white"/>
+    </svg>
+  `),
+  iconSize: [40, 50],
+  iconAnchor: [20, 50],
+  popupAnchor: [0, -50],
+});
 
 // Component to update map view when location changes
 function LocationMarker({ position, onLocationUpdate, mapRef }) {
@@ -91,6 +105,18 @@ function MapEventHandler({ onMapMove }) {
       const center = map.getCenter();
       const zoom = map.getZoom();
       onMapMove(center.lat, center.lng, zoom);
+    },
+  });
+  return null;
+}
+
+// Component to handle location selection clicks
+function LocationSelector({ onLocationSelect, disabled }) {
+  const map = useMapEvents({
+    click: (e) => {
+      if (onLocationSelect && !disabled) {
+        onLocationSelect({ lat: e.latlng.lat, lon: e.latlng.lng });
+      }
     },
   });
   return null;
@@ -174,7 +200,7 @@ function RouteLineWithArrows({ positions, color, headsign, routeName, stopCount 
   return null;
 }
 
-function StopFinder({ isDarkMode, selectedStop: highlightedStop }) {
+function StopFinder({ isDarkMode, selectedStop: highlightedStop, locationSelectionMode, onLocationSelected, onCancelLocationSelection }) {
   const { t } = useTranslation();
   const { location, getLocation, startWatching, stopWatching, watching } = useGeolocation();
   const { isFavorite, toggleFavorite } = useFavorites();
@@ -192,6 +218,9 @@ function StopFinder({ isDarkMode, selectedStop: highlightedStop }) {
   const [lastUpdated, setLastUpdated] = useState(null);
   const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(true);
   const [locationMessage, setLocationMessage] = useState(null);
+  const [pendingLocation, setPendingLocation] = useState(null);
+  const [pendingLocationAddress, setPendingLocationAddress] = useState(null);
+  const [expandedPopupStops, setExpandedPopupStops] = useState(new Map()); // Map of stopId -> expansion level
   const mapRef = useRef(null);
   const moveTimeoutRef = useRef(null);
   const lastMovePositionRef = useRef(null);
@@ -536,6 +565,56 @@ function StopFinder({ isDarkMode, selectedStop: highlightedStop }) {
     return () => clearInterval(interval);
   }, [lastUpdated]);
 
+  // Fetch address for pending location
+  useEffect(() => {
+    if (pendingLocation?.lat && pendingLocation?.lon) {
+      reverseGeocode(pendingLocation.lat, pendingLocation.lon).then(addr => {
+        if (addr) {
+          setPendingLocationAddress(addr);
+        } else {
+          setPendingLocationAddress(t('nearMe.noLocation'));
+        }
+      });
+    }
+  }, [pendingLocation]);
+
+  // Handler for location tap
+  const handleLocationTap = (location) => {
+    setPendingLocation(location);
+    setPendingLocationAddress(t('common.loading'));
+  };
+
+  // Handler for apply button
+  const handleApplyLocation = () => {
+    if (pendingLocation && onLocationSelected) {
+      onLocationSelected(pendingLocation);
+    }
+  };
+
+  // Handler for cancel pending location
+  const handleCancelPendingLocation = () => {
+    setPendingLocation(null);
+    setPendingLocationAddress(null);
+  };
+
+  // Handlers for popup expansion
+  const expandPopupStop = (stopId) => {
+    setExpandedPopupStops(prev => {
+      const newMap = new Map(prev);
+      const currentLevel = newMap.get(stopId) || 0;
+      newMap.set(stopId, currentLevel + 1);
+      return newMap;
+    });
+  };
+
+  const collapsePopupStop = (stopId) => {
+    setExpandedPopupStops(prev => {
+      const newMap = new Map(prev);
+      newMap.delete(stopId);
+      return newMap;
+    });
+  };
+
   // Load all stops for selected routes
   useEffect(() => {
     const loadRouteStops = async () => {
@@ -580,10 +659,25 @@ function StopFinder({ isDarkMode, selectedStop: highlightedStop }) {
         />
 
         {/* Map event handler */}
-        <MapEventHandler onMapMove={handleMapMove} />
+        {!locationSelectionMode && <MapEventHandler onMapMove={handleMapMove} />}
+
+        {/* Location selector - active when in selection mode */}
+        {locationSelectionMode && <LocationSelector onLocationSelect={handleLocationTap} disabled={!!pendingLocation} />}
+
+        {/* Pending location marker */}
+        {pendingLocation && (
+          <Marker position={[pendingLocation.lat, pendingLocation.lon]} icon={locationPinIcon}>
+            <Popup>
+              <div className="text-sm">
+                <div className="font-semibold mb-1">{t('map.selectedLocation')}</div>
+                <div>{pendingLocationAddress || t('common.loading')}</div>
+              </div>
+            </Popup>
+          </Marker>
+        )}
 
         {/* User location marker */}
-        {location.lat && <LocationMarker position={location} onLocationUpdate={handleLocationUpdate} mapRef={mapRef} />}
+        {location.lat && !locationSelectionMode && <LocationMarker position={location} onLocationUpdate={handleLocationUpdate} mapRef={mapRef} />}
 
         {/* Route lines with direction arrows */}
         {routePatterns.map((pattern, idx) => {
@@ -709,34 +803,103 @@ function StopFinder({ isDarkMode, selectedStop: highlightedStop }) {
                   {stop.stoptimesWithoutPatterns && stop.stoptimesWithoutPatterns.length > 0 ? (
                     <div className="space-y-1">
                       <p className="font-semibold text-sm">Next buses:</p>
-                      {stop.stoptimesWithoutPatterns.slice(0, 3).map((departure, idx) => {
-                        const nextStop = getNextStopName(departure);
-                        return (
-                          <div
-                            key={idx}
-                            className="flex items-center justify-between gap-2 text-sm"
-                          >
-                            <div className="flex items-center gap-2 flex-1 min-w-0">
-                              <span className="bg-blue-600 text-white px-2 py-0.5 rounded font-bold text-xs shrink-0">
-                                {departure.trip?.route?.shortName || '?'}
-                              </span>
-                              <div className="flex-1 min-w-0">
-                                <div className="text-gray-700 text-xs truncate">
-                                  {departure.headsign || 'Unknown'}
-                                </div>
-                                {nextStop && (
-                                  <div className="text-xs text-gray-500 truncate">
-                                    → {nextStop}
+                      <div className="max-h-64 overflow-y-auto pr-1 space-y-1" style={{ scrollbarWidth: 'thin' }}>
+                        {(() => {
+                          const expansionLevel = expandedPopupStops.get(stop.gtfsId) || 0;
+                          const totalDepartures = stop.stoptimesWithoutPatterns.length;
+                          let visibleCount = 3;
+                          if (expansionLevel === 1) visibleCount = 8;
+                          if (expansionLevel >= 2) visibleCount = totalDepartures;
+
+                          const departureItems = stop.stoptimesWithoutPatterns.slice(0, visibleCount).map((departure, idx) => {
+                            const nextStop = getNextStopName(departure);
+                            return (
+                              <div
+                                key={idx}
+                                className="flex items-center justify-between gap-2 text-sm"
+                              >
+                                <div className="flex items-center gap-2 flex-1 min-w-0">
+                                  <span className="bg-blue-600 text-white px-2 py-0.5 rounded font-bold text-xs shrink-0">
+                                    {departure.trip?.route?.shortName || '?'}
+                                  </span>
+                                  <div className="flex-1 min-w-0">
+                                    <div className="text-gray-700 text-xs truncate">
+                                      {departure.headsign || 'Unknown'}
+                                    </div>
+                                    {nextStop && (
+                                      <div className="text-xs text-gray-500 truncate">
+                                        → {nextStop}
+                                      </div>
+                                    )}
                                   </div>
-                                )}
+                                </div>
+                                <span className="font-semibold text-xs shrink-0">
+                                  <CountdownTimer scheduledArrival={departure.scheduledArrival} />
+                                </span>
                               </div>
-                            </div>
-                            <span className="font-semibold text-xs shrink-0">
-                              <CountdownTimer scheduledArrival={departure.scheduledArrival} />
-                            </span>
-                          </div>
-                        );
-                      })}
+                            );
+                          });
+
+                          let expansionButton = null;
+                          if (totalDepartures > 3) {
+                            if (expansionLevel === 0) {
+                              expansionButton = (
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    expandPopupStop(stop.gtfsId);
+                                  }}
+                                  className="w-full text-center text-xs text-blue-600 hover:text-blue-700 py-1 border-t border-gray-200 mt-1"
+                                >
+                                  {`··· ${t('nearMe.showMore')} (${Math.min(5, totalDepartures - 3)})`}
+                                </button>
+                              );
+                            } else if (expansionLevel === 1 && totalDepartures > 8) {
+                              expansionButton = (
+                                <div className="flex gap-1 pt-1 border-t border-gray-200 mt-1">
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      collapsePopupStop(stop.gtfsId);
+                                    }}
+                                    className="flex-1 text-center text-xs text-gray-600 hover:text-gray-700 py-1"
+                                  >
+                                    − {t('nearMe.showLess')}
+                                  </button>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      expandPopupStop(stop.gtfsId);
+                                    }}
+                                    className="flex-1 text-center text-xs text-blue-600 hover:text-blue-700 py-1"
+                                  >
+                                    {`··· ${t('nearMe.showAll')} (${totalDepartures - 8})`}
+                                  </button>
+                                </div>
+                              );
+                            } else {
+                              expansionButton = (
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    collapsePopupStop(stop.gtfsId);
+                                  }}
+                                  className="w-full text-center text-xs text-gray-600 hover:text-gray-700 py-1 border-t border-gray-200 mt-1"
+                                >
+                                  − {t('nearMe.showLess')}
+                                </button>
+                              );
+                            }
+                          }
+
+                          return (
+                            <>
+                              {departureItems}
+                              {expansionButton}
+                            </>
+                          );
+                        })()}
+                      </div>
                     </div>
                   ) : (
                     <p className="text-sm text-gray-500">No upcoming departures</p>
@@ -850,6 +1013,59 @@ function StopFinder({ isDarkMode, selectedStop: highlightedStop }) {
           </svg>
         </button>
       </div>
+
+      {/* Location Selection Mode Overlay */}
+      {locationSelectionMode && (
+        <div className="absolute top-0 left-0 right-0 z-[1000] bg-blue-600 dark:bg-blue-700 text-white p-4 shadow-lg">
+          <div className="max-w-2xl mx-auto">
+            {!pendingLocation ? (
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3 flex-1">
+                  <svg className="w-6 h-6 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                  <div>
+                    <div className="font-semibold">{t('map.selectLocation')}</div>
+                    <div className="text-xs text-blue-100">{t('map.tapOnMap')}</div>
+                  </div>
+                </div>
+                <button
+                  onClick={onCancelLocationSelection}
+                  className="px-4 py-2 bg-white/20 hover:bg-white/30 rounded-lg transition-colors text-sm font-medium"
+                >
+                  {t('nearMe.cancel')}
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <div className="flex items-start gap-3">
+                  <svg className="w-6 h-6 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-semibold mb-1">{t('map.locationSelected')}</div>
+                    <div className="text-sm text-blue-100 truncate">{pendingLocationAddress || t('common.loading')}</div>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={handleCancelPendingLocation}
+                    className="flex-1 px-4 py-2 bg-white/20 hover:bg-white/30 rounded-lg transition-colors text-sm font-medium"
+                  >
+                    {t('nearMe.cancel')}
+                  </button>
+                  <button
+                    onClick={handleApplyLocation}
+                    className="flex-1 px-4 py-2 bg-white hover:bg-gray-100 text-blue-600 rounded-lg transition-colors text-sm font-medium"
+                  >
+                    {t('map.apply')}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -11,16 +11,41 @@ function App() {
   const [activeView, setActiveView] = useState('nearme')
   const { isDarkMode, toggleDarkMode } = useDarkMode()
   const [selectedStop, setSelectedStop] = useState(null)
+  const [locationSelectionMode, setLocationSelectionMode] = useState(false)
+  const [manualLocation, setManualLocation] = useState(null)
 
   const renderView = () => {
     switch (activeView) {
       case 'nearme':
-        return <NearMe onNavigateToMap={(stop) => {
-          setSelectedStop(stop)
-          setActiveView('map')
-        }} />
+        return <NearMe
+          manualLocation={manualLocation}
+          onNavigateToMap={(stop) => {
+            if (stop?.selectLocation) {
+              setLocationSelectionMode(true)
+              setActiveView('map')
+            } else {
+              setSelectedStop(stop)
+              setLocationSelectionMode(false)
+              setActiveView('map')
+            }
+          }}
+          onClearManualLocation={() => setManualLocation(null)}
+        />
       case 'map':
-        return <StopFinder isDarkMode={isDarkMode} selectedStop={selectedStop} />
+        return <StopFinder
+          isDarkMode={isDarkMode}
+          selectedStop={selectedStop}
+          locationSelectionMode={locationSelectionMode}
+          onLocationSelected={(location) => {
+            setManualLocation(location)
+            setLocationSelectionMode(false)
+            setActiveView('nearme')
+          }}
+          onCancelLocationSelection={() => {
+            setLocationSelectionMode(false)
+            setActiveView('nearme')
+          }}
+        />
       case 'favorites':
         return <Favorites onNavigateToMap={(stop) => {
           setSelectedStop(stop)

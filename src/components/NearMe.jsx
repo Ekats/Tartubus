@@ -9,7 +9,7 @@ import { reverseGeocode } from '../utils/geocoding';
 import { getNextStopName } from '../services/digitransit';
 import CountdownTimer from './CountdownTimer';
 
-function NearMe({ onNavigateToMap }) {
+function NearMe({ onNavigateToMap, manualLocation: manualLocationProp, onClearManualLocation }) {
   const { t } = useTranslation();
   const { location, error: locationError, loading: locationLoading, getLocation, startWatching } = useGeolocation();
   const { stops, loading: stopsLoading, error: stopsError, fetchNearbyStops } = useNearbyStops();
@@ -18,6 +18,7 @@ function NearMe({ onNavigateToMap }) {
   const [address, setAddress] = useState(t('nearMe.requestingLocation'));
   const [expandedStops, setExpandedStops] = useState(new Map()); // Map of stopId -> expansion level (0=collapsed, 1=medium, 2=full)
   const [expandedDepartures, setExpandedDepartures] = useState(new Set()); // Set of "stopId-departureIdx" keys
+  const [showLocationPicker, setShowLocationPicker] = useState(false);
 
   // Auto-start on mount
   useEffect(() => {
@@ -26,16 +27,28 @@ function NearMe({ onNavigateToMap }) {
   }, []);
 
   const handleFindNearby = () => {
+    const loc = activeLocation;
     // If we already have location, just refresh the stops
-    if (location.lat && location.lon) {
+    if (loc.lat && loc.lon) {
       const radius = getSetting('nearbyRadius') || 500;
       // Force refresh to bypass cache and get fresh departure times
-      fetchNearbyStops(location.lat, location.lon, radius, true);
+      fetchNearbyStops(loc.lat, loc.lon, radius, true);
     } else {
       // Otherwise, get location first
       getLocation();
       setHasSearched(true);
     }
+  };
+
+  const handleSetManualLocation = () => {
+    setShowLocationPicker(true);
+  };
+
+  const handleUseGPS = () => {
+    if (onClearManualLocation) {
+      onClearManualLocation();
+    }
+    getLocation();
   };
 
   const expandStop = (stopId) => {
@@ -68,10 +81,14 @@ function NearMe({ onNavigateToMap }) {
     });
   };
 
+  // Use manual location if set, otherwise use GPS location
+  const activeLocation = manualLocationProp || location;
+
   // Fetch address when location is available
   useEffect(() => {
-    if (location.lat && location.lon) {
-      reverseGeocode(location.lat, location.lon).then(addr => {
+    const loc = activeLocation;
+    if (loc.lat && loc.lon) {
+      reverseGeocode(loc.lat, loc.lon).then(addr => {
         if (addr) {
           setAddress(addr);
         } else {
@@ -79,28 +96,30 @@ function NearMe({ onNavigateToMap }) {
         }
       });
     }
-  }, [location.lat, location.lon]);
+  }, [activeLocation.lat, activeLocation.lon, manualLocationProp]);
 
   // Fetch stops when location is available
   useEffect(() => {
-    if (location.lat && location.lon && hasSearched) {
+    const loc = activeLocation;
+    if (loc.lat && loc.lon && hasSearched) {
       const radius = getSetting('nearbyRadius') || 500;
-      fetchNearbyStops(location.lat, location.lon, radius);
+      fetchNearbyStops(loc.lat, loc.lon, radius);
     }
-  }, [location.lat, location.lon, hasSearched]);
+  }, [activeLocation.lat, activeLocation.lon, hasSearched, manualLocationProp]);
 
   // Auto-refresh departure times every 30 seconds
   useEffect(() => {
-    if (!location.lat || !location.lon) return;
+    const loc = activeLocation;
+    if (!loc.lat || !loc.lon) return;
 
     const interval = setInterval(() => {
       const radius = getSetting('nearbyRadius') || 500;
       // Refresh without force (use cache if available < 2 min old)
-      fetchNearbyStops(location.lat, location.lon, radius, false);
+      fetchNearbyStops(loc.lat, loc.lon, radius, false);
     }, 30000); // 30 seconds
 
     return () => clearInterval(interval);
-  }, [location.lat, location.lon]);
+  }, [activeLocation.lat, activeLocation.lon, manualLocationProp]);
 
   const loading = locationLoading || stopsLoading;
   const error = locationError || stopsError;
@@ -108,15 +127,52 @@ function NearMe({ onNavigateToMap }) {
   return (
     <div className="p-4 h-full overflow-y-auto dark:bg-gray-900">
       {/* Your Location Display */}
-      {location.lat && location.lon && (
+      {activeLocation.lat && activeLocation.lon && (
         <div className="mb-4 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
-          <div className="flex items-center gap-2 text-blue-900 dark:text-blue-100">
-            <span className="text-lg">📍</span>
-            <div>
-              <div className="text-xs font-semibold text-blue-600 dark:text-blue-400 uppercase tracking-wide">{t('nearMe.currentLocation')}</div>
-              <div className="text-sm font-medium">{address}</div>
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 text-blue-900 dark:text-blue-100 flex-1 min-w-0">
+              <span className="text-lg shrink-0">📍</span>
+              <div className="flex-1 min-w-0">
+                <div className="text-xs font-semibold text-blue-600 dark:text-blue-400 uppercase tracking-wide">
+                  {manualLocationProp ? t('nearMe.manualLocation') : t('nearMe.currentLocation')}
+                </div>
+                <div className="text-sm font-medium truncate">{address}</div>
+              </div>
+            </div>
+            <div className="flex gap-1 shrink-0">
+              {manualLocationProp && (
+                <button
+                  onClick={handleUseGPS}
+                  className="px-2.5 py-1.5 text-xs bg-blue-600 dark:bg-blue-500 text-white rounded hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors whitespace-nowrap"
+                  title={t('nearMe.useGPS')}
+                >
+                  {t('nearMe.useGPS')}
+                </button>
+              )}
+              <button
+                onClick={handleSetManualLocation}
+                className="px-2.5 py-1.5 text-xs bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 border border-blue-300 dark:border-blue-600 rounded hover:bg-blue-50 dark:hover:bg-gray-600 transition-colors whitespace-nowrap"
+                title={t('nearMe.setLocation')}
+              >
+                {t('nearMe.setLocation')}
+              </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Set Location button when no location available */}
+      {!activeLocation.lat && !activeLocation.lon && !loading && (
+        <div className="mb-4">
+          <button
+            onClick={handleSetManualLocation}
+            className="w-full bg-blue-600 dark:bg-blue-500 text-white font-semibold py-3 px-4 rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors flex items-center justify-center gap-2"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+            {t('nearMe.setLocation')}
+          </button>
         </div>
       )}
 
@@ -240,7 +296,11 @@ function NearMe({ onNavigateToMap }) {
 
                         return (
                           <div key={idx} className="border-t border-gray-100 dark:border-gray-700">
-                            <div className="flex items-center justify-between py-2">
+                            <button
+                              onClick={() => remainingStops.length > 0 && toggleDepartureExpanded(stop.gtfsId, idx)}
+                              className={`w-full flex items-center justify-between py-2 text-left ${remainingStops.length > 0 ? 'hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer' : 'cursor-default'}`}
+                              disabled={remainingStops.length === 0}
+                            >
                               <div className="flex items-center gap-3 flex-1">
                                 <div className="bg-primary dark:bg-blue-600 text-white font-bold px-3 py-1 rounded-md text-sm">
                                   {departure.trip?.route?.shortName || '?'}
@@ -261,18 +321,12 @@ function NearMe({ onNavigateToMap }) {
                                   <CountdownTimer scheduledArrival={departure.scheduledArrival} />
                                 </div>
                                 {remainingStops.length > 0 && (
-                                  <button
-                                    onClick={() => toggleDepartureExpanded(stop.gtfsId, idx)}
-                                    className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 p-1"
-                                    title={isDepartureExpanded ? 'Hide route' : 'Show route'}
-                                  >
-                                    <svg className={`w-5 h-5 transition-transform ${isDepartureExpanded ? 'rotate-90' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                                    </svg>
-                                  </button>
+                                  <svg className={`w-5 h-5 transition-transform text-blue-600 dark:text-blue-400 ${isDepartureExpanded ? 'rotate-90' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                  </svg>
                                 )}
                               </div>
-                            </div>
+                            </button>
                             {isDepartureExpanded && remainingStops.length > 0 && (
                               <div className="pl-12 pr-2 pb-2 text-xs">
                                 <div className="bg-gray-50 dark:bg-gray-800 rounded p-2 space-y-1">
@@ -364,6 +418,43 @@ function NearMe({ onNavigateToMap }) {
           <div className="text-4xl mb-2">🤷</div>
           <div className="font-medium">No bus stops found nearby</div>
           <div className="text-sm mt-1">Try increasing the search radius or moving to a different location</div>
+        </div>
+      )}
+
+      {/* Location Picker Modal */}
+      {showLocationPicker && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-md w-full p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">{t('nearMe.setLocationTitle')}</h2>
+              <button
+                onClick={() => setShowLocationPicker(false)}
+                className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+              {t('nearMe.setLocationDescription')}
+            </p>
+            <button
+              onClick={() => {
+                setShowLocationPicker(false);
+                onNavigateToMap({ selectLocation: true });
+              }}
+              className="w-full bg-blue-600 dark:bg-blue-500 text-white font-semibold py-3 px-4 rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors mb-3"
+            >
+              {t('nearMe.pickOnMap')}
+            </button>
+            <button
+              onClick={() => setShowLocationPicker(false)}
+              className="w-full bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 font-semibold py-3 px-4 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+            >
+              {t('nearMe.cancel')}
+            </button>
+          </div>
         </div>
       )}
     </div>

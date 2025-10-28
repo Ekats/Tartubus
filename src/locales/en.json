@@ -21,13 +21,20 @@
     "refreshing": "Refreshing...",
     "refresh": "Refresh",
     "currentLocation": "Current location",
+    "manualLocation": "Manual location",
+    "setLocation": "Set location",
+    "useGPS": "Use GPS",
+    "setLocationTitle": "Set Location",
+    "setLocationDescription": "Choose a location on the map to find nearby stops.",
+    "pickOnMap": "Pick on map",
     "viewOnMap": "View on map",
     "minutes": "min",
     "upcomingStops": "Upcoming stops:",
     "showMore": "Show more",
     "showLess": "Show less",
     "showAll": "Show all",
-    "moreStops": "{{count}} more stops"
+    "moreStops": "{{count}} more stops",
+    "cancel": "Cancel"
   },
   "map": {
     "title": "Map",
@@ -46,7 +53,12 @@
     "routesAtStop": "Routes at this stop:",
     "autoRefresh": "Auto refresh",
     "lastUpdated": "Last updated",
-    "ago": "ago"
+    "ago": "ago",
+    "selectLocation": "Select location",
+    "tapOnMap": "Tap on the map to select a location",
+    "locationSelected": "Location selected",
+    "selectedLocation": "Selected location",
+    "apply": "Apply"
   },
   "favorites": {
     "title": "Favorite Stops",

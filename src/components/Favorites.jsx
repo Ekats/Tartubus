@@ -275,7 +275,11 @@ function Favorites({ onNavigateToMap }) {
 
                       return (
                         <div key={idx}>
-                          <div className="flex items-center justify-between gap-3 p-2 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                          <button
+                            onClick={() => remainingStops.length > 0 && toggleDepartureExpanded(stop.gtfsId, idx)}
+                            className={`w-full flex items-center justify-between gap-3 p-2 bg-gray-50 dark:bg-gray-700/50 rounded-lg text-left ${remainingStops.length > 0 ? 'hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer' : 'cursor-default'}`}
+                            disabled={remainingStops.length === 0}
+                          >
                             <div className="flex items-center gap-3 flex-1 min-w-0">
                               <span className="bg-blue-600 dark:bg-blue-500 text-white px-2.5 py-1 rounded font-bold text-sm shrink-0">
                                 {departure.trip?.route?.shortName || '?'}
@@ -296,18 +300,12 @@ function Favorites({ onNavigateToMap }) {
                                 <CountdownTimer scheduledArrival={departure.scheduledArrival} />
                               </span>
                               {remainingStops.length > 0 && (
-                                <button
-                                  onClick={() => toggleDepartureExpanded(stop.gtfsId, idx)}
-                                  className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 p-1"
-                                  title={isDepartureExpanded ? 'Hide route' : 'Show route'}
-                                >
-                                  <svg className={`w-5 h-5 transition-transform ${isDepartureExpanded ? 'rotate-90' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                                  </svg>
-                                </button>
+                                <svg className={`w-5 h-5 transition-transform text-blue-600 dark:text-blue-400 ${isDepartureExpanded ? 'rotate-90' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                </svg>
                               )}
                             </div>
-                          </div>
+                          </button>
                           {isDepartureExpanded && remainingStops.length > 0 && (
                             <div className="pl-12 pr-2 pb-2 mt-1 text-xs">
                               <div className="bg-gray-100 dark:bg-gray-800 rounded p-2 space-y-1">
