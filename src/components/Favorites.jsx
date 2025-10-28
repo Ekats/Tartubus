@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useFavorites } from '../hooks/useFavorites';
-import { getStopById } from '../services/digitransit';
+import { getStopById, getNextStopName } from '../services/digitransit';
 import CountdownTimer from './CountdownTimer';
 
 function Favorites({ onNavigateToMap }) {
@@ -165,6 +165,21 @@ function Favorites({ onNavigateToMap }) {
                 <div className="flex items-center gap-2">
                   <h3 className="font-bold text-lg text-gray-900 dark:text-gray-100">
                     {stop.name}
+                    {(() => {
+                      // Get the most common next stop from departures
+                      const nextStops = stop.stoptimesWithoutPatterns
+                        ?.map(dep => getNextStopName(dep))
+                        .filter(Boolean);
+
+                      if (nextStops && nextStops.length > 0) {
+                        // Find most common next stop
+                        const counts = {};
+                        nextStops.forEach(name => counts[name] = (counts[name] || 0) + 1);
+                        const mostCommon = Object.keys(counts).reduce((a, b) => counts[a] > counts[b] ? a : b);
+                        return <span className="text-gray-500 dark:text-gray-400 font-normal"> → {mostCommon}</span>;
+                      }
+                      return null;
+                    })()}
                   </h3>
                   {stop.error && (
                     <span className="text-xs text-red-500 dark:text-red-400">⚠️</span>
@@ -209,24 +224,34 @@ function Favorites({ onNavigateToMap }) {
                 <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">
                   Next Buses:
                 </p>
-                {stop.stoptimesWithoutPatterns.slice(0, 5).map((departure, idx) => (
-                  <div
-                    key={idx}
-                    className="flex items-center justify-between gap-3 p-2 bg-gray-50 dark:bg-gray-700/50 rounded-lg"
-                  >
-                    <div className="flex items-center gap-3 flex-1 min-w-0">
-                      <span className="bg-blue-600 dark:bg-blue-500 text-white px-2.5 py-1 rounded font-bold text-sm shrink-0">
-                        {departure.trip?.route?.shortName || '?'}
-                      </span>
-                      <span className="text-sm text-gray-700 dark:text-gray-300 truncate">
-                        {departure.headsign || 'Unknown'}
+                {stop.stoptimesWithoutPatterns.slice(0, 5).map((departure, idx) => {
+                  const nextStop = getNextStopName(departure);
+                  return (
+                    <div
+                      key={idx}
+                      className="flex items-center justify-between gap-3 p-2 bg-gray-50 dark:bg-gray-700/50 rounded-lg"
+                    >
+                      <div className="flex items-center gap-3 flex-1 min-w-0">
+                        <span className="bg-blue-600 dark:bg-blue-500 text-white px-2.5 py-1 rounded font-bold text-sm shrink-0">
+                          {departure.trip?.route?.shortName || '?'}
+                        </span>
+                        <div className="flex-1 min-w-0">
+                          <div className="text-sm text-gray-700 dark:text-gray-300 truncate">
+                            {departure.headsign || 'Unknown'}
+                          </div>
+                          {nextStop && (
+                            <div className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                              → {nextStop}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      <span className="font-bold text-sm text-gray-900 dark:text-gray-100 shrink-0">
+                        <CountdownTimer scheduledArrival={departure.scheduledArrival} />
                       </span>
                     </div>
-                    <span className="font-bold text-sm text-gray-900 dark:text-gray-100 shrink-0">
-                      <CountdownTimer scheduledArrival={departure.scheduledArrival} />
-                    </span>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             ) : (
               <div className="text-sm text-gray-500 dark:text-gray-400 text-center py-4">

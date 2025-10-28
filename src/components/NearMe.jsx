@@ -6,6 +6,7 @@ import { useFavorites } from '../hooks/useFavorites';
 import { formatDistance } from '../utils/timeFormatter';
 import { getSetting } from '../utils/settings';
 import { reverseGeocode } from '../utils/geocoding';
+import { getNextStopName } from '../services/digitransit';
 import CountdownTimer from './CountdownTimer';
 
 function NearMe({ onNavigateToMap }) {
@@ -137,7 +138,24 @@ function NearMe({ onNavigateToMap }) {
               {/* Stop Header */}
               <div className="flex items-start justify-between mb-3">
                 <div className="flex-1">
-                  <h3 className="font-bold text-lg text-gray-800 dark:text-gray-100">{stop.name}</h3>
+                  <h3 className="font-bold text-lg text-gray-800 dark:text-gray-100">
+                    {stop.name}
+                    {(() => {
+                      // Get the most common next stop from departures
+                      const nextStops = stop.stoptimesWithoutPatterns
+                        ?.map(dep => getNextStopName(dep))
+                        .filter(Boolean);
+
+                      if (nextStops && nextStops.length > 0) {
+                        // Find most common next stop
+                        const counts = {};
+                        nextStops.forEach(name => counts[name] = (counts[name] || 0) + 1);
+                        const mostCommon = Object.keys(counts).reduce((a, b) => counts[a] > counts[b] ? a : b);
+                        return <span className="text-gray-500 dark:text-gray-400 font-normal"> → {mostCommon}</span>;
+                      }
+                      return null;
+                    })()}
+                  </h3>
                   <div className="text-sm text-gray-500 dark:text-gray-400">
                     {t('map.stop')} {stop.code} • {t('nearMe.distance', { distance: Math.round(stop.distance) })}
                   </div>
@@ -171,24 +189,34 @@ function NearMe({ onNavigateToMap }) {
               {/* Departures */}
               {stop.stoptimesWithoutPatterns && stop.stoptimesWithoutPatterns.length > 0 ? (
                 <div className="space-y-2">
-                  {stop.stoptimesWithoutPatterns.slice(0, 3).map((departure, idx) => (
-                    <div
-                      key={idx}
-                      className="flex items-center justify-between py-2 border-t border-gray-100 dark:border-gray-700"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="bg-primary dark:bg-blue-600 text-white font-bold px-3 py-1 rounded-md text-sm">
-                          {departure.trip?.route?.shortName || '?'}
+                  {stop.stoptimesWithoutPatterns.slice(0, 3).map((departure, idx) => {
+                    const nextStop = getNextStopName(departure);
+                    return (
+                      <div
+                        key={idx}
+                        className="flex items-center justify-between py-2 border-t border-gray-100 dark:border-gray-700"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="bg-primary dark:bg-blue-600 text-white font-bold px-3 py-1 rounded-md text-sm">
+                            {departure.trip?.route?.shortName || '?'}
+                          </div>
+                          <div className="text-sm">
+                            <div className="text-gray-700 dark:text-gray-300">
+                              {departure.headsign || departure.trip?.route?.longName || 'Unknown destination'}
+                            </div>
+                            {nextStop && (
+                              <div className="text-xs text-gray-500 dark:text-gray-400">
+                                → {nextStop}
+                              </div>
+                            )}
+                          </div>
                         </div>
-                        <div className="text-sm text-gray-700 dark:text-gray-300">
-                          {departure.headsign || departure.trip?.route?.longName || 'Unknown destination'}
+                        <div className="font-semibold text-gray-800 dark:text-gray-100">
+                          <CountdownTimer scheduledArrival={departure.scheduledArrival} />
                         </div>
                       </div>
-                      <div className="font-semibold text-gray-800 dark:text-gray-100">
-                        <CountdownTimer scheduledArrival={departure.scheduledArrival} />
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               ) : (
                 <div className="text-sm text-gray-500 dark:text-gray-400 py-2">{t('nearMe.noDepartures')}</div>

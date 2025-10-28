@@ -102,15 +102,23 @@ export async function getNearbyStops(lat, lon, radius = 500, forceRefresh = fals
               code
               lat
               lon
-              stoptimesWithoutPatterns(numberOfDepartures: 5) {
+              stoptimesWithoutPatterns(numberOfDepartures: 5, omitCanceled: false) {
                 scheduledArrival
                 scheduledDeparture
                 headsign
+                stopPosition
                 trip {
                   route {
                     shortName
                     longName
                     gtfsId
+                  }
+                  stoptimes {
+                    stop {
+                      gtfsId
+                      name
+                    }
+                    stopPosition
                   }
                 }
               }
@@ -228,15 +236,23 @@ export async function getStopById(gtfsId) {
         code
         lat
         lon
-        stoptimesWithoutPatterns(numberOfDepartures: 5) {
+        stoptimesWithoutPatterns(numberOfDepartures: 5, omitCanceled: false) {
           scheduledArrival
           scheduledDeparture
           headsign
+          stopPosition
           trip {
             route {
               shortName
               longName
               gtfsId
+            }
+            stoptimes {
+              stop {
+                gtfsId
+                name
+              }
+              stopPosition
             }
           }
         }
@@ -325,6 +341,34 @@ export async function planJourney(from, to, numItineraries = 3) {
   });
 
   return data.plan?.itineraries || [];
+}
+
+/**
+ * Get the next stop name from a stoptime object
+ * @param {Object} stoptime - Stoptime object with trip.stoptimes data
+ * @returns {string|null} - Name of the next stop, or null if not available
+ */
+export function getNextStopName(stoptime) {
+  try {
+    if (!stoptime?.trip?.stoptimes || !Array.isArray(stoptime.trip.stoptimes)) {
+      return null;
+    }
+
+    const currentStopPosition = stoptime.stopPosition;
+    if (currentStopPosition === undefined || currentStopPosition === null) {
+      return null;
+    }
+
+    // Find the next stop in the sequence
+    const nextStop = stoptime.trip.stoptimes.find(
+      st => st.stopPosition === currentStopPosition + 1
+    );
+
+    return nextStop?.stop?.name || null;
+  } catch (error) {
+    console.warn('Error getting next stop name:', error);
+    return null;
+  }
 }
 
 /**

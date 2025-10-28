@@ -5,7 +5,7 @@ import L from 'leaflet';
 import 'leaflet-polylinedecorator';
 import { useGeolocation } from '../hooks/useGeolocation';
 import { useFavorites } from '../hooks/useFavorites';
-import { getNearbyStops, getStopsByRoutes } from '../services/digitransit';
+import { getNearbyStops, getStopsByRoutes, getNextStopName } from '../services/digitransit';
 import { getSetting } from '../utils/settings';
 import CountdownTimer from './CountdownTimer';
 import 'leaflet/dist/leaflet.css';
@@ -646,7 +646,24 @@ function StopFinder({ isDarkMode, selectedStop: highlightedStop }) {
                 <div className="p-2">
                   <div className="flex items-start justify-between gap-2 mb-2">
                     <div>
-                      <h3 className="font-bold text-lg mb-1">{stop.name}</h3>
+                      <h3 className="font-bold text-lg mb-1">
+                        {stop.name}
+                        {(() => {
+                          // Get the most common next stop from departures
+                          const nextStops = stop.stoptimesWithoutPatterns
+                            ?.map(dep => getNextStopName(dep))
+                            .filter(Boolean);
+
+                          if (nextStops && nextStops.length > 0) {
+                            // Find most common next stop
+                            const counts = {};
+                            nextStops.forEach(name => counts[name] = (counts[name] || 0) + 1);
+                            const mostCommon = Object.keys(counts).reduce((a, b) => counts[a] > counts[b] ? a : b);
+                            return <span className="text-gray-500 font-normal"> → {mostCommon}</span>;
+                          }
+                          return null;
+                        })()}
+                      </h3>
                       <p className="text-sm text-gray-600">Stop {stop.code}</p>
                     </div>
                     <button
@@ -692,24 +709,34 @@ function StopFinder({ isDarkMode, selectedStop: highlightedStop }) {
                   {stop.stoptimesWithoutPatterns && stop.stoptimesWithoutPatterns.length > 0 ? (
                     <div className="space-y-1">
                       <p className="font-semibold text-sm">Next buses:</p>
-                      {stop.stoptimesWithoutPatterns.slice(0, 3).map((departure, idx) => (
-                        <div
-                          key={idx}
-                          className="flex items-center justify-between gap-2 text-sm"
-                        >
-                          <div className="flex items-center gap-2">
-                            <span className="bg-blue-600 text-white px-2 py-0.5 rounded font-bold text-xs">
-                              {departure.trip?.route?.shortName || '?'}
-                            </span>
-                            <span className="text-gray-700 text-xs">
-                              {departure.headsign || 'Unknown'}
+                      {stop.stoptimesWithoutPatterns.slice(0, 3).map((departure, idx) => {
+                        const nextStop = getNextStopName(departure);
+                        return (
+                          <div
+                            key={idx}
+                            className="flex items-center justify-between gap-2 text-sm"
+                          >
+                            <div className="flex items-center gap-2 flex-1 min-w-0">
+                              <span className="bg-blue-600 text-white px-2 py-0.5 rounded font-bold text-xs shrink-0">
+                                {departure.trip?.route?.shortName || '?'}
+                              </span>
+                              <div className="flex-1 min-w-0">
+                                <div className="text-gray-700 text-xs truncate">
+                                  {departure.headsign || 'Unknown'}
+                                </div>
+                                {nextStop && (
+                                  <div className="text-xs text-gray-500 truncate">
+                                    → {nextStop}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                            <span className="font-semibold text-xs shrink-0">
+                              <CountdownTimer scheduledArrival={departure.scheduledArrival} />
                             </span>
                           </div>
-                          <span className="font-semibold text-xs">
-                            <CountdownTimer scheduledArrival={departure.scheduledArrival} />
-                          </span>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   ) : (
                     <p className="text-sm text-gray-500">No upcoming departures</p>
