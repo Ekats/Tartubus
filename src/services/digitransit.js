@@ -486,11 +486,9 @@ function decodePolyline(encoded) {
 }
 
 // Cache expiration times
-// Route geometry - cache for 1 year (rarely changes)
-const ROUTE_CACHE_DURATION = 365 * 24 * 60 * 60 * 1000;
 // Departure times - cache for 2 minutes (fresh enough, provides offline resilience)
 const STOPS_CACHE_DURATION = 2 * 60 * 1000; // 2 minutes
-// Limit number of cached location queries (keep 20 most recent for good offline UX)
+// Limit number of cached location queries (keep 10 most recent for good offline UX)
 const MAX_STOPS_CACHE_ENTRIES = 10; // Reduced to prevent quota issues
 
 // In-memory cache for all routes (loaded from bundled JSON file)
@@ -601,13 +599,79 @@ window.showCacheDebug = showCacheDebugInfo;
 
 /**
  * Initialize caches on app startup
- * This cleans up old cached data
+ * This cleans up old cached data and handles version changes
  */
 export function initializeCaches() {
   console.log('🚀 Initializing caches...');
 
-  // Clean up old/expired caches
-  clearOldCacheEntries();
+  const APP_VERSION = '0.1.0'; // Should match package.json version
+  const VERSION_KEY = 'app_version';
+  const PRESERVE_KEYS = [
+    'tartu_bus_favorites',      // User's favorite stops
+    'tartu-bus-settings',       // User settings (radius, max stops, etc)
+    'darkMode',                 // Dark mode preference
+    'i18nextLng',               // Language preference
+    VERSION_KEY                 // Version tracking
+  ];
+
+  try {
+    // Check if app version has changed
+    const storedVersion = localStorage.getItem(VERSION_KEY);
+    const isVersionChanged = storedVersion !== APP_VERSION;
+
+    if (isVersionChanged) {
+      console.log(`🔄 App version changed (${storedVersion || 'none'} → ${APP_VERSION}), clearing all cache...`);
+
+      // Store important data temporarily
+      const preserved = {};
+      PRESERVE_KEYS.forEach(key => {
+        const value = localStorage.getItem(key);
+        if (value !== null) {
+          preserved[key] = value;
+        }
+      });
+
+      // Clear everything
+      localStorage.clear();
+
+      // Restore preserved data
+      Object.entries(preserved).forEach(([key, value]) => {
+        localStorage.setItem(key, value);
+      });
+
+      // Update version
+      localStorage.setItem(VERSION_KEY, APP_VERSION);
+
+      console.log(`✅ Cache cleared, preserved ${Object.keys(preserved).length} important items`);
+    } else {
+      // Normal startup - clear temporary cache
+      console.log('🧹 Clearing temporary cache (stops & routes)...');
+
+      const keysToRemove = [];
+
+      // Remove cache entries - routes are now bundled, stops are time-sensitive
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+
+        // Clear stops and route cache on every page reload
+        if (key && (key.startsWith('stops_') || key.startsWith('route_'))) {
+          keysToRemove.push(key);
+        }
+      }
+
+      // Remove marked entries
+      keysToRemove.forEach(key => localStorage.removeItem(key));
+
+      if (keysToRemove.length > 0) {
+        console.log(`🗑️ Cleared ${keysToRemove.length} temporary cache entries`);
+      }
+
+      // Also clean up any old/expired entries
+      clearOldCacheEntries();
+    }
+  } catch (error) {
+    console.error('Error during cache initialization:', error);
+  }
 
   console.log(`✅ Cache initialization complete`);
 }
@@ -671,13 +735,6 @@ function getStaleCache(cacheKey) {
 }
 
 /**
- * Get cached route data from localStorage
- */
-function getCachedRouteData(cacheKey) {
-  return getCachedData(`route_${cacheKey}`, ROUTE_CACHE_DURATION, 'route');
-}
-
-/**
  * Clear old cache entries to free up space
  */
 function clearOldCacheEntries() {
@@ -691,19 +748,17 @@ function clearOldCacheEntries() {
       const key = localStorage.key(i);
 
       // Only process our cache keys (route_ and stops_ prefixed)
-      if (key && (key.startsWith('route_') || key.startsWith('stops_'))) {
+      if (key && key.startsWith('stops_')) {
         try {
           const cached = localStorage.getItem(key);
           if (cached) {
             const { timestamp } = JSON.parse(cached);
             const age = now - timestamp;
-            const isRouteCache = key.startsWith('route_');
-            const maxAge = isRouteCache ? ROUTE_CACHE_DURATION : STOPS_CACHE_DURATION;
 
             // Remove if older than cache duration
-            if (age > maxAge) {
+            if (age > STOPS_CACHE_DURATION) {
               keysToRemove.push(key);
-            } else if (!isRouteCache) {
+            } else {
               // Track valid stops cache entries for LRU eviction
               stopsCacheEntries.push({ key, timestamp });
             }
@@ -779,13 +834,6 @@ function setCachedData(cacheKey, data) {
 }
 
 /**
- * Save route data to localStorage cache
- */
-function setCachedRouteData(cacheKey, data) {
-  setCachedData(`route_${cacheKey}`, data);
-}
-
-/**
  * Get cached nearby stops data
  */
 function getCachedNearbyStops(lat, lon, radius) {
@@ -814,17 +862,7 @@ function setCachedNearbyStops(lat, lon, radius, data) {
  * @param {Object} cityBounds - Optional city bounds to limit query area {lat, lon, radius}
  */
 export async function getStopsByRoutes(routeShortNames, cityBounds = null) {
-  // Create cache key from sorted route names and city bounds
-  const boundsKey = cityBounds ? `_${Math.round(cityBounds.lat * 100)}_${Math.round(cityBounds.lon * 100)}` : '';
-  const cacheKey = [...routeShortNames].sort().join(',') + boundsKey;
-
-  // Check if we have cached data
-  const cachedData = getCachedRouteData(cacheKey);
-  if (cachedData) {
-    return cachedData;
-  }
-
-  console.log('🔄 Fetching route data from API for:', routeShortNames, cityBounds ? `in ${cityBounds.radius}m radius` : '');
+  console.log('🔄 Loading route data from bundle for:', routeShortNames, cityBounds ? `in ${cityBounds.radius}m radius` : '');
 
   // Helper function to calculate distance
   const getDistance = (lat1, lon1, lat2, lon2) => {
@@ -996,9 +1034,7 @@ export async function getStopsByRoutes(routeShortNames, cityBounds = null) {
 
     const result = { stops, routePatterns };
 
-    // Cache the result in localStorage
-    setCachedRouteData(cacheKey, result);
-
+    // No need to cache - routes are already bundled and in-memory cached
     return result;
   } catch (error) {
     console.error('Error fetching stops by routes:', error);
