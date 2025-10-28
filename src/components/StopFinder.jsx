@@ -93,8 +93,9 @@ function LocationMarker({ position, onLocationUpdate, mapRef }) {
   );
 }
 
-// Component to handle map events (zoom, pan)
-function MapEventHandler({ onMapMove }) {
+// Component to handle map events (zoom, pan, click)
+function MapEventHandler({ onMapMove, onMapClick }) {
+  const dragStartRef = useRef(null);
   const map = useMapEvents({
     moveend: () => {
       const center = map.getCenter();
@@ -105,6 +106,26 @@ function MapEventHandler({ onMapMove }) {
       const center = map.getCenter();
       const zoom = map.getZoom();
       onMapMove(center.lat, center.lng, zoom);
+    },
+    dragstart: (e) => {
+      // Track when dragging starts
+      dragStartRef.current = { lat: e.latlng.lat, lng: e.latlng.lng };
+    },
+    click: (e) => {
+      // Only trigger click if we weren't dragging
+      // Check if we moved significantly during the interaction
+      if (dragStartRef.current) {
+        const latDiff = Math.abs(e.latlng.lat - dragStartRef.current.lat);
+        const lngDiff = Math.abs(e.latlng.lng - dragStartRef.current.lng);
+        // If movement is tiny (< 0.0001 degrees ~11 meters), treat as click
+        if (latDiff < 0.0001 && lngDiff < 0.0001) {
+          if (onMapClick) onMapClick();
+        }
+        dragStartRef.current = null;
+      } else {
+        // No drag happened, definitely a click
+        if (onMapClick) onMapClick();
+      }
     },
   });
   return null;
@@ -224,6 +245,7 @@ function StopFinder({ isDarkMode, selectedStop: highlightedStop, locationSelecti
   const mapRef = useRef(null);
   const moveTimeoutRef = useRef(null);
   const lastMovePositionRef = useRef(null);
+  const filterMenuRef = useRef(null);
 
   // Default to Tartu center
   const defaultCenter = { lat: 58.3776, lon: 26.7290 };
@@ -270,9 +292,10 @@ function StopFinder({ isDarkMode, selectedStop: highlightedStop, locationSelecti
 
     const interval = setInterval(() => {
       // Refresh stops data silently (without showing loading indicator)
+      // Use refreshOnly=true to merge data instead of replacing stops
       const currentLat = location.lat || defaultCenter.lat;
       const currentLon = location.lon || defaultCenter.lon;
-      loadStops(currentLat, currentLon, currentZoom);
+      loadStops(currentLat, currentLon, currentZoom, false, true);
     }, 30000); // 30 seconds
 
     return () => clearInterval(interval);
@@ -288,8 +311,10 @@ function StopFinder({ isDarkMode, selectedStop: highlightedStop, locationSelecti
     return 1000;                       // 1km for zoom 15+
   };
 
-  const loadStops = async (lat, lon, zoom = 13, includeUserLocation = false) => {
-    setLoading(true);
+  const loadStops = async (lat, lon, zoom = 13, includeUserLocation = false, refreshOnly = false) => {
+    if (!refreshOnly) {
+      setLoading(true);
+    }
     setError(null);
     try {
       const radius = getRadiusForZoom(zoom);
@@ -297,7 +322,7 @@ function StopFinder({ isDarkMode, selectedStop: highlightedStop, locationSelecti
 
       // If user has a location and we're not already loading from their location,
       // also load stops near the user
-      let allStops = mapCenterStops;
+      let newStops = mapCenterStops;
       const nearbyIds = new Set();
 
       if (location.lat && location.lon && !includeUserLocation) {
@@ -312,17 +337,60 @@ function StopFinder({ isDarkMode, selectedStop: highlightedStop, locationSelecti
         [...mapCenterStops, ...userLocationStops].forEach(stop => {
           stopMap.set(stop.gtfsId, stop);
         });
-        allStops = Array.from(stopMap.values());
+        newStops = Array.from(stopMap.values());
       }
 
-      setStops(allStops);
+      // Helper function to calculate distance in degrees (rough approximation)
+      const getDistance = (lat1, lon1, lat2, lon2) => {
+        const latDiff = lat1 - lat2;
+        const lonDiff = lon1 - lon2;
+        return Math.sqrt(latDiff * latDiff + lonDiff * lonDiff);
+      };
+
+      // Calculate cleanup threshold - 2x the fetch radius to keep stops visible while panning
+      const cleanupThreshold = (getRadiusForZoom(zoom) * 2) / 111000; // Convert meters to degrees
+
+      // If this is a refresh, merge with existing stops instead of replacing
+      if (refreshOnly) {
+        setStops(prevStops => {
+          const stopMap = new Map();
+          // Keep existing stops that are still reasonably close
+          prevStops.forEach(stop => {
+            const distance = getDistance(lat, lon, stop.lat, stop.lon);
+            if (distance <= cleanupThreshold) {
+              stopMap.set(stop.gtfsId, stop);
+            }
+          });
+          // Update with new data (fresher departure times)
+          newStops.forEach(stop => stopMap.set(stop.gtfsId, stop));
+          return Array.from(stopMap.values());
+        });
+      } else {
+        // Initial load or map movement - merge new stops with existing ones
+        setStops(prevStops => {
+          const stopMap = new Map();
+          // Keep existing stops that are still within the extended range
+          prevStops.forEach(stop => {
+            const distance = getDistance(lat, lon, stop.lat, stop.lon);
+            if (distance <= cleanupThreshold) {
+              stopMap.set(stop.gtfsId, stop);
+            }
+          });
+          // Add new stops
+          newStops.forEach(stop => stopMap.set(stop.gtfsId, stop));
+          return Array.from(stopMap.values());
+        });
+      }
+
       setNearbyStopIds(nearbyIds);
       setLastUpdated(Date.now());
     } catch (err) {
       console.error('Error loading stops:', err);
       setError(err.message);
     } finally {
-      setLoading(false);
+      if (!refreshOnly) {
+        setLoading(false);
+      }
     }
   };
 
@@ -615,6 +683,14 @@ function StopFinder({ isDarkMode, selectedStop: highlightedStop, locationSelecti
     });
   };
 
+  // Handler for map clicks - close popups and filter
+  const handleMapClick = () => {
+    // Close any open popups by clearing selected stop
+    setSelectedStop(null);
+    // Close filter menu
+    setShowRouteFilter(false);
+  };
+
   // Load all stops for selected routes
   useEffect(() => {
     const loadRouteStops = async () => {
@@ -659,7 +735,7 @@ function StopFinder({ isDarkMode, selectedStop: highlightedStop, locationSelecti
         />
 
         {/* Map event handler */}
-        {!locationSelectionMode && <MapEventHandler onMapMove={handleMapMove} />}
+        {!locationSelectionMode && <MapEventHandler onMapMove={handleMapMove} onMapClick={handleMapClick} />}
 
         {/* Location selector - active when in selection mode */}
         {locationSelectionMode && <LocationSelector onLocationSelect={handleLocationTap} disabled={!!pendingLocation} />}
@@ -735,8 +811,14 @@ function StopFinder({ isDarkMode, selectedStop: highlightedStop, locationSelecti
               key={stop.gtfsId}
               position={[stop.adjustedLat, stop.adjustedLon]}
               icon={markerIcon}
+              eventHandlers={{
+                click: () => {
+                  setSelectedStop(stop);
+                },
+              }}
             >
-              <Popup maxWidth={300} autoPan={false} closeOnClick={false}>
+              {selectedStop?.gtfsId === stop.gtfsId && (
+                <Popup maxWidth={300} autoPan={false} closeOnClick={false} onClose={() => setSelectedStop(null)}>
                 <div className="p-2">
                   <div className="flex items-start justify-between gap-2 mb-2">
                     <div>
@@ -906,6 +988,7 @@ function StopFinder({ isDarkMode, selectedStop: highlightedStop, locationSelecti
                   )}
                 </div>
               </Popup>
+              )}
             </Marker>
           );
         })}
@@ -923,7 +1006,7 @@ function StopFinder({ isDarkMode, selectedStop: highlightedStop, locationSelecti
 
         {/* Route filter dropdown */}
         {showRouteFilter && (
-          <div className="bg-white dark:bg-gray-800 shadow-lg rounded-lg p-4 max-h-64 overflow-y-auto border border-gray-200 dark:border-gray-700">
+          <div ref={filterMenuRef} className="bg-white dark:bg-gray-800 shadow-lg rounded-lg p-4 max-h-64 overflow-y-auto border border-gray-200 dark:border-gray-700">
             <div className="flex items-center justify-between mb-3">
               <h3 className="font-semibold text-sm text-gray-800 dark:text-gray-200">{t('map.filterRoutes')}</h3>
               {selectedRoutes.size > 0 && (
