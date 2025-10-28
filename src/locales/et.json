@@ -56,6 +56,8 @@
     "ago": "tagasi",
     "selectLocation": "Vali asukoht",
     "tapOnMap": "Vajuta kaardile, et valida asukoht",
+    "showFavoritesOnly": "Näita ainult lemmikuid",
+    "showAllStops": "Näita kõiki peatusi",
     "locationSelected": "Asukoht valitud",
     "selectedLocation": "Valitud asukoht",
     "apply": "Rakenda"

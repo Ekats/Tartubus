@@ -40,6 +40,52 @@ const createStopIcon = (color) => {
   });
 };
 
+// Create bus stop icon with golden star background for favorited stops
+const createFavoriteStopIcon = (color, isNearby = false) => {
+  // Make nearby favorites even bigger and more prominent
+  const size = isNearby ? 60 : 50;
+  const height = isNearby ? 70 : 60;
+  const starSize = isNearby ? 1.2 : 1; // 20% bigger star for nearby
+  const viewBox = isNearby ? '-5 -5 60 70' : '0 0 50 60'; // Expanded viewBox for bigger star
+  const glowEffect = isNearby ? `
+    <defs>
+      <filter id="glow">
+        <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+        <feMerge>
+          <feMergeNode in="coloredBlur"/>
+          <feMergeNode in="SourceGraphic"/>
+        </feMerge>
+      </filter>
+    </defs>
+  ` : '';
+  const filterAttr = isNearby ? ' filter="url(#glow)"' : '';
+
+  return new L.Icon({
+    iconUrl: 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(`
+      <svg width="${size}" height="${height}" viewBox="${viewBox}" xmlns="http://www.w3.org/2000/svg">
+        ${glowEffect}
+        <!-- Golden star background -->
+        <g transform="translate(25, 20) scale(${starSize})"${filterAttr}>
+          <path d="M 0,-18 L 5.5,-5.5 L 19,-4 L 9.5,5 L 12,18.5 L 0,12 L -12,18.5 L -9.5,5 L -19,-4 L -5.5,-5.5 Z"
+                fill="#FFD700" stroke="#FFA500" stroke-width="2"/>
+        </g>
+        <!-- Bus stop pole (golden yellow) -->
+        <rect x="22" y="30" width="6" height="30" fill="#FFD700"/>
+        <!-- Bus icon (black and white) -->
+        <rect x="17" y="14" width="16" height="12" rx="2" fill="white" stroke="#000000" stroke-width="2"/>
+        <rect x="18.5" y="16" width="5" height="5" fill="#000000"/>
+        <rect x="26.5" y="16" width="5" height="5" fill="#000000"/>
+        <circle cx="20.5" cy="23" r="1.5" fill="#000000"/>
+        <circle cx="29.5" cy="23" r="1.5" fill="#000000"/>
+      </svg>
+    `),
+    iconSize: [size, height],
+    iconAnchor: [size/2, height],
+    popupAnchor: [0, -height],
+    className: '', // Remove any default classes
+  });
+};
+
 const stopIcon = createStopIcon('#6B7280'); // Gray for regular stops (not on filtered routes)
 const nearbyStopIcon = createStopIcon('#6B7280'); // Gray for nearby stops when no filter
 const selectedStopIcon = createStopIcon('#EF4444'); // Red for selected stop from Near Me
@@ -320,6 +366,7 @@ function StopFinder({ isDarkMode, selectedStop: highlightedStop, locationSelecti
   const [cityZoneStopsLoaded, setCityZoneStopsLoaded] = useState(false);
   const [allZoneStops, setAllZoneStops] = useState([]); // Store ALL zone stops
   const [visibleBounds, setVisibleBounds] = useState(null); // Current viewport bounds
+  const [showFavoritesOnly, setShowFavoritesOnly] = useState(false); // Toggle for favorites-only view
   const boundsUpdateTimeoutRef = useRef(null);
 
   // Load ALL stops for the current city zone (once per zone)
@@ -548,6 +595,22 @@ function StopFinder({ isDarkMode, selectedStop: highlightedStop, locationSelecti
              stop.lon >= bufferedBounds.west;
     });
 
+    // Calculate nearby stops based on user location
+    if (location.lat && location.lon) {
+      const userRadius = getSetting('nearbyRadius') || 500;
+      const nearbyIds = new Set();
+
+      visibleStops.forEach(stop => {
+        const distance = getDistanceFromCity(stop.lat, stop.lon, location.lat, location.lon);
+        if (distance <= userRadius) {
+          nearbyIds.add(stop.gtfsId);
+        }
+      });
+
+      setNearbyStopIds(nearbyIds);
+      console.log(`📍 ${nearbyIds.size} stops are nearby (within ${userRadius}m)`);
+    }
+
     console.log(`📊 Showing ${visibleStops.length} stops in viewport (of ${allZoneStops.length} total)`);
     setStops(visibleStops);
   };
@@ -720,6 +783,11 @@ function StopFinder({ isDarkMode, selectedStop: highlightedStop, locationSelecti
       return routeName && selectedRoutes.has(routeName);
     });
   });
+
+  // Further filter by favorites if favorites-only mode is enabled
+  if (showFavoritesOnly) {
+    filteredStops = filteredStops.filter(stop => isFavorite(stop.gtfsId));
+  }
 
   // Show all stops - no limit needed since we're only loading the zone
   // (Typically 100-200 stops for Tartu, very manageable)
@@ -966,9 +1034,19 @@ function StopFinder({ isDarkMode, selectedStop: highlightedStop, locationSelecti
         })}
 
         {/* Stop markers with offset to prevent overlap */}
-        {filteredStops.map((stop, idx) => {
+        {/* Sort stops so favorites render last (on top) */}
+        {filteredStops
+          .slice()
+          .sort((a, b) => {
+            const aIsFav = isFavorite(a.gtfsId);
+            const bIsFav = isFavorite(b.gtfsId);
+            // Non-favorites first (0), favorites last (1)
+            return (aIsFav ? 1 : 0) - (bIsFav ? 1 : 0);
+          })
+          .map((stop, idx) => {
           const isNearby = nearbyStopIds.has(stop.gtfsId);
           const isHighlighted = highlightedStop && stop.gtfsId === highlightedStop.gtfsId;
+          const isFavorited = isFavorite(stop.gtfsId);
 
           // Determine marker color based on route patterns
           let iconColor = '#6B7280'; // Default gray
@@ -988,13 +1066,15 @@ function StopFinder({ isDarkMode, selectedStop: highlightedStop, locationSelecti
             iconColor = '#10B981';
           }
 
-          const markerIcon = createStopIcon(iconColor);
+          // Use golden star icon for favorited stops (bigger and glowing if nearby)
+          const markerIcon = isFavorited ? createFavoriteStopIcon(iconColor, isNearby) : createStopIcon(iconColor);
 
           return (
             <Marker
               key={stop.gtfsId}
               position={[stop.adjustedLat, stop.adjustedLon]}
               icon={markerIcon}
+              zIndexOffset={isFavorited ? 1000 : 0}
               eventHandlers={{
                 click: (e) => {
                   // Prevent event from bubbling to map
@@ -1276,13 +1356,29 @@ function StopFinder({ isDarkMode, selectedStop: highlightedStop, locationSelecti
           </div>
         )}
 
+        {/* Favorites filter toggle button */}
+        <button
+          onClick={() => setShowFavoritesOnly(!showFavoritesOnly)}
+          className={`w-12 h-12 rounded-full flex items-center justify-center transition-all border-[2mm] border-white shadow-lg ${
+            showFavoritesOnly
+              ? 'bg-yellow-400 hover:bg-yellow-500 text-gray-900'
+              : 'bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700'
+          }`}
+          title={showFavoritesOnly ? t('map.showAllStops') : t('map.showFavoritesOnly')}
+        >
+          <svg className="w-10 h-10" fill={showFavoritesOnly ? 'currentColor' : '#000000'} stroke={showFavoritesOnly ? 'none' : '#FFD700'} strokeWidth={showFavoritesOnly ? 0 : 2} viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+          </svg>
+        </button>
+
+        {/* Location tracking button */}
         <button
           onClick={handleToggleLocationTracking}
           disabled={loading}
-          className={`w-12 h-12 rounded-full shadow-lg flex items-center justify-center transition-all disabled:opacity-50 ${
+          className={`w-12 h-12 rounded-full flex items-center justify-center transition-all disabled:opacity-50 border-[2mm] border-white shadow-lg ${
             watching
               ? 'bg-green-500 hover:bg-green-600 text-white'
-              : 'bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-gray-700'
+              : 'bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200'
           }`}
           title={watching ? 'Click to stop tracking' : 'Click to start tracking'}
         >

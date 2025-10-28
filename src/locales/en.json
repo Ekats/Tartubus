@@ -56,6 +56,8 @@
     "ago": "ago",
     "selectLocation": "Select location",
     "tapOnMap": "Tap on the map to select a location",
+    "showFavoritesOnly": "Show favorites only",
+    "showAllStops": "Show all stops",
     "locationSelected": "Location selected",
     "selectedLocation": "Selected location",
     "apply": "Apply"
