@@ -102,7 +102,7 @@ export async function getNearbyStops(lat, lon, radius = 500, forceRefresh = fals
               code
               lat
               lon
-              stoptimesWithoutPatterns(numberOfDepartures: 5, omitCanceled: false) {
+              stoptimesWithoutPatterns(numberOfDepartures: 20, omitCanceled: false) {
                 scheduledArrival
                 scheduledDeparture
                 headsign
@@ -236,7 +236,7 @@ export async function getStopById(gtfsId) {
         code
         lat
         lon
-        stoptimesWithoutPatterns(numberOfDepartures: 5, omitCanceled: false) {
+        stoptimesWithoutPatterns(numberOfDepartures: 20, omitCanceled: false) {
           scheduledArrival
           scheduledDeparture
           headsign

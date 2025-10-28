@@ -22,7 +22,12 @@
     "refresh": "Värskenda",
     "currentLocation": "Praegune asukoht",
     "viewOnMap": "Vaata kaardil",
-    "minutes": "min"
+    "minutes": "min",
+    "upcomingStops": "Järgmised peatused:",
+    "showMore": "Näita veel",
+    "showLess": "Näita vähem",
+    "showAll": "Näita kõiki",
+    "moreStops": "veel {{count}} peatust"
   },
   "map": {
     "title": "Kaart",

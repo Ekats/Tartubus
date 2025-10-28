@@ -22,7 +22,12 @@
     "refresh": "Refresh",
     "currentLocation": "Current location",
     "viewOnMap": "View on map",
-    "minutes": "min"
+    "minutes": "min",
+    "upcomingStops": "Upcoming stops:",
+    "showMore": "Show more",
+    "showLess": "Show less",
+    "showAll": "Show all",
+    "moreStops": "{{count}} more stops"
   },
   "map": {
     "title": "Map",

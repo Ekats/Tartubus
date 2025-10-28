@@ -10,6 +10,8 @@ function Favorites({ onNavigateToMap }) {
   const [stopsWithDepartures, setStopsWithDepartures] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [expandedStops, setExpandedStops] = useState(new Map()); // Map of stopId -> expansion level
+  const [expandedDepartures, setExpandedDepartures] = useState(new Set()); // Set of "stopId-departureIdx" keys
 
   // Fetch departure times for all favorite stops
   const fetchDepartures = async () => {
@@ -89,6 +91,36 @@ function Favorites({ onNavigateToMap }) {
     if (window.confirm(`Remove all ${favorites.length} favorite stops?`)) {
       clearAllFavorites();
     }
+  };
+
+  const expandStop = (stopId) => {
+    setExpandedStops(prev => {
+      const newMap = new Map(prev);
+      const currentLevel = newMap.get(stopId) || 0;
+      newMap.set(stopId, currentLevel + 1);
+      return newMap;
+    });
+  };
+
+  const collapseStop = (stopId) => {
+    setExpandedStops(prev => {
+      const newMap = new Map(prev);
+      newMap.delete(stopId);
+      return newMap;
+    });
+  };
+
+  const toggleDepartureExpanded = (stopId, departureIdx) => {
+    const key = `${stopId}-${departureIdx}`;
+    setExpandedDepartures(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(key)) {
+        newSet.delete(key);
+      } else {
+        newSet.add(key);
+      }
+      return newSet;
+    });
   };
 
   // Empty state
@@ -224,34 +256,123 @@ function Favorites({ onNavigateToMap }) {
                 <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">
                   Next Buses:
                 </p>
-                {stop.stoptimesWithoutPatterns.slice(0, 5).map((departure, idx) => {
-                  const nextStop = getNextStopName(departure);
-                  return (
-                    <div
-                      key={idx}
-                      className="flex items-center justify-between gap-3 p-2 bg-gray-50 dark:bg-gray-700/50 rounded-lg"
-                    >
-                      <div className="flex items-center gap-3 flex-1 min-w-0">
-                        <span className="bg-blue-600 dark:bg-blue-500 text-white px-2.5 py-1 rounded font-bold text-sm shrink-0">
-                          {departure.trip?.route?.shortName || '?'}
-                        </span>
-                        <div className="flex-1 min-w-0">
-                          <div className="text-sm text-gray-700 dark:text-gray-300 truncate">
-                            {departure.headsign || 'Unknown'}
+                {(() => {
+                  const expansionLevel = expandedStops.get(stop.gtfsId) || 0;
+                  const totalDepartures = stop.stoptimesWithoutPatterns.length;
+                  let visibleCount = 3;
+                  if (expansionLevel === 1) visibleCount = 8;
+                  if (expansionLevel >= 2) visibleCount = totalDepartures;
+
+                  return stop.stoptimesWithoutPatterns
+                    .slice(0, visibleCount)
+                    .map((departure, idx) => {
+                      const nextStop = getNextStopName(departure);
+                      const departureKey = `${stop.gtfsId}-${idx}`;
+                      const isDepartureExpanded = expandedDepartures.has(departureKey);
+                      const allStops = departure.trip?.stoptimes || [];
+                      const currentStopIndex = allStops.findIndex(st => st.stopPosition === departure.stopPosition);
+                      const remainingStops = currentStopIndex >= 0 ? allStops.slice(currentStopIndex + 1) : [];
+
+                      return (
+                        <div key={idx}>
+                          <div className="flex items-center justify-between gap-3 p-2 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                            <div className="flex items-center gap-3 flex-1 min-w-0">
+                              <span className="bg-blue-600 dark:bg-blue-500 text-white px-2.5 py-1 rounded font-bold text-sm shrink-0">
+                                {departure.trip?.route?.shortName || '?'}
+                              </span>
+                              <div className="flex-1 min-w-0">
+                                <div className="text-sm text-gray-700 dark:text-gray-300 truncate">
+                                  {departure.headsign || 'Unknown'}
+                                </div>
+                                {nextStop && (
+                                  <div className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                                    → {nextStop}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2 shrink-0">
+                              <span className="font-bold text-sm text-gray-900 dark:text-gray-100">
+                                <CountdownTimer scheduledArrival={departure.scheduledArrival} />
+                              </span>
+                              {remainingStops.length > 0 && (
+                                <button
+                                  onClick={() => toggleDepartureExpanded(stop.gtfsId, idx)}
+                                  className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 p-1"
+                                  title={isDepartureExpanded ? 'Hide route' : 'Show route'}
+                                >
+                                  <svg className={`w-5 h-5 transition-transform ${isDepartureExpanded ? 'rotate-90' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                  </svg>
+                                </button>
+                              )}
+                            </div>
                           </div>
-                          {nextStop && (
-                            <div className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                              → {nextStop}
+                          {isDepartureExpanded && remainingStops.length > 0 && (
+                            <div className="pl-12 pr-2 pb-2 mt-1 text-xs">
+                              <div className="bg-gray-100 dark:bg-gray-800 rounded p-2 space-y-1">
+                                <div className="font-semibold text-gray-700 dark:text-gray-300 mb-1">{t('nearMe.upcomingStops')}</div>
+                                {remainingStops.slice(0, 10).map((stopTime, sIdx) => (
+                                  <div key={sIdx} className="text-gray-600 dark:text-gray-400 flex items-center gap-1">
+                                    <span className="text-gray-400">•</span>
+                                    <span>{stopTime.stop?.name || 'Unknown'}</span>
+                                  </div>
+                                ))}
+                                {remainingStops.length > 10 && (
+                                  <div className="text-gray-500 dark:text-gray-500 italic">
+                                    + {t('nearMe.moreStops', { count: remainingStops.length - 10 })}
+                                  </div>
+                                )}
+                              </div>
                             </div>
                           )}
                         </div>
+                      );
+                    });
+                })()}
+                {(() => {
+                  const expansionLevel = expandedStops.get(stop.gtfsId) || 0;
+                  const totalDepartures = stop.stoptimesWithoutPatterns.length;
+
+                  if (totalDepartures <= 3) return null;
+
+                  if (expansionLevel === 0) {
+                    return (
+                      <button
+                        onClick={() => expandStop(stop.gtfsId)}
+                        className="w-full text-center text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 py-2"
+                      >
+                        {`··· ${t('nearMe.showMore')} (${Math.min(5, totalDepartures - 3)})`}
+                      </button>
+                    );
+                  } else if (expansionLevel === 1 && totalDepartures > 8) {
+                    return (
+                      <div className="flex gap-2 pt-2">
+                        <button
+                          onClick={() => collapseStop(stop.gtfsId)}
+                          className="flex-1 text-center text-sm text-gray-600 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 py-2"
+                        >
+                          − {t('nearMe.showLess')}
+                        </button>
+                        <button
+                          onClick={() => expandStop(stop.gtfsId)}
+                          className="flex-1 text-center text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 py-2"
+                        >
+                          {`··· ${t('nearMe.showAll')} (${totalDepartures - 8})`}
+                        </button>
                       </div>
-                      <span className="font-bold text-sm text-gray-900 dark:text-gray-100 shrink-0">
-                        <CountdownTimer scheduledArrival={departure.scheduledArrival} />
-                      </span>
-                    </div>
-                  );
-                })}
+                    );
+                  } else {
+                    return (
+                      <button
+                        onClick={() => collapseStop(stop.gtfsId)}
+                        className="w-full text-center text-sm text-gray-600 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 py-2"
+                      >
+                        − {t('nearMe.showLess')}
+                      </button>
+                    );
+                  }
+                })()}
               </div>
             ) : (
               <div className="text-sm text-gray-500 dark:text-gray-400 text-center py-4">

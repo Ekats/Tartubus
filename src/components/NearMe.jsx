@@ -16,6 +16,8 @@ function NearMe({ onNavigateToMap }) {
   const { isFavorite, toggleFavorite } = useFavorites();
   const [hasSearched, setHasSearched] = useState(true); // Start as true for auto-trigger
   const [address, setAddress] = useState(t('nearMe.requestingLocation'));
+  const [expandedStops, setExpandedStops] = useState(new Map()); // Map of stopId -> expansion level (0=collapsed, 1=medium, 2=full)
+  const [expandedDepartures, setExpandedDepartures] = useState(new Set()); // Set of "stopId-departureIdx" keys
 
   // Auto-start on mount
   useEffect(() => {
@@ -34,6 +36,36 @@ function NearMe({ onNavigateToMap }) {
       getLocation();
       setHasSearched(true);
     }
+  };
+
+  const expandStop = (stopId) => {
+    setExpandedStops(prev => {
+      const newMap = new Map(prev);
+      const currentLevel = newMap.get(stopId) || 0;
+      newMap.set(stopId, currentLevel + 1);
+      return newMap;
+    });
+  };
+
+  const collapseStop = (stopId) => {
+    setExpandedStops(prev => {
+      const newMap = new Map(prev);
+      newMap.delete(stopId);
+      return newMap;
+    });
+  };
+
+  const toggleDepartureExpanded = (stopId, departureIdx) => {
+    const key = `${stopId}-${departureIdx}`;
+    setExpandedDepartures(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(key)) {
+        newSet.delete(key);
+      } else {
+        newSet.add(key);
+      }
+      return newSet;
+    });
   };
 
   // Fetch address when location is available
@@ -189,34 +221,126 @@ function NearMe({ onNavigateToMap }) {
               {/* Departures */}
               {stop.stoptimesWithoutPatterns && stop.stoptimesWithoutPatterns.length > 0 ? (
                 <div className="space-y-2">
-                  {stop.stoptimesWithoutPatterns.slice(0, 3).map((departure, idx) => {
-                    const nextStop = getNextStopName(departure);
-                    return (
-                      <div
-                        key={idx}
-                        className="flex items-center justify-between py-2 border-t border-gray-100 dark:border-gray-700"
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className="bg-primary dark:bg-blue-600 text-white font-bold px-3 py-1 rounded-md text-sm">
-                            {departure.trip?.route?.shortName || '?'}
-                          </div>
-                          <div className="text-sm">
-                            <div className="text-gray-700 dark:text-gray-300">
-                              {departure.headsign || departure.trip?.route?.longName || 'Unknown destination'}
+                  {(() => {
+                    const expansionLevel = expandedStops.get(stop.gtfsId) || 0;
+                    const totalDepartures = stop.stoptimesWithoutPatterns.length;
+                    let visibleCount = 3; // Start with 3
+                    if (expansionLevel === 1) visibleCount = 8; // Medium expansion
+                    if (expansionLevel >= 2) visibleCount = totalDepartures; // Full expansion
+
+                    return stop.stoptimesWithoutPatterns
+                      .slice(0, visibleCount)
+                      .map((departure, idx) => {
+                        const nextStop = getNextStopName(departure);
+                        const departureKey = `${stop.gtfsId}-${idx}`;
+                        const isDepartureExpanded = expandedDepartures.has(departureKey);
+                        const allStops = departure.trip?.stoptimes || [];
+                        const currentStopIndex = allStops.findIndex(st => st.stopPosition === departure.stopPosition);
+                        const remainingStops = currentStopIndex >= 0 ? allStops.slice(currentStopIndex + 1) : [];
+
+                        return (
+                          <div key={idx} className="border-t border-gray-100 dark:border-gray-700">
+                            <div className="flex items-center justify-between py-2">
+                              <div className="flex items-center gap-3 flex-1">
+                                <div className="bg-primary dark:bg-blue-600 text-white font-bold px-3 py-1 rounded-md text-sm">
+                                  {departure.trip?.route?.shortName || '?'}
+                                </div>
+                                <div className="text-sm flex-1">
+                                  <div className="text-gray-700 dark:text-gray-300">
+                                    {departure.headsign || departure.trip?.route?.longName || 'Unknown destination'}
+                                  </div>
+                                  {nextStop && (
+                                    <div className="text-xs text-gray-500 dark:text-gray-400">
+                                      → {nextStop}
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <div className="font-semibold text-gray-800 dark:text-gray-100">
+                                  <CountdownTimer scheduledArrival={departure.scheduledArrival} />
+                                </div>
+                                {remainingStops.length > 0 && (
+                                  <button
+                                    onClick={() => toggleDepartureExpanded(stop.gtfsId, idx)}
+                                    className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 p-1"
+                                    title={isDepartureExpanded ? 'Hide route' : 'Show route'}
+                                  >
+                                    <svg className={`w-5 h-5 transition-transform ${isDepartureExpanded ? 'rotate-90' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                    </svg>
+                                  </button>
+                                )}
+                              </div>
                             </div>
-                            {nextStop && (
-                              <div className="text-xs text-gray-500 dark:text-gray-400">
-                                → {nextStop}
+                            {isDepartureExpanded && remainingStops.length > 0 && (
+                              <div className="pl-12 pr-2 pb-2 text-xs">
+                                <div className="bg-gray-50 dark:bg-gray-800 rounded p-2 space-y-1">
+                                  <div className="font-semibold text-gray-700 dark:text-gray-300 mb-1">{t('nearMe.upcomingStops')}</div>
+                                  {remainingStops.slice(0, 10).map((stopTime, sIdx) => (
+                                    <div key={sIdx} className="text-gray-600 dark:text-gray-400 flex items-center gap-1">
+                                      <span className="text-gray-400">•</span>
+                                      <span>{stopTime.stop?.name || 'Unknown'}</span>
+                                    </div>
+                                  ))}
+                                  {remainingStops.length > 10 && (
+                                    <div className="text-gray-500 dark:text-gray-500 italic">
+                                      + {t('nearMe.moreStops', { count: remainingStops.length - 10 })}
+                                    </div>
+                                  )}
+                                </div>
                               </div>
                             )}
                           </div>
+                        );
+                      });
+                  })()}
+                  {(() => {
+                    const expansionLevel = expandedStops.get(stop.gtfsId) || 0;
+                    const totalDepartures = stop.stoptimesWithoutPatterns.length;
+
+                    if (totalDepartures <= 3) return null; // No buttons needed
+
+                    if (expansionLevel === 0) {
+                      // Collapsed - show "Show more" button
+                      return (
+                        <button
+                          onClick={() => expandStop(stop.gtfsId)}
+                          className="w-full text-center text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 py-2 border-t border-gray-100 dark:border-gray-700"
+                        >
+                          {`··· ${t('nearMe.showMore')} (${Math.min(5, totalDepartures - 3)})`}
+                        </button>
+                      );
+                    } else if (expansionLevel === 1 && totalDepartures > 8) {
+                      // Medium - show both "Show more" and "Show less"
+                      return (
+                        <div className="flex gap-2 border-t border-gray-100 dark:border-gray-700 pt-2">
+                          <button
+                            onClick={() => collapseStop(stop.gtfsId)}
+                            className="flex-1 text-center text-sm text-gray-600 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 py-2"
+                          >
+                            − {t('nearMe.showLess')}
+                          </button>
+                          <button
+                            onClick={() => expandStop(stop.gtfsId)}
+                            className="flex-1 text-center text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 py-2"
+                          >
+                            {`··· ${t('nearMe.showAll')} (${totalDepartures - 8})`}
+                          </button>
                         </div>
-                        <div className="font-semibold text-gray-800 dark:text-gray-100">
-                          <CountdownTimer scheduledArrival={departure.scheduledArrival} />
-                        </div>
-                      </div>
-                    );
-                  })}
+                      );
+                    } else {
+                      // Fully expanded or medium with <= 8 total - just show "Show less"
+                      return (
+                        <button
+                          onClick={() => collapseStop(stop.gtfsId)}
+                          className="w-full text-center text-sm text-gray-600 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 py-2 border-t border-gray-100 dark:border-gray-700"
+                        >
+                          − {t('nearMe.showLess')}
+                        </button>
+                      );
+                    }
+                  })()}
                 </div>
               ) : (
                 <div className="text-sm text-gray-500 dark:text-gray-400 py-2">{t('nearMe.noDepartures')}</div>
