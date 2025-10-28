@@ -75,7 +75,24 @@ export async function getNearbyStops(lat, lon, radius = 500, forceRefresh = fals
   if (!forceRefresh) {
     const cachedStops = getCachedNearbyStops(lat, lon, radius);
     if (cachedStops) {
-      return cachedStops;
+      // Reconstruct trip objects from compressed cache
+      return cachedStops.map(stop => ({
+        ...stop,
+        stoptimesWithoutPatterns: stop.stoptimesWithoutPatterns?.map(st => ({
+          ...st,
+          trip: {
+            route: {
+              shortName: st.routeShortName,
+              longName: st.routeLongName,
+              gtfsId: st.routeGtfsId
+            },
+            stoptimes: st.nextStops?.map(ns => ({
+              stop: { gtfsId: null, name: ns.name },
+              stopPosition: ns.position
+            })) || []
+          }
+        })) || []
+      }));
     }
   } else {
     console.log('🔄 Force refresh requested, bypassing cache');
@@ -148,8 +165,32 @@ export async function getNearbyStops(lat, lon, radius = 500, forceRefresh = fals
         distance: edge.node.distance,
       }));
 
-      // Cache the result
-      setCachedNearbyStops(lat, lon, radius, result);
+      // Cache with compressed departure data to save space
+      const compressedResult = result.map(stop => ({
+        gtfsId: stop.gtfsId,
+        name: stop.name,
+        code: stop.code,
+        lat: stop.lat,
+        lon: stop.lon,
+        distance: stop.distance,
+        // Store only essential departure info (much smaller than full trip data)
+        stoptimesWithoutPatterns: stop.stoptimesWithoutPatterns?.map(st => ({
+          scheduledArrival: st.scheduledArrival,
+          scheduledDeparture: st.scheduledDeparture,
+          headsign: st.headsign,
+          stopPosition: st.stopPosition,
+          routeShortName: st.trip?.route?.shortName,
+          routeLongName: st.trip?.route?.longName,
+          routeGtfsId: st.trip?.route?.gtfsId,
+          // Store only next stops, not full trip.stoptimes array
+          nextStops: st.trip?.stoptimes
+            ?.filter(s => s.stopPosition > st.stopPosition)
+            ?.slice(0, 3)  // Only keep next 3 stops
+            ?.map(s => ({ name: s.stop?.name, position: s.stopPosition })) || []
+        })) || []
+      }));
+
+      setCachedNearbyStops(lat, lon, radius, compressedResult);
 
       // Remove from in-flight tracking
       inFlightRequests.delete(cacheKey);
@@ -450,7 +491,7 @@ const ROUTE_CACHE_DURATION = 365 * 24 * 60 * 60 * 1000;
 // Departure times - cache for 2 minutes (fresh enough, provides offline resilience)
 const STOPS_CACHE_DURATION = 2 * 60 * 1000; // 2 minutes
 // Limit number of cached location queries (keep 20 most recent for good offline UX)
-const MAX_STOPS_CACHE_ENTRIES = 20;
+const MAX_STOPS_CACHE_ENTRIES = 10; // Reduced to prevent quota issues
 
 // In-flight request tracking to prevent duplicate requests
 const inFlightRequests = new Map();
