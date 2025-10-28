@@ -70,6 +70,7 @@ function App() {
       <div className="flex-1 overflow-hidden">
         {renderView()}
       </div>
+      {/* Floating bottom navigation */}
       <BottomNav activeView={activeView} onViewChange={setActiveView} />
     </div>
   )

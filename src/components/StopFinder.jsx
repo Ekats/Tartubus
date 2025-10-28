@@ -1079,18 +1079,12 @@ function StopFinder({ isDarkMode, selectedStop: highlightedStop, locationSelecti
                 click: (e) => {
                   // Prevent event from bubbling to map
                   L.DomEvent.stopPropagation(e);
-                  // Close previous popup if any
-                  if (openMarkerRef.current && openMarkerRef.current !== e.target) {
-                    openMarkerRef.current.closePopup();
-                  }
-                  // Open the popup immediately using Leaflet's API
-                  e.target.openPopup();
-                  // Track this marker as open
-                  openMarkerRef.current = e.target;
+                  // Set selected stop to show overlay
                   setSelectedStop(stop);
                 },
               }}
             >
+              {false && ( // Disable popup, we'll use overlay instead
               <Popup maxWidth={300} autoPan={false} closeOnClick={false} onClose={() => {
                 setSelectedStop(null);
                 openMarkerRef.current = null;
@@ -1436,6 +1430,170 @@ function StopFinder({ isDarkMode, selectedStop: highlightedStop, locationSelecti
                     {t('map.apply')}
                   </button>
                 </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Full-screen stop details overlay */}
+      {selectedStop && !locationSelectionMode && (
+        <div className="absolute inset-x-0 top-0 bottom-24 z-[2000] bg-white dark:bg-gray-900 flex flex-col rounded-b-3xl shadow-2xl animate-slide-down">
+          {/* Header */}
+          <div className="bg-blue-600 dark:bg-blue-700 text-white px-4 py-3 flex items-center justify-between shadow-lg">
+            <div className="flex-1 min-w-0">
+              <h2 className="font-bold text-lg truncate">{selectedStop.name}</h2>
+              <p className="text-sm text-blue-100">Stop {selectedStop.code}</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => toggleFavorite(selectedStop)}
+                className={`p-2 rounded-lg transition-colors ${
+                  isFavorite(selectedStop.gtfsId)
+                    ? 'bg-yellow-400 text-yellow-900'
+                    : 'bg-white/20 hover:bg-white/30 text-white'
+                }`}
+              >
+                <svg className="w-6 h-6" fill={isFavorite(selectedStop.gtfsId) ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+                </svg>
+              </button>
+              <button
+                onClick={() => setSelectedStop(null)}
+                className="p-2 rounded-lg bg-white/20 hover:bg-white/30 transition-colors"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          {/* Content */}
+          <div className="flex-1 overflow-y-auto p-4 space-y-4">
+            {/* Show route directions if filtered */}
+            {stopToPatterns.has(selectedStop.gtfsId) && (
+              <div className="bg-blue-50 dark:bg-blue-900/30 rounded-lg p-4 border border-blue-200 dark:border-blue-700">
+                <p className="font-semibold text-sm text-gray-700 dark:text-gray-300 mb-2">Routes at this stop:</p>
+                <div className="space-y-2">
+                  {stopToPatterns.get(selectedStop.gtfsId).map((pattern, patternIdx) => {
+                    const colors = ['#0066CC', '#FBBF24', '#10B981', '#F59E0B'];
+                    const dirId = (pattern.directionId >= 0) ? pattern.directionId : 0;
+                    const lineColor = colors[dirId % colors.length];
+                    return (
+                      <div key={patternIdx} className="flex items-center gap-2">
+                        <span
+                          className="font-bold px-2 py-1 rounded text-white text-sm"
+                          style={{ backgroundColor: lineColor }}
+                        >
+                          {pattern.routeShortName}
+                        </span>
+                        <span className="text-sm text-gray-700 dark:text-gray-300">→ {pattern.headsign}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Next departures */}
+            {selectedStop.stoptimesWithoutPatterns && selectedStop.stoptimesWithoutPatterns.length > 0 ? (
+              <div className="space-y-2">
+                <h3 className="font-semibold text-lg text-gray-800 dark:text-gray-200">Next buses:</h3>
+                <div className="space-y-2">
+                  {(() => {
+                    const expansionLevel = expandedPopupStops.get(selectedStop.gtfsId) || 0;
+                    const totalDepartures = selectedStop.stoptimesWithoutPatterns.length;
+                    let visibleCount = 3;
+                    if (expansionLevel === 1) visibleCount = 8;
+                    if (expansionLevel >= 2) visibleCount = totalDepartures;
+
+                    const departureItems = selectedStop.stoptimesWithoutPatterns.slice(0, visibleCount).map((departure, idx) => {
+                      const nextStop = getNextStopName(departure);
+                      return (
+                        <div
+                          key={idx}
+                          className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 border border-gray-200 dark:border-gray-700"
+                        >
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-3 flex-1 min-w-0">
+                              <span className="bg-blue-600 text-white px-3 py-1 rounded font-bold text-sm shrink-0">
+                                {departure.trip?.route?.shortName || '?'}
+                              </span>
+                              <div className="flex-1 min-w-0">
+                                <div className="text-gray-800 dark:text-gray-200 font-medium truncate">
+                                  {departure.headsign || 'Unknown'}
+                                </div>
+                                {nextStop && (
+                                  <div className="text-sm text-gray-500 dark:text-gray-400 truncate">
+                                    → {nextStop}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                            <span className="font-bold text-lg text-blue-600 dark:text-blue-400 shrink-0">
+                              <CountdownTimer scheduledArrival={departure.scheduledArrival} />
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    });
+
+                    let expansionButton = null;
+                    if (totalDepartures > 3) {
+                      if (expansionLevel === 0) {
+                        expansionButton = (
+                          <button
+                            onClick={() => expandPopupStop(selectedStop.gtfsId)}
+                            className="w-full text-center text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 py-3 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-750 transition-colors"
+                          >
+                            {`··· ${t('nearMe.showMore')} (${Math.min(5, totalDepartures - 3)})`}
+                          </button>
+                        );
+                      } else if (expansionLevel === 1 && totalDepartures > 8) {
+                        expansionButton = (
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => collapsePopupStop(selectedStop.gtfsId)}
+                              className="flex-1 text-center text-sm text-gray-600 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 py-3 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-750 transition-colors"
+                            >
+                              − {t('nearMe.showLess')}
+                            </button>
+                            <button
+                              onClick={() => expandPopupStop(selectedStop.gtfsId)}
+                              className="flex-1 text-center text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 py-3 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-750 transition-colors"
+                            >
+                              {`··· ${t('nearMe.showAll')} (${totalDepartures - 8})`}
+                            </button>
+                          </div>
+                        );
+                      } else {
+                        expansionButton = (
+                          <button
+                            onClick={() => collapsePopupStop(selectedStop.gtfsId)}
+                            className="w-full text-center text-sm text-gray-600 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 py-3 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-750 transition-colors"
+                          >
+                            − {t('nearMe.showLess')}
+                          </button>
+                        );
+                      }
+                    }
+
+                    return (
+                      <>
+                        {departureItems}
+                        {expansionButton}
+                      </>
+                    );
+                  })()}
+                </div>
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <svg className="w-16 h-16 mx-auto text-gray-400 dark:text-gray-600 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <p className="text-gray-500 dark:text-gray-400">No upcoming departures</p>
               </div>
             )}
           </div>

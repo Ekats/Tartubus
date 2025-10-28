@@ -125,7 +125,7 @@ function NearMe({ onNavigateToMap, manualLocation: manualLocationProp, onClearMa
   const error = locationError || stopsError;
 
   return (
-    <div className="p-4 h-full overflow-y-auto dark:bg-gray-900">
+    <div className="p-4 pb-48 h-full overflow-y-auto dark:bg-gray-900">
       {/* Your Location Display */}
       {activeLocation.lat && activeLocation.lon && (
         <div className="mb-4 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-lg p-3">

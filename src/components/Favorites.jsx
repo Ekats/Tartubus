@@ -139,7 +139,7 @@ function Favorites({ onNavigateToMap }) {
   }
 
   return (
-    <div className="h-full overflow-y-auto dark:bg-gray-900 p-4">
+    <div className="h-full overflow-y-auto dark:bg-gray-900 p-4 pb-48">
       {/* Header with refresh and clear buttons */}
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">
