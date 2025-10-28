@@ -261,34 +261,140 @@ function StopFinder({ isDarkMode, selectedStop: highlightedStop, locationSelecti
   const filterMenuRef = useRef(null);
   const openMarkerRef = useRef(null); // Track currently open marker
 
+  // Define city zones for filtering routes
+  const CITY_ZONES = {
+    tartu: {
+      name: 'Tartu',
+      center: { lat: 58.3776, lon: 26.7290 },
+      radius: 8000, // 8km radius (reduced from 15km)
+      feed: 'Viro',
+      cityFilter: 'Tartu' // Filter routes by city name
+    },
+    tallinn: {
+      name: 'Tallinn',
+      center: { lat: 59.4370, lon: 24.7536 },
+      radius: 20000, // 20km radius
+      feed: 'Viro',
+      cityFilter: 'Tallinn'
+    },
+    // Add more cities as needed
+  };
+
   // Default to Tartu center
   const defaultCenter = { lat: 58.3776, lon: 26.7290 };
   const center = location.lat ? location : defaultCenter;
 
-  // Load stops around the center on mount and auto-request location
+  // Determine which city zone we're in based on map center
+  const getCurrentCityZone = (mapCenter) => {
+    const lat = mapCenter?.lat || center.lat;
+    const lon = mapCenter?.lon || center.lon;
+
+    // Calculate distance to each city center
+    const getDistance = (lat1, lon1, lat2, lon2) => {
+      const R = 6371000; // Earth's radius in meters
+      const dLat = (lat2 - lat1) * Math.PI / 180;
+      const dLon = (lon2 - lon1) * Math.PI / 180;
+      const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                Math.sin(dLon/2) * Math.sin(dLon/2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+      return R * c;
+    };
+
+    // Find closest city zone
+    let closestZone = CITY_ZONES.tartu; // Default to Tartu
+    let minDistance = Infinity;
+
+    for (const zone of Object.values(CITY_ZONES)) {
+      const distance = getDistance(lat, lon, zone.center.lat, zone.center.lon);
+      if (distance < zone.radius && distance < minDistance) {
+        minDistance = distance;
+        closestZone = zone;
+      }
+    }
+
+    return closestZone;
+  };
+
+  const [currentCityZone, setCurrentCityZone] = useState(getCurrentCityZone(center));
+  const [cityZoneStopsLoaded, setCityZoneStopsLoaded] = useState(false);
+  const [allZoneStops, setAllZoneStops] = useState([]); // Store ALL zone stops
+  const [visibleBounds, setVisibleBounds] = useState(null); // Current viewport bounds
+  const boundsUpdateTimeoutRef = useRef(null);
+
+  // Load ALL stops for the current city zone (once per zone)
+  const loadCityZoneStops = async (zone) => {
+    console.log(`📍 Loading all stops for ${zone.name} (${zone.radius/1000}km radius)...`);
+    setLoading(true);
+    setError(null);
+    try {
+      // Load ALL stops in the city zone radius
+      const zoneStops = await getNearbyStops(zone.center.lat, zone.center.lon, zone.radius);
+      console.log(`✅ Loaded ${zoneStops.length} stops for ${zone.name}`);
+      setAllZoneStops(zoneStops); // Store all stops
+      setStops(zoneStops); // Initially show all (will be filtered by viewport)
+      setCityZoneStopsLoaded(true);
+      setLastUpdated(Date.now());
+    } catch (err) {
+      console.error('Error loading city zone stops:', err);
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Load stops for current city zone on mount
   useEffect(() => {
     // Auto-request location on startup and start watching for movement
     getLocation();
     startWatching();
 
-    // Load initial stops (will be updated when location arrives)
-    loadStops(center.lat, center.lon, currentZoom);
+    // Load ALL stops for the current city zone (one-time)
+    loadCityZoneStops(currentCityZone);
 
-    // Cleanup: stop watching and clear timeout when component unmounts
+    // Cleanup: stop watching and clear timeouts when component unmounts
     return () => {
       stopWatching();
       if (moveTimeoutRef.current) {
         clearTimeout(moveTimeoutRef.current);
       }
+      if (boundsUpdateTimeoutRef.current) {
+        clearTimeout(boundsUpdateTimeoutRef.current);
+      }
     };
   }, []);
 
-  // Update stops when location is received
+  // When city zone changes, reload stops for new zone
   useEffect(() => {
-    if (location.lat && location.lon) {
-      loadStops(location.lat, location.lon, currentZoom, true);
+    if (cityZoneStopsLoaded) {
+      console.log(`🔄 City zone changed to ${currentCityZone.name}, reloading stops...`);
+      setCityZoneStopsLoaded(false);
+      setAllZoneStops([]); // Clear previous zone stops
+      loadCityZoneStops(currentCityZone);
     }
-  }, [location.lat, location.lon]);
+  }, [currentCityZone.name]);
+
+  // Filter stops by viewport when zone stops are loaded or map ref becomes available
+  useEffect(() => {
+    if (cityZoneStopsLoaded && mapRef.current && allZoneStops.length > 0) {
+      // Initial viewport filter
+      setTimeout(() => {
+        if (mapRef.current) {
+          const bounds = mapRef.current.getBounds();
+          const initialBounds = {
+            north: bounds.getNorth(),
+            south: bounds.getSouth(),
+            east: bounds.getEast(),
+            west: bounds.getWest(),
+          };
+          setVisibleBounds(initialBounds);
+          filterStopsByViewport(initialBounds);
+        }
+      }, 100); // Small delay to ensure map is ready
+    }
+  }, [cityZoneStopsLoaded, allZoneStops.length]);
+
+  // No need to reload stops when location changes - we have all zone stops loaded
 
   // Center map on highlighted stop when navigating from Near Me
   useEffect(() => {
@@ -419,37 +525,70 @@ function StopFinder({ isDarkMode, selectedStop: highlightedStop, locationSelecti
     }
   };
 
+  // Filter stops based on viewport bounds with buffer
+  const filterStopsByViewport = (bounds) => {
+    if (!bounds || allZoneStops.length === 0) return;
+
+    // Calculate buffer (50% extra on each side = 1.5x viewport)
+    const latBuffer = (bounds.north - bounds.south) * 0.5;
+    const lonBuffer = (bounds.east - bounds.west) * 0.5;
+
+    const bufferedBounds = {
+      north: bounds.north + latBuffer,
+      south: bounds.south - latBuffer,
+      east: bounds.east + lonBuffer,
+      west: bounds.west - lonBuffer,
+    };
+
+    // Filter stops within buffered viewport
+    const visibleStops = allZoneStops.filter(stop => {
+      return stop.lat <= bufferedBounds.north &&
+             stop.lat >= bufferedBounds.south &&
+             stop.lon <= bufferedBounds.east &&
+             stop.lon >= bufferedBounds.west;
+    });
+
+    console.log(`📊 Showing ${visibleStops.length} stops in viewport (of ${allZoneStops.length} total)`);
+    setStops(visibleStops);
+  };
+
   const handleMapMove = (lat, lon, zoom) => {
     setCurrentZoom(zoom);
 
-    // Clear any pending timeout
-    if (moveTimeoutRef.current) {
-      clearTimeout(moveTimeoutRef.current);
+    // Check for city zone changes
+    const newZone = getCurrentCityZone({ lat, lon });
+    if (newZone.name !== currentCityZone.name) {
+      console.log(`📍 Switched to ${newZone.name} zone`);
+      setCurrentCityZone(newZone);
+      setSelectedRoutes(new Set());
+      return; // Zone change will trigger reload
     }
 
-    // Check if we've moved significantly since last load
-    const lastPos = lastMovePositionRef.current;
-    if (lastPos) {
-      const latDiff = Math.abs(lat - lastPos.lat);
-      const lonDiff = Math.abs(lon - lastPos.lon);
-      const zoomDiff = Math.abs(zoom - lastPos.zoom);
-
-      // Thresholds: 0.01° = ~1.1km, zoom change of 1 level
-      // Only reload if we've moved significantly OR zoomed
-      if (latDiff < 0.01 && lonDiff < 0.01 && zoomDiff < 1) {
-        return; // Movement too small, skip reload
+    // Update visible bounds with debouncing
+    if (mapRef.current) {
+      // Clear previous timeout
+      if (boundsUpdateTimeoutRef.current) {
+        clearTimeout(boundsUpdateTimeoutRef.current);
       }
-    }
 
-    // Debounce: wait 500ms after map stops moving before loading
-    moveTimeoutRef.current = setTimeout(() => {
-      lastMovePositionRef.current = { lat, lon, zoom };
-      loadStops(lat, lon, zoom);
-    }, 500);
+      // Wait 300ms after map stops moving before updating
+      boundsUpdateTimeoutRef.current = setTimeout(() => {
+        const bounds = mapRef.current.getBounds();
+        const newBounds = {
+          north: bounds.getNorth(),
+          south: bounds.getSouth(),
+          east: bounds.getEast(),
+          west: bounds.getWest(),
+        };
+        setVisibleBounds(newBounds);
+        filterStopsByViewport(newBounds);
+      }, 300);
+    }
   };
 
+  // No longer needed - we have all zone stops loaded
   const handleLocationUpdate = (lat, lon) => {
-    loadStops(lat, lon, currentZoom, true);
+    // Do nothing - stops are already loaded for the entire zone
   };
 
   const handleToggleLocationTracking = () => {
@@ -582,25 +721,8 @@ function StopFinder({ isDarkMode, selectedStop: highlightedStop, locationSelecti
     });
   });
 
-  // Limit number of stops based on setting
-  const maxStops = getSetting('maxStopsOnMap') || 100;
-  const stopsLimitExceeded = filteredStops.length > maxStops;
-  if (stopsLimitExceeded) {
-    // Prioritize nearby stops, then closest to map center
-    filteredStops = filteredStops
-      .sort((a, b) => {
-        const aIsNearby = nearbyStopIds.has(a.gtfsId);
-        const bIsNearby = nearbyStopIds.has(b.gtfsId);
-        if (aIsNearby && !bIsNearby) return -1;
-        if (!aIsNearby && bIsNearby) return 1;
-
-        // If both or neither are nearby, sort by distance to map center
-        const aDist = Math.sqrt(Math.pow(a.lat - center.lat, 2) + Math.pow(a.lon - center.lon, 2));
-        const bDist = Math.sqrt(Math.pow(b.lat - center.lat, 2) + Math.pow(b.lon - center.lon, 2));
-        return aDist - bDist;
-      })
-      .slice(0, maxStops);
-  }
+  // Show all stops - no limit needed since we're only loading the zone
+  // (Typically 100-200 stops for Tartu, very manageable)
 
   const toggleRoute = (route) => {
     const newRoutes = new Set(selectedRoutes);
@@ -710,16 +832,47 @@ function StopFinder({ isDarkMode, selectedStop: highlightedStop, locationSelecti
     setShowRouteFilter(false);
   };
 
-  // Load all stops for selected routes
+  // Load stops for selected routes - but only for routes in the current city zone
   useEffect(() => {
     const loadRouteStops = async () => {
       if (selectedRoutes.size > 0) {
         setLoadingRoutes(true);
         try {
           const routeNames = Array.from(selectedRoutes);
-          const { stops: routeStopsData, routePatterns: patterns } = await getStopsByRoutes(routeNames);
-          setRouteStops(routeStopsData);
-          setRoutePatterns(patterns);
+
+          // Pass city bounds to limit API query
+          const cityBounds = {
+            lat: currentCityZone.center.lat,
+            lon: currentCityZone.center.lon,
+            radius: currentCityZone.radius
+          };
+
+          const { stops: routeStopsData, routePatterns: patterns } = await getStopsByRoutes(routeNames, cityBounds);
+
+          // Filter patterns to only include those in the current city zone
+          // Check if any stop in the pattern is within the city zone radius
+          const filteredPatterns = patterns.filter(pattern => {
+            return pattern.stops.some(stop => {
+              const distance = getDistanceFromCity(stop.lat, stop.lon, currentCityZone.center.lat, currentCityZone.center.lon);
+              return distance <= currentCityZone.radius;
+            });
+          });
+
+          // Get unique stops from filtered patterns that are also in the city zone
+          const filteredStopsMap = new Map();
+          filteredPatterns.forEach(pattern => {
+            pattern.stops.forEach(stop => {
+              const distance = getDistanceFromCity(stop.lat, stop.lon, currentCityZone.center.lat, currentCityZone.center.lon);
+              if (distance <= currentCityZone.radius) {
+                filteredStopsMap.set(stop.gtfsId, stop);
+              }
+            });
+          });
+
+          setRouteStops(Array.from(filteredStopsMap.values()));
+          setRoutePatterns(filteredPatterns);
+
+          console.log(`🚌 Loaded ${filteredPatterns.length} route patterns for ${currentCityZone.name}`);
         } catch (err) {
           console.error('Error loading route stops:', err);
         } finally {
@@ -733,7 +886,19 @@ function StopFinder({ isDarkMode, selectedStop: highlightedStop, locationSelecti
     };
 
     loadRouteStops();
-  }, [selectedRoutes]);
+  }, [selectedRoutes, currentCityZone]);
+
+  // Helper function to calculate distance from city center
+  const getDistanceFromCity = (lat1, lon1, lat2, lon2) => {
+    const R = 6371000; // Earth's radius in meters
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+              Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+              Math.sin(dLon/2) * Math.sin(dLon/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c;
+  };
 
   return (
     <div className="relative w-full h-full">
@@ -1033,6 +1198,7 @@ function StopFinder({ isDarkMode, selectedStop: highlightedStop, locationSelecti
         >
           <span className="text-lg">🚌</span>
           {t('map.filterRoutes')} {selectedRoutes.size > 0 ? `(${selectedRoutes.size})` : ''}
+          <span className="text-xs opacity-60">• {currentCityZone.name}</span>
         </button>
 
         {/* Route filter dropdown */}
@@ -1092,12 +1258,11 @@ function StopFinder({ isDarkMode, selectedStop: highlightedStop, locationSelecti
           </div>
         )}
 
-        {/* Stop count - only show if filtered or limited */}
-        {!loading && stops.length > 0 && (selectedRoutes.size > 0 || stopsLimitExceeded) && (
+        {/* Stop count - only show if filtered */}
+        {!loading && stops.length > 0 && selectedRoutes.size > 0 && (
           <div className="bg-white dark:bg-gray-800 shadow-lg rounded-lg px-4 py-2 text-xs text-gray-600 dark:text-gray-300 text-center border border-gray-200 dark:border-gray-700">
             {t('map.showingStops', { shown: filteredStops.length, total: stops.length })}
-            {selectedRoutes.size > 0 && ` (${t('map.filtered')})`}
-            {stopsLimitExceeded && ` - ${t('map.limitedTo', { max: maxStops })}`}
+            {` (${t('map.filtered')})`}
           </div>
         )}
       </div>

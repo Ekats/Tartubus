@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Header from './components/Header'
 import NearMe from './components/NearMe'
 import StopFinder from './components/StopFinder'
@@ -6,6 +6,7 @@ import Favorites from './components/Favorites'
 import BottomNav from './components/BottomNav'
 import Settings from './components/Settings'
 import { useDarkMode } from './hooks/useDarkMode'
+import { initializeCaches } from './services/digitransit'
 
 function App() {
   const [activeView, setActiveView] = useState('nearme')
@@ -13,6 +14,11 @@ function App() {
   const [selectedStop, setSelectedStop] = useState(null)
   const [locationSelectionMode, setLocationSelectionMode] = useState(false)
   const [manualLocation, setManualLocation] = useState(null)
+
+  // Initialize caches on app startup
+  useEffect(() => {
+    initializeCaches();
+  }, [])
 
   const renderView = () => {
     switch (activeView) {

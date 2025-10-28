@@ -5,12 +5,15 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "prebuild": "node scripts/fetchRoutes.js",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "fetch-routes": "node scripts/fetchRoutes.js"
   },
   "dependencies": {
     "@emailjs/browser": "^4.4.1",
     "date-fns": "^4.1.0",
+    "dotenv": "^17.2.3",
     "i18next": "^25.6.0",
     "leaflet": "^1.9.4",
     "leaflet-polylinedecorator": "^1.6.0",

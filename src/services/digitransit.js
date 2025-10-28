@@ -493,8 +493,124 @@ const STOPS_CACHE_DURATION = 2 * 60 * 1000; // 2 minutes
 // Limit number of cached location queries (keep 20 most recent for good offline UX)
 const MAX_STOPS_CACHE_ENTRIES = 10; // Reduced to prevent quota issues
 
+// In-memory cache for all routes (loaded from bundled JSON file)
+let allRoutesCache = null;
+let allRoutesFetchPromise = null;
+
+// Load routes from bundled JSON file
+async function loadRoutesFromBundle() {
+  if (allRoutesCache) {
+    return allRoutesCache;
+  }
+
+  if (allRoutesFetchPromise) {
+    return allRoutesFetchPromise;
+  }
+
+  console.log('📦 Loading routes from bundled data...');
+
+  allRoutesFetchPromise = fetch('/Tartubus/data/routes.min.json')
+    .then(response => {
+      if (!response.ok) {
+        throw new Error(`Failed to load routes: ${response.status}`);
+      }
+      return response.json();
+    })
+    .then(routes => {
+      allRoutesCache = routes;
+      allRoutesFetchPromise = null;
+      console.log(`✅ Loaded ${routes.length} routes from bundle (instant)`);
+      return routes;
+    })
+    .catch(error => {
+      allRoutesFetchPromise = null;
+      console.error('Failed to load bundled routes:', error);
+      throw error;
+    });
+
+  return allRoutesFetchPromise;
+}
+
+
 // In-flight request tracking to prevent duplicate requests
 const inFlightRequests = new Map();
+
+// Debug function to show cache usage
+function showCacheDebugInfo() {
+  console.log('🔍 === CACHE DEBUG INFO ===');
+
+  let totalSize = 0;
+  const cacheInfo = [];
+
+  // Check all localStorage items
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    const value = localStorage.getItem(key);
+    const sizeKB = (value.length * 2) / 1024; // UTF-16 = 2 bytes per char
+    totalSize += sizeKB;
+
+    // Parse cache data to show details
+    let details = '';
+    try {
+      const parsed = JSON.parse(value);
+      if (key.startsWith('stops_')) {
+        const age = Math.round((Date.now() - parsed.timestamp) / 1000 / 60);
+        details = `${parsed.data.length} stops, age: ${age}m, expires in: ${Math.round((STOPS_CACHE_DURATION - (Date.now() - parsed.timestamp)) / 1000 / 60)}m`;
+      } else if (key.startsWith('route_')) {
+        const age = Math.round((Date.now() - parsed.timestamp) / 1000 / 60 / 60);
+        details = `route geometry, age: ${age}h`;
+      } else if (key === 'tartu_bus_favorites') {
+        const favs = Array.isArray(parsed) ? parsed : [];
+        details = `${favs.length} favorite stops`;
+      } else if (key === 'settings') {
+        details = `user settings`;
+      } else if (key === 'darkMode') {
+        details = `dark mode: ${parsed}`;
+      }
+    } catch (e) {
+      details = 'unknown format';
+    }
+
+    cacheInfo.push({
+      key,
+      sizeMB: (sizeKB / 1024).toFixed(2),
+      sizeKB: sizeKB.toFixed(2),
+      details
+    });
+  }
+
+  // Sort by size (largest first)
+  cacheInfo.sort((a, b) => parseFloat(b.sizeMB) - parseFloat(a.sizeMB));
+
+  console.table(cacheInfo);
+  console.log(`📦 Total cache size: ${(totalSize / 1024).toFixed(2)} MB (${totalSize.toFixed(2)} KB)`);
+  console.log(`📊 localStorage quota: ~5-10 MB (browser dependent)`);
+  console.log(`💾 Used: ${((totalSize / 1024) / 10 * 100).toFixed(1)}% (assuming 10MB quota)`);
+
+  // In-memory caches
+  console.log('\n🧠 In-Memory Caches (session only):');
+  console.log(`  - allRoutesCache: ${allRoutesCache ? `${allRoutesCache.length} routes` : 'not loaded'}`);
+  console.log(`  - inFlightRequests: ${inFlightRequests.size} active`);
+
+  console.log('\n💡 Tip: Clear old caches with: localStorage.clear()');
+  console.log('======================\n');
+}
+
+// Expose debug function globally
+window.showCacheDebug = showCacheDebugInfo;
+
+/**
+ * Initialize caches on app startup
+ * This cleans up old cached data
+ */
+export function initializeCaches() {
+  console.log('🚀 Initializing caches...');
+
+  // Clean up old/expired caches
+  clearOldCacheEntries();
+
+  console.log(`✅ Cache initialization complete`);
+}
 
 /**
  * Get cached data from localStorage with expiration check
@@ -694,10 +810,13 @@ function setCachedNearbyStops(lat, lon, radius, data) {
 
 /**
  * Get all stops for specific routes by route short names with proper geometry
+ * @param {string[]} routeShortNames - Array of route numbers to fetch
+ * @param {Object} cityBounds - Optional city bounds to limit query area {lat, lon, radius}
  */
-export async function getStopsByRoutes(routeShortNames) {
-  // Create cache key from sorted route names
-  const cacheKey = [...routeShortNames].sort().join(',');
+export async function getStopsByRoutes(routeShortNames, cityBounds = null) {
+  // Create cache key from sorted route names and city bounds
+  const boundsKey = cityBounds ? `_${Math.round(cityBounds.lat * 100)}_${Math.round(cityBounds.lon * 100)}` : '';
+  const cacheKey = [...routeShortNames].sort().join(',') + boundsKey;
 
   // Check if we have cached data
   const cachedData = getCachedRouteData(cacheKey);
@@ -705,43 +824,48 @@ export async function getStopsByRoutes(routeShortNames) {
     return cachedData;
   }
 
-  console.log('🔄 Fetching route data from API for:', routeShortNames);
+  console.log('🔄 Fetching route data from API for:', routeShortNames, cityBounds ? `in ${cityBounds.radius}m radius` : '');
 
-  const graphqlQuery = `
-    query GetRoutes {
-      routes(feeds: ["Viro"]) {
-        gtfsId
-        shortName
-        longName
-        mode
-        patterns {
-          code
-          directionId
-          headsign
-          stops {
-            name
-            code
-            gtfsId
-            lat
-            lon
-          }
-          geometry {
-            lat
-            lon
-          }
-        }
-      }
-    }
-  `;
+  // Helper function to calculate distance
+  const getDistance = (lat1, lon1, lat2, lon2) => {
+    const R = 6371000; // Earth's radius in meters
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+              Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+              Math.sin(dLon/2) * Math.sin(dLon/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c;
+  };
+
+  // Load routes from bundled JSON file (fast!)
+  await loadRoutesFromBundle();
 
   try {
-    const data = await query(graphqlQuery);
-    const allRoutes = data.routes || [];
-
-    // Filter for selected routes
-    const selectedRoutes = allRoutes.filter(route =>
+    // Filter by shortName
+    let selectedRoutes = allRoutesCache.filter(route =>
       routeShortNames.includes(route.shortName)
     );
+
+    console.log(`📍 Found ${selectedRoutes.length} routes matching ${routeShortNames.join(', ')}`);
+
+    // If we have city bounds, filter routes that have stops in the area
+    if (cityBounds && selectedRoutes.length > 0) {
+      selectedRoutes = selectedRoutes.filter(route => {
+        // Check if any pattern has stops within city bounds
+        return route.patterns?.some(pattern =>
+          pattern.stops?.some(stop => {
+            const distance = getDistance(
+              cityBounds.lat, cityBounds.lon,
+              stop.lat, stop.lon
+            );
+            return distance <= cityBounds.radius;
+          })
+        );
+      });
+
+      console.log(`✅ Filtered to ${selectedRoutes.length} routes in ${cityBounds.radius/1000}km radius`);
+    }
 
     // Collect all unique stops and their patterns
     const stopsMap = new Map();

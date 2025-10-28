@@ -1,0 +1,48 @@
+name: Update Route Data
+
+on:
+  # Run automatically every day at 3 AM UTC
+  schedule:
+    - cron: '0 3 * * *'
+
+  # Allow manual trigger from GitHub Actions tab
+  workflow_dispatch:
+
+jobs:
+  update-routes:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Fetch latest route data
+        env:
+          VITE_DIGITRANSIT_API_KEY: ${{ secrets.VITE_DIGITRANSIT_API_KEY }}
+        run: npm run fetch-routes
+
+      - name: Check if routes changed
+        id: check_changes
+        run: |
+          if git diff --quiet public/data/routes.min.json; then
+            echo "changed=false" >> $GITHUB_OUTPUT
+          else
+            echo "changed=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Commit and push if changed
+        if: steps.check_changes.outputs.changed == 'true'
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          git add public/data/routes.min.json public/data/routes.json
+          git commit -m "🚌 Auto-update route data ($(date +'%Y-%m-%d'))"
+          git push

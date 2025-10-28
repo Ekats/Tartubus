@@ -17,28 +17,10 @@ function Settings() {
     { value: 2000, label: `2km - ${t('settings.veryWide')}` },
   ];
 
-  const maxStopsOptions = [
-    { value: 50, label: `50 ${t('settings.stops')} - ${t('settings.fastPerformance')}` },
-    { value: 100, label: `100 ${t('settings.stops')} - ${t('settings.balanced')} (${t('settings.default')})` },
-    { value: 200, label: `200 ${t('settings.stops')} - ${t('settings.moreDetail')}` },
-    { value: 300, label: `300 ${t('settings.stops')} - ${t('settings.maximumDetail')}` },
-    { value: 500, label: `500 ${t('settings.stops')} - ${t('settings.showEverything')}` },
-  ];
-
   const handleRadiusChange = (e) => {
     const newRadius = parseInt(e.target.value);
     setSettings({ ...settings, nearbyRadius: newRadius });
     updateSetting('nearbyRadius', newRadius);
-
-    // Show saved message
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
-  };
-
-  const handleMaxStopsChange = (e) => {
-    const newMaxStops = parseInt(e.target.value);
-    setSettings({ ...settings, maxStopsOnMap: newMaxStops });
-    updateSetting('maxStopsOnMap', newMaxStops);
 
     // Show saved message
     setSaved(true);
@@ -134,35 +116,6 @@ function Settings() {
               <span>Settings saved automatically</span>
             </div>
           )}
-        </div>
-
-        {/* Max Stops on Map Setting */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 border border-gray-200 dark:border-gray-700">
-          <div className="mb-4">
-            <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-1">{t('settings.maxStopsOnMap')}</h2>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              {t('settings.maxStopsDescription')}
-            </p>
-          </div>
-
-          <div className="space-y-3">
-            {maxStopsOptions.map((option) => (
-              <label
-                key={option.value}
-                className="flex items-center p-3 border border-gray-200 dark:border-gray-700 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-              >
-                <input
-                  type="radio"
-                  name="maxStops"
-                  value={option.value}
-                  checked={settings.maxStopsOnMap === option.value}
-                  onChange={handleMaxStopsChange}
-                  className="w-4 h-4 text-primary focus:ring-primary"
-                />
-                <span className="ml-3 text-gray-700 dark:text-gray-300">{option.label}</span>
-              </label>
-            ))}
-          </div>
         </div>
 
         {/* Feedback Section */}
