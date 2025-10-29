@@ -1036,6 +1036,12 @@ function StopFinder({ isDarkMode, selectedStop: highlightedStop, locationSelecti
         className="w-full h-full"
         zoomControl={true}
         maxZoom={18}
+        zoomAnimation={true}
+        zoomAnimationThreshold={4}
+        fadeAnimation={true}
+        markerZoomAnimation={true}
+        preferCanvas={false}
+        wheelPxPerZoomLevel={60}
       >
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'

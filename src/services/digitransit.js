@@ -607,72 +607,106 @@ window.showCacheDebug = showCacheDebugInfo;
 export function initializeCaches() {
   console.log('🚀 Initializing caches...');
 
+  // One-time migration flags for cache clear
+  // Soft clear: Clears cache but preserves favorites, settings, dark mode, language
+  // Full clear: Clears EVERYTHING including favorites (nuclear option)
+  const SOFT_CLEAR_VERSION = 'v1.1-soft-clear';
+  const FULL_CLEAR_VERSION = 'v1.1-full-clear'; // Full wipe - clears everything including favorites
+  const SOFT_CLEAR_KEY = 'cache_soft_clear_version';
+  const FULL_CLEAR_KEY = 'cache_full_clear_version';
+
   // Use build hash that changes on every build/deployment
   const APP_BUILD_HASH = typeof __BUILD_HASH__ !== 'undefined' ? __BUILD_HASH__ : 'dev';
   const BUILD_HASH_KEY = 'app_build_hash';
-  const PRESERVE_KEYS = [
+  const PRESERVE_KEYS_SOFT = [
     'tartu_bus_favorites',      // User's favorite stops
     'tartu-bus-settings',       // User settings (radius, max stops, etc)
     'darkMode',                 // Dark mode preference
     'i18nextLng',               // Language preference
-    BUILD_HASH_KEY              // Build hash tracking
+    BUILD_HASH_KEY,             // Build hash tracking
+    SOFT_CLEAR_KEY,             // Soft clear version tracking
+    FULL_CLEAR_KEY              // Full clear version tracking
   ];
 
   try {
-    // Check if app build has changed (new deployment)
-    const storedHash = localStorage.getItem(BUILD_HASH_KEY);
-    const isVersionChanged = storedHash !== APP_BUILD_HASH;
+    // Check for FULL CLEAR first (nuclear option - wipes everything)
+    const storedFullClear = localStorage.getItem(FULL_CLEAR_KEY);
+    const needsFullClear = FULL_CLEAR_VERSION !== 'never' && storedFullClear !== FULL_CLEAR_VERSION;
 
-    if (isVersionChanged) {
-      console.log(`🔄 New build detected (${storedHash || 'first load'} → ${APP_BUILD_HASH}), clearing all cache...`);
+    if (needsFullClear) {
+      console.warn(`💥 FULL CACHE CLEAR triggered (${storedFullClear || 'first'} → ${FULL_CLEAR_VERSION})`);
+      console.warn('⚠️  This will delete EVERYTHING including favorites!');
 
-      // Store important data temporarily
-      const preserved = {};
-      PRESERVE_KEYS.forEach(key => {
-        const value = localStorage.getItem(key);
-        if (value !== null) {
-          preserved[key] = value;
-        }
-      });
-
-      // Clear everything
+      // Nuclear option - clear absolutely everything
       localStorage.clear();
 
-      // Restore preserved data
-      Object.entries(preserved).forEach(([key, value]) => {
-        localStorage.setItem(key, value);
-      });
-
-      // Update build hash
+      // Only set the full clear flag so it doesn't happen again
+      localStorage.setItem(FULL_CLEAR_KEY, FULL_CLEAR_VERSION);
       localStorage.setItem(BUILD_HASH_KEY, APP_BUILD_HASH);
 
-      console.log(`✅ Cache cleared for new build, preserved ${Object.keys(preserved).length} important items`);
+      console.log('💥 Full cache clear complete - all user data removed');
     } else {
-      // Normal startup - clear temporary cache
-      console.log('🧹 Clearing temporary cache (stops & routes)...');
+      // Check for SOFT CLEAR (preserves user preferences)
+      const storedSoftClear = localStorage.getItem(SOFT_CLEAR_KEY);
+      const needsSoftClear = storedSoftClear !== SOFT_CLEAR_VERSION;
 
-      const keysToRemove = [];
+      if (needsSoftClear) {
+        console.log(`🧹 Soft cache clear needed (${storedSoftClear || 'first load'} → ${SOFT_CLEAR_VERSION})`);
 
-      // Remove cache entries - routes are now bundled, stops are time-sensitive
-      for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
+        // Store important data temporarily
+        const preserved = {};
+        PRESERVE_KEYS_SOFT.forEach(key => {
+          const value = localStorage.getItem(key);
+          if (value !== null) {
+            preserved[key] = value;
+          }
+        });
 
-        // Clear stops and route cache on every page reload
-        if (key && (key.startsWith('stops_') || key.startsWith('route_'))) {
-          keysToRemove.push(key);
-        }
+        // Clear everything
+        localStorage.clear();
+
+        // Restore preserved data
+        Object.entries(preserved).forEach(([key, value]) => {
+          localStorage.setItem(key, value);
+        });
+
+        // Set soft clear flag so this doesn't happen again
+        localStorage.setItem(SOFT_CLEAR_KEY, SOFT_CLEAR_VERSION);
+
+        // Also update build hash
+        localStorage.setItem(BUILD_HASH_KEY, APP_BUILD_HASH);
+
+        console.log(`✅ Soft cache clear complete, preserved ${Object.keys(preserved).length} important items`);
+      } else {
+        // No migration needed, just update build hash for tracking
+        localStorage.setItem(BUILD_HASH_KEY, APP_BUILD_HASH);
       }
-
-      // Remove marked entries
-      keysToRemove.forEach(key => localStorage.removeItem(key));
-
-      if (keysToRemove.length > 0) {
-        console.log(`🗑️ Cleared ${keysToRemove.length} temporary cache entries`);
-      }
-
-      // Also clean up any old/expired entries
-      clearOldCacheEntries();
     }
+
+    // Always clean temporary cache on startup
+    console.log('🧹 Clearing temporary cache (stops & routes)...');
+
+    const keysToRemove = [];
+
+    // Remove cache entries - routes are now bundled, stops are time-sensitive
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+
+      // Clear stops and route cache on every page reload
+      if (key && (key.startsWith('stops_') || key.startsWith('route_'))) {
+        keysToRemove.push(key);
+      }
+    }
+
+    // Remove marked entries
+    keysToRemove.forEach(key => localStorage.removeItem(key));
+
+    if (keysToRemove.length > 0) {
+      console.log(`🗑️ Cleared ${keysToRemove.length} temporary cache entries`);
+    }
+
+    // Also clean up any old/expired entries
+    clearOldCacheEntries();
   } catch (error) {
     console.error('Error during cache initialization:', error);
   }
