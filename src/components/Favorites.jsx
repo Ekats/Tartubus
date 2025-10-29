@@ -1,18 +1,40 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useFavorites } from '../hooks/useFavorites';
+import { useGeolocation } from '../hooks/useGeolocation';
 import { getStopById, getNextStopName } from '../services/digitransit';
 import { shouldShowDeparture } from '../utils/timeFormatter';
 import CountdownTimer from './CountdownTimer';
 
-function Favorites({ onNavigateToMap }) {
+function Favorites({ onNavigateToMap, manualLocation }) {
   const { t } = useTranslation();
   const { favorites, removeFavorite, clearAllFavorites } = useFavorites();
+  const { location: gpsLocation, startWatching } = useGeolocation();
+
+  // Use manual location if available, otherwise use GPS location
+  const location = manualLocation || gpsLocation;
   const [stopsWithDepartures, setStopsWithDepartures] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [expandedStops, setExpandedStops] = useState(new Map()); // Map of stopId -> expansion level
   const [expandedDepartures, setExpandedDepartures] = useState(new Set()); // Set of "stopId-departureIdx" keys
+
+  // Start watching location on mount
+  useEffect(() => {
+    startWatching();
+  }, []);
+
+  // Calculate distance between two coordinates (in meters)
+  const calculateDistance = (lat1, lon1, lat2, lon2) => {
+    const R = 6371000; // Earth's radius in meters
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+              Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+              Math.sin(dLon/2) * Math.sin(dLon/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c;
+  };
 
   // Fetch departure times for all favorite stops
   const fetchDepartures = async () => {
@@ -50,7 +72,29 @@ function Favorites({ onNavigateToMap }) {
         })
       );
 
-      setStopsWithDepartures(stopsData);
+      // Calculate distances and sort by closest if location is available
+      const stopsWithDistances = stopsData.map(stop => {
+        if (location.lat && location.lon && stop.lat && stop.lon) {
+          const distance = calculateDistance(location.lat, location.lon, stop.lat, stop.lon);
+          console.log(`Distance to ${stop.name}: ${Math.round(distance)}m`, {
+            userLocation: { lat: location.lat, lon: location.lon },
+            stopLocation: { lat: stop.lat, lon: stop.lon }
+          });
+          return { ...stop, distance };
+        }
+        console.log(`No location data for ${stop.name}`, {
+          hasUserLocation: !!(location.lat && location.lon),
+          hasStopLocation: !!(stop.lat && stop.lon)
+        });
+        return { ...stop, distance: Infinity }; // No location = put at end
+      });
+
+      // Sort by distance (closest first)
+      stopsWithDistances.sort((a, b) => a.distance - b.distance);
+
+      console.log('Sorted favorites by distance:', stopsWithDistances.map(s => ({ name: s.name, distance: Math.round(s.distance) })));
+
+      setStopsWithDepartures(stopsWithDistances);
     } catch (err) {
       console.error('Error fetching favorite stops:', err);
       setError(err.message);
@@ -59,10 +103,10 @@ function Favorites({ onNavigateToMap }) {
     }
   };
 
-  // Fetch departures on mount and when favorites change
+  // Fetch departures on mount and when favorites or location changes
   useEffect(() => {
     fetchDepartures();
-  }, [favorites.length]); // Re-fetch when favorites list changes
+  }, [favorites.length, location.lat, location.lon]); // Re-fetch when favorites list or location changes
 
   // Auto-refresh departure times every 30 seconds
   useEffect(() => {
@@ -220,6 +264,9 @@ function Favorites({ onNavigateToMap }) {
                 </div>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
                   Stop {stop.code}
+                  {stop.distance !== undefined && stop.distance !== Infinity && (
+                    <> • {Math.round(stop.distance)}m away</>
+                  )}
                 </p>
               </div>
 

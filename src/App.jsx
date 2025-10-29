@@ -54,10 +54,13 @@ function App() {
           }}
         />
       case 'favorites':
-        return <Favorites onNavigateToMap={(stop) => {
-          setSelectedStop(stop)
-          setActiveView('map')
-        }} />
+        return <Favorites
+          manualLocation={manualLocation}
+          onNavigateToMap={(stop) => {
+            setSelectedStop(stop)
+            setActiveView('map')
+          }}
+        />
       case 'settings':
         return <Settings />
       default:
