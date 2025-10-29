@@ -129,7 +129,17 @@
     "privacyFocused": "Privaatsust austav – jälgimist pole",
     "usesDigitransit": "Äpp kasutab Digitransit API-d sõiduplaanide jaoks",
     "usesOSM": "Äpp kasutab OpenStreetMapsi kaarte",
-    "localSettings": "Kõik seaded salvestatud sinu seadmesse"
+    "localSettings": "Kõik seaded salvestatud sinu seadmesse",
+    "cacheManagement": "Vahemälu haldus",
+    "cacheDescription": "Tühjenda vahemälu kui koged probleeme.",
+    "softClear": "Kerge tühjendamine (Jäta lemmikud)",
+    "softClearDesc": "Tühjendab vahemälu, kuid säilitab lemmikud ja seaded",
+    "softClearConfirm": "Kas tühjendada vahemälu? Sinu lemmikud ja seaded jäävad alles.",
+    "fullClear": "Täielik tühjendamine (Kustuta kõik)",
+    "fullClearDesc": "HOIATUS: Kustutab lemmikud, seaded, kõik!",
+    "fullClearConfirm": "⚠️ HOIATUS: See kustutab KÕIK, kaasa arvatud lemmikud ja seaded! Kas oled kindel?",
+    "fullClearConfirm2": "Seda tegevust ei saa tagasi võtta. Kas kustutada kõik andmed?",
+    "cacheCleared": "Vahemälu tühjendatud! Laadime uuesti..."
   },
   "common": {
     "loading": "Laadimine...",

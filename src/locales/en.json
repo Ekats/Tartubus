@@ -129,7 +129,17 @@
     "privacyFocused": "Privacy-focused - no tracking",
     "usesDigitransit": "Uses Digitransit API for schedules",
     "usesOSM": "OpenStreetMap for maps",
-    "localSettings": "All settings stored locally on your device"
+    "localSettings": "All settings stored locally on your device",
+    "cacheManagement": "Cache Management",
+    "cacheDescription": "Clear cached data if you experience issues.",
+    "softClear": "Soft Clear (Keep Favorites)",
+    "softClearDesc": "Clears cache but preserves favorites and settings",
+    "softClearConfirm": "Clear cached data? Your favorites and settings will be preserved.",
+    "fullClear": "Full Clear (Delete Everything)",
+    "fullClearDesc": "WARNING: Deletes favorites, settings, everything!",
+    "fullClearConfirm": "⚠️ WARNING: This will delete EVERYTHING including your favorites and settings! Are you sure?",
+    "fullClearConfirm2": "This action cannot be undone. Delete all data?",
+    "cacheCleared": "Cache cleared! Reloading..."
   },
   "common": {
     "loading": "Loading...",

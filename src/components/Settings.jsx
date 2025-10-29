@@ -7,6 +7,7 @@ function Settings() {
   const { t, i18n } = useTranslation();
   const [settings, setSettings] = useState(getSettings());
   const [saved, setSaved] = useState(false);
+  const [cacheCleared, setCacheCleared] = useState(false);
 
   const radiusOptions = [
     { value: 300, label: `300m - ${t('settings.veryClose')}` },
@@ -31,6 +32,60 @@ function Settings() {
     i18n.changeLanguage(lang);
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
+  };
+
+  const handleSoftClearCache = () => {
+    if (window.confirm(t('settings.softClearConfirm') || 'Clear cached data? Your favorites and settings will be preserved.')) {
+      // Clear all cache except preserved keys
+      const preserveKeys = [
+        'tartu_bus_favorites',
+        'tartu-bus-settings',
+        'darkMode',
+        'i18nextLng',
+        'app_build_hash',
+        'cache_soft_clear_version',
+        'cache_full_clear_version'
+      ];
+
+      const preserved = {};
+      preserveKeys.forEach(key => {
+        const value = localStorage.getItem(key);
+        if (value !== null) {
+          preserved[key] = value;
+        }
+      });
+
+      // Clear everything
+      localStorage.clear();
+
+      // Restore preserved data
+      Object.entries(preserved).forEach(([key, value]) => {
+        localStorage.setItem(key, value);
+      });
+
+      setCacheCleared(true);
+      setTimeout(() => {
+        setCacheCleared(false);
+        // Reload page to reinitialize caches
+        window.location.reload();
+      }, 1500);
+    }
+  };
+
+  const handleFullClearCache = () => {
+    if (window.confirm(t('settings.fullClearConfirm') || '⚠️ WARNING: This will delete EVERYTHING including your favorites and settings! Are you sure?')) {
+      if (window.confirm(t('settings.fullClearConfirm2') || 'This action cannot be undone. Delete all data?')) {
+        // Nuclear option - clear absolutely everything
+        localStorage.clear();
+
+        setCacheCleared(true);
+        setTimeout(() => {
+          setCacheCleared(false);
+          // Reload page to reinitialize caches
+          window.location.reload();
+        }, 1500);
+      }
+    }
   };
 
   return (
@@ -156,9 +211,53 @@ function Settings() {
           </div>
         </div>
 
+        {/* Cache Management */}
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 border border-gray-200 dark:border-gray-700">
+          <div className="mb-4">
+            <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-1">
+              {t('settings.cacheManagement') || 'Cache Management'}
+            </h2>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              {t('settings.cacheDescription') || 'Clear cached data if you experience issues.'}
+            </p>
+          </div>
+
+          <div className="space-y-3">
+            {/* Soft Clear Button */}
+            <button
+              onClick={handleSoftClearCache}
+              className="w-full bg-orange-500 hover:bg-orange-600 dark:bg-orange-600 dark:hover:bg-orange-700 text-white font-semibold py-3 px-4 rounded-lg transition-colors flex items-center justify-center gap-2"
+            >
+              <span>🧹</span>
+              <span>{t('settings.softClear') || 'Soft Clear (Keep Favorites)'}</span>
+            </button>
+            <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
+              {t('settings.softClearDesc') || 'Clears cache but preserves favorites and settings'}
+            </p>
+
+            {/* Full Clear Button */}
+            <button
+              onClick={handleFullClearCache}
+              className="w-full bg-red-600 hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-800 text-white font-semibold py-3 px-4 rounded-lg transition-colors flex items-center justify-center gap-2"
+            >
+              <span>💥</span>
+              <span>{t('settings.fullClear') || 'Full Clear (Delete Everything)'}</span>
+            </button>
+            <p className="text-xs text-red-600 dark:text-red-400 text-center font-medium">
+              ⚠️ {t('settings.fullClearDesc') || 'WARNING: Deletes favorites, settings, everything!'}
+            </p>
+          </div>
+
+          {cacheCleared && (
+            <div className="mt-3 bg-green-100 dark:bg-green-900/30 border border-green-500 dark:border-green-700 text-green-800 dark:text-green-300 px-4 py-2 rounded-lg text-sm text-center">
+              ✅ {t('settings.cacheCleared') || 'Cache cleared! Reloading...'}
+            </div>
+          )}
+        </div>
+
         {/* Version info */}
         <div className="text-center text-xs text-gray-500 dark:text-gray-400 pb-4">
-          Tartu Bussid v0.1.0
+          Tartu Bussid v1.1.0
         </div>
       </div>
     </div>
