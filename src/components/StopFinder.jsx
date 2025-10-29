@@ -301,6 +301,7 @@ function StopFinder({ isDarkMode, selectedStop: highlightedStop, locationSelecti
   const [pendingLocation, setPendingLocation] = useState(null);
   const [pendingLocationAddress, setPendingLocationAddress] = useState(null);
   const [expandedPopupStops, setExpandedPopupStops] = useState(new Map()); // Map of stopId -> expansion level
+  const [nearbyStopsForRouting, setNearbyStopsForRouting] = useState([]); // Stops with departure data for routing
   const mapRef = useRef(null);
   const moveTimeoutRef = useRef(null);
   const lastMovePositionRef = useRef(null);
@@ -366,6 +367,36 @@ function StopFinder({ isDarkMode, selectedStop: highlightedStop, locationSelecti
   const [cityZoneStopsLoaded, setCityZoneStopsLoaded] = useState(false);
   const [allZoneStops, setAllZoneStops] = useState([]); // Store ALL zone stops
   const [visibleBounds, setVisibleBounds] = useState(null); // Current viewport bounds
+
+  // Fetch nearby stops with departure data when a stop is selected
+  useEffect(() => {
+    if (selectedStop && location.lat && location.lon) {
+      const fetchNearbyStopsForRouting = async () => {
+        try {
+          console.log('🚀 Fetching nearby stops for routing to:', selectedStop.name);
+
+          // Fetch stops near the user's location
+          const nearbyUserStops = await getNearbyStops(location.lat, location.lon, 500, true);
+
+          // Also fetch stops near the destination (to find nearby alternatives)
+          const nearbyDestStops = await getNearbyStops(selectedStop.lat, selectedStop.lon, 300);
+
+          console.log('✅ Got', nearbyUserStops?.length, 'stops near user and', nearbyDestStops?.length, 'stops near destination');
+
+          setNearbyStopsForRouting({
+            nearUser: nearbyUserStops || [],
+            nearDestination: nearbyDestStops || []
+          });
+        } catch (error) {
+          console.error('Error fetching nearby stops for routing:', error);
+          setNearbyStopsForRouting({ nearUser: [], nearDestination: [] });
+        }
+      };
+      fetchNearbyStopsForRouting();
+    } else {
+      setNearbyStopsForRouting({ nearUser: [], nearDestination: [] });
+    }
+  }, [selectedStop, location.lat, location.lon]);
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false); // Toggle for favorites-only view
   const boundsUpdateTimeoutRef = useRef(null);
 
@@ -1472,37 +1503,59 @@ function StopFinder({ isDarkMode, selectedStop: highlightedStop, locationSelecti
           {/* Content */}
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
             {/* Route to this stop section */}
-            {location.lat && location.lon && (() => {
-              // Find nearby stops and their buses that go to the selected stop
-              const nearbyRadius = 500; // 500m radius
-              const nearbyStopsWithRoutes = stops
-                .filter(stop => {
-                  // Calculate distance from user to stop
-                  const latDiff = stop.lat - location.lat;
-                  const lonDiff = stop.lon - location.lon;
-                  const distance = Math.sqrt(latDiff * latDiff + lonDiff * lonDiff) * 111000; // rough conversion to meters
-                  return distance <= nearbyRadius && stop.gtfsId !== selectedStop.gtfsId;
-                })
+            {location.lat && location.lon && nearbyStopsForRouting?.nearUser?.length > 0 && nearbyStopsForRouting?.nearDestination?.length > 0 && (() => {
+              console.log('🔍 Analyzing routes to', selectedStop.name, 'area');
+
+              // Create a set of destination stop IDs (all stops near the selected destination)
+              const destinationStopIds = new Set(
+                nearbyStopsForRouting.nearDestination.map(stop => stop.gtfsId)
+              );
+              console.log('🎯 Looking for buses going to any of', destinationStopIds.size, 'stops near destination');
+
+              // Use the fetched nearby stops with full departure data
+              const nearbyStopsWithRoutes = nearbyStopsForRouting.nearUser
+                .filter(stop => !destinationStopIds.has(stop.gtfsId)) // Don't include destination stops themselves
                 .map(nearbyStop => {
-                  // Check which departures from this nearby stop go to the selected stop
-                  const relevantDepartures = nearbyStop.stoptimesWithoutPatterns?.filter(departure => {
-                    // Check if this bus stops at the selected destination
-                    const stopsAtDestination = departure.trip?.stoptimes?.some(
-                      tripStop => tripStop.stop?.gtfsId === selectedStop.gtfsId &&
-                                  tripStop.stopPosition > departure.stopPosition
+                  // Check departures to see if any go to the destination AREA
+                  const connectingDepartures = nearbyStop.stoptimesWithoutPatterns?.filter(dep => {
+                    // Check if this trip's route stops at ANY stop in the destination area
+                    if (!dep.trip?.stoptimes) {
+                      return false;
+                    }
+
+                    const currentStopPosition = dep.stopPosition;
+                    const destinationStop = dep.trip.stoptimes.find(
+                      ts => destinationStopIds.has(ts.stop?.gtfsId) && ts.stopPosition > currentStopPosition
                     );
-                    return stopsAtDestination;
+
+                    if (destinationStop) {
+                      console.log('✅ Found connection:', dep.trip?.route?.shortName, 'from', nearbyStop.name, 'to', destinationStop.stop?.name || 'destination area');
+                    }
+
+                    return !!destinationStop;
                   }) || [];
 
-                  if (relevantDepartures.length > 0) {
+                  if (connectingDepartures.length > 0) {
+                    console.log('🎯', nearbyStop.name, 'has', connectingDepartures.length, 'connecting buses');
+
                     // Calculate walking distance
                     const latDiff = nearbyStop.lat - location.lat;
                     const lonDiff = nearbyStop.lon - location.lon;
                     const walkingDistance = Math.round(Math.sqrt(latDiff * latDiff + lonDiff * lonDiff) * 111000);
 
+                    // Group by route for display
+                    const routeMap = new Map();
+                    connectingDepartures.forEach(dep => {
+                      const routeName = dep.trip?.route?.shortName;
+                      if (routeName && !routeMap.has(routeName)) {
+                        routeMap.set(routeName, dep);
+                      }
+                    });
+
                     return {
                       stop: nearbyStop,
-                      departures: relevantDepartures.slice(0, 3), // Show top 3
+                      departures: connectingDepartures.slice(0, 3), // Top 3 departures
+                      routes: Array.from(routeMap.values()).slice(0, 3), // Top 3 unique routes
                       walkingDistance
                     };
                   }

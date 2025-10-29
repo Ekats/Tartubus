@@ -100,7 +100,10 @@ export async function getNearbyStops(lat, lon, radius = 500, forceRefresh = fals
 
   // Check if there's already a request in flight for this location
   if (inFlightRequests.has(cacheKey)) {
-    console.log(`⏳ Request already in flight for ${cacheKey}, waiting...`);
+    console.log(`⏳ Request already in flight for ${cacheKey}, waiting... (forceRefresh=${forceRefresh})`);
+    if (forceRefresh) {
+      console.log('⚠️ Force refresh but using in-flight request - this might return cached data!');
+    }
     return inFlightRequests.get(cacheKey);
   }
 
