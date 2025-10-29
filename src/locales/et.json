@@ -24,6 +24,7 @@
     "manualLocation": "Käsitsi määratud asukoht",
     "setLocation": "Määra asukoht",
     "useGPS": "Kasuta GPS-i",
+    "requestLocation": "Küsi asukohta",
     "setLocationTitle": "Määra asukoht",
     "setLocationDescription": "Vali asukoht kaardil, kus soovid lähedalolevaid peatusi näha.",
     "pickOnMap": "Vali kaardil",
@@ -140,6 +141,18 @@
     "fullClearConfirm": "⚠️ HOIATUS: See kustutab KÕIK, kaasa arvatud lemmikud ja seaded! Kas oled kindel?",
     "fullClearConfirm2": "Seda tegevust ei saa tagasi võtta. Kas kustutada kõik andmed?",
     "cacheCleared": "Vahemälu tühjendatud! Laadime uuesti..."
+  },
+  "locationInfo": {
+    "title": "Asukoha luba",
+    "description": "Vajame sinu asukohta, et näidata lähedalolevaid bussipeatusi ja reaalajas väljumisaegu.",
+    "privacyTitle": "Sinu privaatsus on kaitstud",
+    "noTracking": "Ei jälgimist ega andmete kogumist",
+    "neverStored": "Sinu asukohta ei salvestata ega saadeta serveritesse",
+    "localOnly": "Kasutatakse ainult sinu seadmes lähedalasuvate peatuste leidmiseks",
+    "openSource": "Täielikult avatud lähtekoodiga - vaata koodi ise",
+    "canDecline": "Võid keelduda ja seada oma asukoha käsitsi kaardil, kui soovid.",
+    "allow": "Luba asukohale juurdepääs",
+    "decline": "Kasuta käsitsi asukohta"
   },
   "common": {
     "loading": "Laadimine...",

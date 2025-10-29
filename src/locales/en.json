@@ -24,6 +24,7 @@
     "manualLocation": "Manual location",
     "setLocation": "Set location",
     "useGPS": "Use GPS",
+    "requestLocation": "Request Location",
     "setLocationTitle": "Set Location",
     "setLocationDescription": "Choose a location on the map to find nearby stops.",
     "pickOnMap": "Pick on map",
@@ -140,6 +141,18 @@
     "fullClearConfirm": "⚠️ WARNING: This will delete EVERYTHING including your favorites and settings! Are you sure?",
     "fullClearConfirm2": "This action cannot be undone. Delete all data?",
     "cacheCleared": "Cache cleared! Reloading..."
+  },
+  "locationInfo": {
+    "title": "Location Permission",
+    "description": "We need your location to show you nearby bus stops and live departure times.",
+    "privacyTitle": "Your Privacy is Safe",
+    "noTracking": "No tracking or data collection",
+    "neverStored": "Your location is never stored or sent to servers",
+    "localOnly": "Used only on your device for finding nearby stops",
+    "openSource": "Fully open source - see the code yourself",
+    "canDecline": "You can decline and set your location manually on the map if preferred.",
+    "allow": "Allow Location Access",
+    "decline": "Use Manual Location"
   },
   "common": {
     "loading": "Loading...",

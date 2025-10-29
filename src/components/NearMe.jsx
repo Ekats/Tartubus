@@ -8,6 +8,7 @@ import { getSetting } from '../utils/settings';
 import { reverseGeocode } from '../utils/geocoding';
 import { getNextStopName } from '../services/digitransit';
 import CountdownTimer from './CountdownTimer';
+import LocationPermissionInfo from './LocationPermissionInfo';
 
 function NearMe({ onNavigateToMap, manualLocation: manualLocationProp, onClearManualLocation }) {
   const { t } = useTranslation();
@@ -19,12 +20,76 @@ function NearMe({ onNavigateToMap, manualLocation: manualLocationProp, onClearMa
   const [expandedStops, setExpandedStops] = useState(new Map()); // Map of stopId -> expansion level (0=collapsed, 1=medium, 2=full)
   const [expandedDepartures, setExpandedDepartures] = useState(new Set()); // Set of "stopId-departureIdx" keys
   const [showLocationPicker, setShowLocationPicker] = useState(false);
+  const [showLocationInfo, setShowLocationInfo] = useState(false);
+  const [locationPermissionDenied, setLocationPermissionDenied] = useState(false);
 
-  // Auto-start on mount
+  // Check if browser will ask for permission (not already granted)
   useEffect(() => {
+    const checkPermission = async () => {
+      if (!navigator.permissions) {
+        // Permissions API not supported, show modal just in case
+        setShowLocationInfo(true);
+        return;
+      }
+
+      try {
+        const result = await navigator.permissions.query({ name: 'geolocation' });
+
+        if (result.state === 'prompt') {
+          // Browser will prompt - show our info modal first
+          setShowLocationInfo(true);
+        } else if (result.state === 'granted') {
+          // Already granted - proceed directly
+          getLocation();
+          startWatching();
+        } else if (result.state === 'denied') {
+          // Permission denied - show button to request again
+          setLocationPermissionDenied(true);
+        }
+
+        // Listen for permission changes
+        result.addEventListener('change', () => {
+          if (result.state === 'denied') {
+            setLocationPermissionDenied(true);
+          } else if (result.state === 'granted') {
+            setLocationPermissionDenied(false);
+            getLocation();
+            startWatching();
+          }
+        });
+      } catch (err) {
+        // Fallback if permissions query fails
+        setShowLocationInfo(true);
+      }
+    };
+
+    checkPermission();
+  }, []);
+
+  const handleAllowLocation = () => {
+    setShowLocationInfo(false);
     getLocation();
     startWatching();
-  }, []);
+  };
+
+  const handleDeclineLocation = () => {
+    setShowLocationInfo(false);
+    // User declined, they can use manual location
+  };
+
+  // Detect when GPS location is successfully acquired (not default coordinates)
+  useEffect(() => {
+    if (location.lat && location.lon && !manualLocationProp) {
+      // If we have actual GPS coordinates (user must have granted permission)
+      // Check if it's not the default Tartu coordinates
+      const isDefaultCoords = Math.abs(location.lat - 58.3776) < 0.0001 && Math.abs(location.lon - 26.7290) < 0.0001;
+
+      if (!isDefaultCoords) {
+        // We got real GPS location, permission was granted
+        setLocationPermissionDenied(false);
+      }
+    }
+  }, [location.lat, location.lon, manualLocationProp]);
 
   // Stop watching location when manual location is set
   useEffect(() => {
@@ -135,6 +200,13 @@ function NearMe({ onNavigateToMap, manualLocation: manualLocationProp, onClearMa
 
   return (
     <div className="p-4 pb-48 h-full overflow-y-auto dark:bg-gray-900">
+      {/* Location Permission Info Modal */}
+      {showLocationInfo && (
+        <LocationPermissionInfo
+          onAccept={handleAllowLocation}
+          onDecline={handleDeclineLocation}
+        />
+      )}
       {/* Your Location Display */}
       {activeLocation.lat && activeLocation.lon && (
         <div className="mb-4 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
@@ -149,7 +221,7 @@ function NearMe({ onNavigateToMap, manualLocation: manualLocationProp, onClearMa
               </div>
             </div>
             <div className="flex gap-1 shrink-0">
-              {manualLocationProp && (
+              {manualLocationProp ? (
                 <button
                   onClick={handleUseGPS}
                   className="px-2.5 py-1.5 text-xs bg-blue-600 dark:bg-blue-500 text-white rounded hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors whitespace-nowrap"
@@ -157,7 +229,19 @@ function NearMe({ onNavigateToMap, manualLocation: manualLocationProp, onClearMa
                 >
                   {t('nearMe.useGPS')}
                 </button>
-              )}
+              ) : locationPermissionDenied ? (
+                <button
+                  onClick={() => {
+                    getLocation();
+                    startWatching();
+                  }}
+                  className="px-2.5 py-1.5 text-xs bg-green-600 dark:bg-green-500 text-white rounded hover:bg-green-700 dark:hover:bg-green-600 transition-colors whitespace-nowrap flex items-center gap-1"
+                  title={t('nearMe.requestLocation')}
+                >
+                  <span>📍</span>
+                  <span>{t('nearMe.requestLocation')}</span>
+                </button>
+              ) : null}
               <button
                 onClick={handleSetManualLocation}
                 className="px-2.5 py-1.5 text-xs bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 border border-blue-300 dark:border-blue-600 rounded hover:bg-blue-50 dark:hover:bg-gray-600 transition-colors whitespace-nowrap"
