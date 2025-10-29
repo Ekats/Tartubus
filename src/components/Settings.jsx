@@ -222,6 +222,7 @@ function Settings() {
             </p>
           </div>
 
+
           <div className="space-y-3">
             {/* Soft Clear Button */}
             <button
