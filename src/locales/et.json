@@ -143,6 +143,7 @@
     "removeFromFavorites": "Eemalda lemmikutest",
     "inMinutes": "{{minutes}} min",
     "now": "Kohe",
+    "arriving": "Saabub",
     "route": "Liin",
     "direction": "Suund"
   }

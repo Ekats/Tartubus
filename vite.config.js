@@ -1,10 +1,16 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
+// Generate a build hash based on current timestamp
+const BUILD_HASH = Date.now().toString(36);
+
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
   base: '/Tartubus/', // GitHub Pages will serve from https://ekats.github.io/Tartubus/
+  define: {
+    __BUILD_HASH__: JSON.stringify(BUILD_HASH),
+  },
   build: {
     outDir: 'dist',
     sourcemap: false,

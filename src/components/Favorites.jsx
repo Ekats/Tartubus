@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useFavorites } from '../hooks/useFavorites';
 import { getStopById, getNextStopName } from '../services/digitransit';
+import { shouldShowDeparture } from '../utils/timeFormatter';
 import CountdownTimer from './CountdownTimer';
 
 function Favorites({ onNavigateToMap }) {
@@ -258,12 +259,16 @@ function Favorites({ onNavigateToMap }) {
                 </p>
                 {(() => {
                   const expansionLevel = expandedStops.get(stop.gtfsId) || 0;
-                  const totalDepartures = stop.stoptimesWithoutPatterns.length;
+                  // Filter out departures that are too far in the past
+                  const validDepartures = stop.stoptimesWithoutPatterns.filter(dep =>
+                    shouldShowDeparture(dep.scheduledArrival)
+                  );
+                  const totalDepartures = validDepartures.length;
                   let visibleCount = 3;
                   if (expansionLevel === 1) visibleCount = 8;
                   if (expansionLevel >= 2) visibleCount = totalDepartures;
 
-                  return stop.stoptimesWithoutPatterns
+                  return validDepartures
                     .slice(0, visibleCount)
                     .map((departure, idx) => {
                       const nextStop = getNextStopName(departure);

@@ -11,7 +11,7 @@ function BottomNav({ activeView, onViewChange }) {
   ];
 
   return (
-    <nav className="fixed bottom-4 left-4 right-4 z-[1500] bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-2xl rounded-2xl transition-colors">
+    <nav className="fixed bottom-1 left-2 right-2 z-[1500] bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-2xl rounded-2xl transition-colors">
       <div className="flex items-center justify-around">
         {navItems.map((item) => (
           <button

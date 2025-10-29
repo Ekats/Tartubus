@@ -42,6 +42,7 @@ function App() {
           isDarkMode={isDarkMode}
           selectedStop={selectedStop}
           locationSelectionMode={locationSelectionMode}
+          manualLocation={manualLocation}
           onLocationSelected={(location) => {
             setManualLocation(location)
             setLocationSelectionMode(false)

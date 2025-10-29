@@ -607,23 +607,24 @@ window.showCacheDebug = showCacheDebugInfo;
 export function initializeCaches() {
   console.log('🚀 Initializing caches...');
 
-  const APP_VERSION = '0.1.0'; // Should match package.json version
-  const VERSION_KEY = 'app_version';
+  // Use build hash that changes on every build/deployment
+  const APP_BUILD_HASH = typeof __BUILD_HASH__ !== 'undefined' ? __BUILD_HASH__ : 'dev';
+  const BUILD_HASH_KEY = 'app_build_hash';
   const PRESERVE_KEYS = [
     'tartu_bus_favorites',      // User's favorite stops
     'tartu-bus-settings',       // User settings (radius, max stops, etc)
     'darkMode',                 // Dark mode preference
     'i18nextLng',               // Language preference
-    VERSION_KEY                 // Version tracking
+    BUILD_HASH_KEY              // Build hash tracking
   ];
 
   try {
-    // Check if app version has changed
-    const storedVersion = localStorage.getItem(VERSION_KEY);
-    const isVersionChanged = storedVersion !== APP_VERSION;
+    // Check if app build has changed (new deployment)
+    const storedHash = localStorage.getItem(BUILD_HASH_KEY);
+    const isVersionChanged = storedHash !== APP_BUILD_HASH;
 
     if (isVersionChanged) {
-      console.log(`🔄 App version changed (${storedVersion || 'none'} → ${APP_VERSION}), clearing all cache...`);
+      console.log(`🔄 New build detected (${storedHash || 'first load'} → ${APP_BUILD_HASH}), clearing all cache...`);
 
       // Store important data temporarily
       const preserved = {};
@@ -642,10 +643,10 @@ export function initializeCaches() {
         localStorage.setItem(key, value);
       });
 
-      // Update version
-      localStorage.setItem(VERSION_KEY, APP_VERSION);
+      // Update build hash
+      localStorage.setItem(BUILD_HASH_KEY, APP_BUILD_HASH);
 
-      console.log(`✅ Cache cleared, preserved ${Object.keys(preserved).length} important items`);
+      console.log(`✅ Cache cleared for new build, preserved ${Object.keys(preserved).length} important items`);
     } else {
       // Normal startup - clear temporary cache
       console.log('🧹 Clearing temporary cache (stops & routes)...');

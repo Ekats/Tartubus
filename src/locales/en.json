@@ -143,6 +143,7 @@
     "removeFromFavorites": "Remove from favorites",
     "inMinutes": "{{minutes}} min",
     "now": "Now",
+    "arriving": "Arriving",
     "route": "Route",
     "direction": "Direction"
   }

@@ -8,6 +8,7 @@ import { useFavorites } from '../hooks/useFavorites';
 import { getNearbyStops, getStopsByRoutes, getNextStopName } from '../services/digitransit';
 import { getSetting } from '../utils/settings';
 import { reverseGeocode } from '../utils/geocoding';
+import { shouldShowDeparture } from '../utils/timeFormatter';
 import CountdownTimer from './CountdownTimer';
 import 'leaflet/dist/leaflet.css';
 
@@ -19,70 +20,63 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
 });
 
-// Custom stop marker icons - bus stop sign style
-const createStopIcon = (color) => {
+// Custom stop marker icons - modern, clean design
+const createStopIcon = (color, isNearby = false) => {
+  const size = isNearby ? 32 : 24;
+  const dotSize = isNearby ? 10 : 8;
+
   return new L.Icon({
     iconUrl: 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(`
-      <svg width="40" height="50" viewBox="0 0 40 50" xmlns="http://www.w3.org/2000/svg">
-        <rect x="17" y="25" width="6" height="25" fill="${color}"/>
-        <circle cx="20" cy="15" r="14" fill="${color}" stroke="white" stroke-width="3"/>
-        <rect x="12" y="10" width="16" height="10" rx="2" fill="white"/>
-        <rect x="13.5" y="12" width="5" height="4" fill="${color}"/>
-        <rect x="21.5" y="12" width="5" height="4" fill="${color}"/>
-        <circle cx="15.5" cy="19" r="1.5" fill="${color}"/>
-        <circle cx="24.5" cy="19" r="1.5" fill="${color}"/>
+      <svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <filter id="shadow">
+            <feDropShadow dx="0" dy="1" stdDeviation="2" flood-opacity="0.3"/>
+          </filter>
+        </defs>
+        <!-- Outer ring with shadow -->
+        <circle cx="${size/2}" cy="${size/2}" r="${size/2 - 2}" fill="white" filter="url(#shadow)"/>
+        <!-- Colored ring -->
+        <circle cx="${size/2}" cy="${size/2}" r="${size/2 - 3}" fill="none" stroke="${color}" stroke-width="2.5"/>
+        <!-- Center dot -->
+        <circle cx="${size/2}" cy="${size/2}" r="${dotSize/2}" fill="${color}"/>
       </svg>
     `),
-    iconSize: [40, 50],
-    iconAnchor: [20, 50],
-    popupAnchor: [0, -50],
-    className: '', // Remove any default classes
+    iconSize: [size, size],
+    iconAnchor: [size/2, size/2],
+    popupAnchor: [0, -size/2],
+    className: '',
   });
 };
 
-// Create bus stop icon with golden star background for favorited stops
+// Create favorite stop icon with star
 const createFavoriteStopIcon = (color, isNearby = false) => {
-  // Make nearby favorites even bigger and more prominent
-  const size = isNearby ? 60 : 50;
-  const height = isNearby ? 70 : 60;
-  const starSize = isNearby ? 1.2 : 1; // 20% bigger star for nearby
-  const viewBox = isNearby ? '-5 -5 60 70' : '0 0 50 60'; // Expanded viewBox for bigger star
-  const glowEffect = isNearby ? `
-    <defs>
-      <filter id="glow">
-        <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
-        <feMerge>
-          <feMergeNode in="coloredBlur"/>
-          <feMergeNode in="SourceGraphic"/>
-        </feMerge>
-      </filter>
-    </defs>
-  ` : '';
-  const filterAttr = isNearby ? ' filter="url(#glow)"' : '';
+  const size = isNearby ? 48 : 36;
 
   return new L.Icon({
     iconUrl: 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(`
-      <svg width="${size}" height="${height}" viewBox="${viewBox}" xmlns="http://www.w3.org/2000/svg">
-        ${glowEffect}
-        <!-- Golden star background -->
-        <g transform="translate(25, 20) scale(${starSize})"${filterAttr}>
-          <path d="M 0,-18 L 5.5,-5.5 L 19,-4 L 9.5,5 L 12,18.5 L 0,12 L -12,18.5 L -9.5,5 L -19,-4 L -5.5,-5.5 Z"
-                fill="#FFD700" stroke="#FFA500" stroke-width="2"/>
+      <svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <filter id="shadow-fav">
+            <feDropShadow dx="0" dy="2" stdDeviation="4" flood-opacity="0.5"/>
+          </filter>
+        </defs>
+        <!-- Golden glow -->
+        <circle cx="${size/2}" cy="${size/2}" r="${size/2 - 1}" fill="#FCD34D" opacity="0.3"/>
+        <!-- White circle background -->
+        <circle cx="${size/2}" cy="${size/2}" r="${size/2 - 2}" fill="white" filter="url(#shadow-fav)"/>
+        <!-- Yellow outline -->
+        <circle cx="${size/2}" cy="${size/2}" r="${size/2 - 3}" fill="none" stroke="#FBBF24" stroke-width="2.5"/>
+        <!-- Star - centered and sized to fill the circle -->
+        <g transform="translate(${size/2}, ${size/2})">
+          <path d="M 0,-${size/3} L ${size/9},-${size/9} L ${size/3},-${size/10} L ${size/7},${size/10} L ${size/6},${size/3} L 0,${size/6} L -${size/6},${size/3} L -${size/7},${size/10} L -${size/3},-${size/10} L -${size/9},-${size/9} Z"
+                fill="#FBBF24" stroke="#F59E0B" stroke-width="2" filter="url(#shadow-fav)"/>
         </g>
-        <!-- Bus stop pole (golden yellow) -->
-        <rect x="22" y="30" width="6" height="30" fill="#FFD700"/>
-        <!-- Bus icon (black and white) -->
-        <rect x="17" y="14" width="16" height="12" rx="2" fill="white" stroke="#000000" stroke-width="2"/>
-        <rect x="18.5" y="16" width="5" height="5" fill="#000000"/>
-        <rect x="26.5" y="16" width="5" height="5" fill="#000000"/>
-        <circle cx="20.5" cy="23" r="1.5" fill="#000000"/>
-        <circle cx="29.5" cy="23" r="1.5" fill="#000000"/>
       </svg>
     `),
-    iconSize: [size, height],
-    iconAnchor: [size/2, height],
-    popupAnchor: [0, -height],
-    className: '', // Remove any default classes
+    iconSize: [size, size],
+    iconAnchor: [size/2, size/2],
+    popupAnchor: [0, -size/2],
+    className: '',
   });
 };
 
@@ -90,11 +84,16 @@ const stopIcon = createStopIcon('#6B7280'); // Gray for regular stops (not on fi
 const nearbyStopIcon = createStopIcon('#6B7280'); // Gray for nearby stops when no filter
 const selectedStopIcon = createStopIcon('#EF4444'); // Red for selected stop from Near Me
 
-// Custom location pin icon for manual location selection
+// Custom location pin icon for user location - orange
 const locationPinIcon = new L.Icon({
   iconUrl: 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(`
     <svg width="40" height="50" viewBox="0 0 40 50" xmlns="http://www.w3.org/2000/svg">
-      <path d="M20 0C11.716 0 5 6.716 5 15c0 8.284 15 35 15 35s15-26.716 15-35C35 6.716 28.284 0 20 0z" fill="#2563EB" stroke="white" stroke-width="2"/>
+      <defs>
+        <filter id="pin-shadow">
+          <feDropShadow dx="0" dy="2" stdDeviation="3" flood-opacity="0.4"/>
+        </filter>
+      </defs>
+      <path d="M20 0C11.716 0 5 6.716 5 15c0 8.284 15 35 15 35s15-26.716 15-35C35 6.716 28.284 0 20 0z" fill="#F97316" stroke="white" stroke-width="2" filter="url(#pin-shadow)"/>
       <circle cx="20" cy="15" r="6" fill="white"/>
     </svg>
   `),
@@ -133,7 +132,7 @@ function LocationMarker({ position, onLocationUpdate, mapRef }) {
   if (!position) return null;
 
   return (
-    <Marker position={[position.lat, position.lon]}>
+    <Marker position={[position.lat, position.lon]} icon={locationPinIcon}>
       <Popup>You are here</Popup>
     </Marker>
   );
@@ -280,9 +279,12 @@ function RouteLineWithArrows({ positions, color, headsign, routeName, stopCount 
   return null;
 }
 
-function StopFinder({ isDarkMode, selectedStop: highlightedStop, locationSelectionMode, onLocationSelected, onCancelLocationSelection }) {
+function StopFinder({ isDarkMode, selectedStop: highlightedStop, locationSelectionMode, manualLocation, onLocationSelected, onCancelLocationSelection }) {
   const { t } = useTranslation();
-  const { location, getLocation, startWatching, stopWatching, watching } = useGeolocation();
+  const { location: gpsLocation, getLocation, startWatching, stopWatching, watching } = useGeolocation();
+
+  // Use manual location if available, otherwise use GPS location
+  const location = manualLocation || gpsLocation;
   const { isFavorite, toggleFavorite } = useFavorites();
   const [stops, setStops] = useState([]);
   const [nearbyStopIds, setNearbyStopIds] = useState(new Set());
@@ -307,6 +309,7 @@ function StopFinder({ isDarkMode, selectedStop: highlightedStop, locationSelecti
   const lastMovePositionRef = useRef(null);
   const filterMenuRef = useRef(null);
   const openMarkerRef = useRef(null); // Track currently open marker
+  const hasInitializedViewRef = useRef(false); // Track if we've panned to user location on mount
 
   // Define city zones for filtering routes
   const CITY_ZONES = {
@@ -423,9 +426,11 @@ function StopFinder({ isDarkMode, selectedStop: highlightedStop, locationSelecti
 
   // Load stops for current city zone on mount
   useEffect(() => {
-    // Auto-request location on startup and start watching for movement
-    getLocation();
-    startWatching();
+    // Auto-request location on startup and start watching for movement (only if no manual location)
+    if (!manualLocation) {
+      getLocation();
+      startWatching();
+    }
 
     // Load ALL stops for the current city zone (one-time)
     loadCityZoneStops(currentCityZone);
@@ -441,6 +446,15 @@ function StopFinder({ isDarkMode, selectedStop: highlightedStop, locationSelecti
       }
     };
   }, []);
+
+  // Stop GPS tracking when manual location is set, resume when cleared
+  useEffect(() => {
+    if (manualLocation) {
+      stopWatching();
+    } else {
+      startWatching();
+    }
+  }, [manualLocation]);
 
   // When city zone changes, reload stops for new zone
   useEffect(() => {
@@ -474,7 +488,7 @@ function StopFinder({ isDarkMode, selectedStop: highlightedStop, locationSelecti
 
   // No need to reload stops when location changes - we have all zone stops loaded
 
-  // Center map on highlighted stop when navigating from Near Me
+  // Center map on highlighted stop when navigating from Near Me, or on user location when just opening map
   useEffect(() => {
     if (highlightedStop && mapRef.current) {
       // Center on stop and zoom in
@@ -483,6 +497,20 @@ function StopFinder({ isDarkMode, selectedStop: highlightedStop, locationSelecti
       setSelectedStop(highlightedStop);
     }
   }, [highlightedStop]);
+
+  // Pan to user location when map first loads and location becomes available
+  useEffect(() => {
+    if (!highlightedStop && !hasInitializedViewRef.current && mapRef.current && location.lat && location.lon) {
+      // Pan to user location on initial load
+      const timeout = setTimeout(() => {
+        if (mapRef.current) {
+          mapRef.current.setView([location.lat, location.lon], 15);
+          hasInitializedViewRef.current = true;
+        }
+      }, 100);
+      return () => clearTimeout(timeout);
+    }
+  }, [location.lat, location.lon, highlightedStop]);
 
   // Auto-refresh departure times every 30 seconds
   useEffect(() => {
@@ -1098,7 +1126,7 @@ function StopFinder({ isDarkMode, selectedStop: highlightedStop, locationSelecti
           }
 
           // Use golden star icon for favorited stops (bigger and glowing if nearby)
-          const markerIcon = isFavorited ? createFavoriteStopIcon(iconColor, isNearby) : createStopIcon(iconColor);
+          const markerIcon = isFavorited ? createFavoriteStopIcon(iconColor, isNearby) : createStopIcon(iconColor, isNearby);
 
           return (
             <Marker
@@ -1189,12 +1217,16 @@ function StopFinder({ isDarkMode, selectedStop: highlightedStop, locationSelecti
                       <div className="max-h-64 overflow-y-auto pr-1 space-y-1" style={{ scrollbarWidth: 'thin' }}>
                         {(() => {
                           const expansionLevel = expandedPopupStops.get(stop.gtfsId) || 0;
-                          const totalDepartures = stop.stoptimesWithoutPatterns.length;
+                          // Filter out departures that are too far in the past
+                          const validDepartures = stop.stoptimesWithoutPatterns.filter(dep =>
+                            shouldShowDeparture(dep.scheduledArrival)
+                          );
+                          const totalDepartures = validDepartures.length;
                           let visibleCount = 3;
                           if (expansionLevel === 1) visibleCount = 8;
                           if (expansionLevel >= 2) visibleCount = totalDepartures;
 
-                          const departureItems = stop.stoptimesWithoutPatterns.slice(0, visibleCount).map((departure, idx) => {
+                          const departureItems = validDepartures.slice(0, visibleCount).map((departure, idx) => {
                             const nextStop = getNextStopName(departure);
                             return (
                               <div
@@ -1373,7 +1405,7 @@ function StopFinder({ isDarkMode, selectedStop: highlightedStop, locationSelecti
       </div>
 
       {/* Bottom right - Location control */}
-      <div className="absolute bottom-6 right-4 z-[1000] flex flex-col items-end gap-2">
+      <div className="absolute bottom-24 right-4 z-[1000] flex flex-col items-end gap-2">
         {/* Toast message */}
         {locationMessage && (
           <div className="bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 px-4 py-2 rounded-lg shadow-lg text-sm font-medium animate-fade-in">
@@ -1647,12 +1679,16 @@ function StopFinder({ isDarkMode, selectedStop: highlightedStop, locationSelecti
                 <div className="space-y-2">
                   {(() => {
                     const expansionLevel = expandedPopupStops.get(selectedStop.gtfsId) || 0;
-                    const totalDepartures = selectedStop.stoptimesWithoutPatterns.length;
+                    // Filter out departures that are too far in the past
+                    const validDepartures = selectedStop.stoptimesWithoutPatterns.filter(dep =>
+                      shouldShowDeparture(dep.scheduledArrival)
+                    );
+                    const totalDepartures = validDepartures.length;
                     let visibleCount = 3;
                     if (expansionLevel === 1) visibleCount = 8;
                     if (expansionLevel >= 2) visibleCount = totalDepartures;
 
-                    const departureItems = selectedStop.stoptimesWithoutPatterns.slice(0, visibleCount).map((departure, idx) => {
+                    const departureItems = validDepartures.slice(0, visibleCount).map((departure, idx) => {
                       const nextStop = getNextStopName(departure);
                       return (
                         <div

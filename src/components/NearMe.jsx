@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useGeolocation } from '../hooks/useGeolocation';
 import { useNearbyStops } from '../hooks/useNearbyStops';
 import { useFavorites } from '../hooks/useFavorites';
-import { formatDistance } from '../utils/timeFormatter';
+import { formatDistance, shouldShowDeparture } from '../utils/timeFormatter';
 import { getSetting } from '../utils/settings';
 import { reverseGeocode } from '../utils/geocoding';
 import { getNextStopName } from '../services/digitransit';
@@ -11,7 +11,7 @@ import CountdownTimer from './CountdownTimer';
 
 function NearMe({ onNavigateToMap, manualLocation: manualLocationProp, onClearManualLocation }) {
   const { t } = useTranslation();
-  const { location, error: locationError, loading: locationLoading, getLocation, startWatching } = useGeolocation();
+  const { location, error: locationError, loading: locationLoading, getLocation, startWatching, stopWatching } = useGeolocation();
   const { stops, loading: stopsLoading, error: stopsError, fetchNearbyStops } = useNearbyStops();
   const { isFavorite, toggleFavorite } = useFavorites();
   const [hasSearched, setHasSearched] = useState(true); // Start as true for auto-trigger
@@ -25,6 +25,15 @@ function NearMe({ onNavigateToMap, manualLocation: manualLocationProp, onClearMa
     getLocation();
     startWatching();
   }, []);
+
+  // Stop watching location when manual location is set
+  useEffect(() => {
+    if (manualLocationProp) {
+      stopWatching();
+    } else {
+      startWatching();
+    }
+  }, [manualLocationProp]);
 
   const handleFindNearby = () => {
     const loc = activeLocation;
@@ -279,12 +288,16 @@ function NearMe({ onNavigateToMap, manualLocation: manualLocationProp, onClearMa
                 <div className="space-y-2">
                   {(() => {
                     const expansionLevel = expandedStops.get(stop.gtfsId) || 0;
-                    const totalDepartures = stop.stoptimesWithoutPatterns.length;
+                    // Filter out departures that are too far in the past (keep recent ones showing "Arriving")
+                    const validDepartures = stop.stoptimesWithoutPatterns.filter(dep =>
+                      shouldShowDeparture(dep.scheduledArrival)
+                    );
+                    const totalDepartures = validDepartures.length;
                     let visibleCount = 3; // Start with 3
                     if (expansionLevel === 1) visibleCount = 8; // Medium expansion
                     if (expansionLevel >= 2) visibleCount = totalDepartures; // Full expansion
 
-                    return stop.stoptimesWithoutPatterns
+                    return validDepartures
                       .slice(0, visibleCount)
                       .map((departure, idx) => {
                         const nextStop = getNextStopName(departure);
