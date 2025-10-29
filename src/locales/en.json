@@ -60,7 +60,9 @@
     "showAllStops": "Show all stops",
     "locationSelected": "Location selected",
     "selectedLocation": "Selected location",
-    "apply": "Apply"
+    "apply": "Apply",
+    "routeToStop": "Get directions to this stop",
+    "howToGetHere": "How to get here"
   },
   "favorites": {
     "title": "Favorite Stops",

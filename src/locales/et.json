@@ -60,7 +60,9 @@
     "showAllStops": "Näita kõiki peatusi",
     "locationSelected": "Asukoht valitud",
     "selectedLocation": "Valitud asukoht",
-    "apply": "Rakenda"
+    "apply": "Rakenda",
+    "routeToStop": "Saa juhised sellesse peatusse",
+    "howToGetHere": "Kuidas siia saada"
   },
   "favorites": {
     "title": "Lemmikpeatused",

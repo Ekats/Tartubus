@@ -1471,6 +1471,97 @@ function StopFinder({ isDarkMode, selectedStop: highlightedStop, locationSelecti
 
           {/* Content */}
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
+            {/* Route to this stop section */}
+            {location.lat && location.lon && (() => {
+              // Find nearby stops and their buses that go to the selected stop
+              const nearbyRadius = 500; // 500m radius
+              const nearbyStopsWithRoutes = stops
+                .filter(stop => {
+                  // Calculate distance from user to stop
+                  const latDiff = stop.lat - location.lat;
+                  const lonDiff = stop.lon - location.lon;
+                  const distance = Math.sqrt(latDiff * latDiff + lonDiff * lonDiff) * 111000; // rough conversion to meters
+                  return distance <= nearbyRadius && stop.gtfsId !== selectedStop.gtfsId;
+                })
+                .map(nearbyStop => {
+                  // Check which departures from this nearby stop go to the selected stop
+                  const relevantDepartures = nearbyStop.stoptimesWithoutPatterns?.filter(departure => {
+                    // Check if this bus stops at the selected destination
+                    const stopsAtDestination = departure.trip?.stoptimes?.some(
+                      tripStop => tripStop.stop?.gtfsId === selectedStop.gtfsId &&
+                                  tripStop.stopPosition > departure.stopPosition
+                    );
+                    return stopsAtDestination;
+                  }) || [];
+
+                  if (relevantDepartures.length > 0) {
+                    // Calculate walking distance
+                    const latDiff = nearbyStop.lat - location.lat;
+                    const lonDiff = nearbyStop.lon - location.lon;
+                    const walkingDistance = Math.round(Math.sqrt(latDiff * latDiff + lonDiff * lonDiff) * 111000);
+
+                    return {
+                      stop: nearbyStop,
+                      departures: relevantDepartures.slice(0, 3), // Show top 3
+                      walkingDistance
+                    };
+                  }
+                  return null;
+                })
+                .filter(Boolean)
+                .sort((a, b) => a.walkingDistance - b.walkingDistance)
+                .slice(0, 5); // Show top 5 nearest stops
+
+              if (nearbyStopsWithRoutes.length > 0) {
+                return (
+                  <div className="bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20 rounded-xl p-4 border-2 border-green-200 dark:border-green-700">
+                    <div className="flex items-center gap-2 mb-3">
+                      <svg className="w-6 h-6 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+                      </svg>
+                      <h3 className="font-bold text-lg text-gray-800 dark:text-gray-200">
+                        {t('map.howToGetHere') || 'How to get here'}
+                      </h3>
+                    </div>
+                    <div className="space-y-3">
+                      {nearbyStopsWithRoutes.map((item, idx) => (
+                        <div key={idx} className="bg-white dark:bg-gray-800 rounded-lg p-3 border border-gray-200 dark:border-gray-700">
+                          <div className="flex items-start justify-between mb-2">
+                            <div className="flex-1">
+                              <div className="font-semibold text-gray-800 dark:text-gray-200 text-sm">
+                                {item.stop.name}
+                              </div>
+                              <div className="text-xs text-gray-500 dark:text-gray-400">
+                                🚶 {item.walkingDistance}m walk • ~{Math.ceil(item.walkingDistance / 80)} min
+                              </div>
+                            </div>
+                          </div>
+                          <div className="space-y-1">
+                            {item.departures.map((dep, depIdx) => (
+                              <div key={depIdx} className="flex items-center justify-between text-sm">
+                                <div className="flex items-center gap-2">
+                                  <span className="bg-blue-600 text-white px-2 py-0.5 rounded font-bold text-xs">
+                                    {dep.trip?.route?.shortName || '?'}
+                                  </span>
+                                  <span className="text-gray-700 dark:text-gray-300 text-xs">
+                                    → {dep.headsign}
+                                  </span>
+                                </div>
+                                <span className="font-semibold text-green-600 dark:text-green-400 text-xs">
+                                  <CountdownTimer scheduledArrival={dep.scheduledArrival} />
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              }
+              return null;
+            })()}
+
             {/* Show route directions if filtered */}
             {stopToPatterns.has(selectedStop.gtfsId) && (
               <div className="bg-blue-50 dark:bg-blue-900/30 rounded-lg p-4 border border-blue-200 dark:border-blue-700">
