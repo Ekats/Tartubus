@@ -1,4 +1,5 @@
-const CACHE_NAME = 'tartu-bussid-v1';
+const CACHE_VERSION = '1.2.0'; // Update this to force cache clear on all clients
+const CACHE_NAME = `tartu-bussid-v${CACHE_VERSION}`;
 
 // Detect base path from service worker location
 const getBasePath = () => {
@@ -83,18 +84,34 @@ self.addEventListener('fetch', (event) => {
   );
 });
 
-// Activate event - clean up old caches
+// Activate event - clean up old caches and force reload
 self.addEventListener('activate', (event) => {
   const cacheWhitelist = [CACHE_NAME];
   event.waitUntil(
     caches.keys().then((cacheNames) => {
+      const deletedOldCache = cacheNames.some(name => name !== CACHE_NAME);
+
       return Promise.all(
         cacheNames.map((cacheName) => {
           if (cacheWhitelist.indexOf(cacheName) === -1) {
+            console.log('Deleting old cache:', cacheName);
             return caches.delete(cacheName);
           }
         })
-      );
+      ).then(() => {
+        // If we deleted an old cache, clear localStorage and force reload all clients
+        if (deletedOldCache) {
+          return self.clients.matchAll().then((clients) => {
+            clients.forEach(client => {
+              console.log('Sending reload message to client');
+              client.postMessage({
+                type: 'FORCE_RELOAD',
+                version: CACHE_VERSION
+              });
+            });
+          });
+        }
+      });
     })
   );
   self.clients.claim();
