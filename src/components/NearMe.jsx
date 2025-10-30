@@ -26,9 +26,19 @@ function NearMe({ onNavigateToMap, manualLocation: manualLocationProp, onClearMa
   // Check if browser will ask for permission (not already granted)
   useEffect(() => {
     const checkPermission = async () => {
+      // Check if we've already shown the modal or have permission
+      const hasSeenModal = localStorage.getItem('location_modal_seen');
+
       if (!navigator.permissions) {
-        // Permissions API not supported, show modal just in case
-        setShowLocationInfo(true);
+        // Permissions API not supported - try to get location directly
+        // Only show modal if we haven't seen it before
+        if (!hasSeenModal) {
+          setShowLocationInfo(true);
+        } else {
+          // Try to get location, it will either work or fail silently
+          getLocation();
+          startWatching();
+        }
         return;
       }
 
@@ -36,8 +46,10 @@ function NearMe({ onNavigateToMap, manualLocation: manualLocationProp, onClearMa
         const result = await navigator.permissions.query({ name: 'geolocation' });
 
         if (result.state === 'prompt') {
-          // Browser will prompt - show our info modal first
-          setShowLocationInfo(true);
+          // Browser will prompt - show our info modal first only if not seen before
+          if (!hasSeenModal) {
+            setShowLocationInfo(true);
+          }
         } else if (result.state === 'granted') {
           // Already granted - proceed directly
           getLocation();
@@ -59,7 +71,12 @@ function NearMe({ onNavigateToMap, manualLocation: manualLocationProp, onClearMa
         });
       } catch (err) {
         // Fallback if permissions query fails
-        setShowLocationInfo(true);
+        if (!hasSeenModal) {
+          setShowLocationInfo(true);
+        } else {
+          getLocation();
+          startWatching();
+        }
       }
     };
 
@@ -68,12 +85,14 @@ function NearMe({ onNavigateToMap, manualLocation: manualLocationProp, onClearMa
 
   const handleAllowLocation = () => {
     setShowLocationInfo(false);
+    localStorage.setItem('location_modal_seen', 'true');
     getLocation();
     startWatching();
   };
 
   const handleDeclineLocation = () => {
     setShowLocationInfo(false);
+    localStorage.setItem('location_modal_seen', 'true');
     // User declined, they can use manual location
   };
 
