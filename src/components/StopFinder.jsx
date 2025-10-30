@@ -312,18 +312,20 @@ function StopFinder({ isDarkMode, selectedStop: highlightedStop, locationSelecti
   const hasInitializedViewRef = useRef(false); // Track if we've panned to user location on mount
 
   // Define city zones for filtering routes
+  const cityRadius = getSetting('cityRadius') || 8000;
+
   const CITY_ZONES = {
     tartu: {
       name: 'Tartu',
       center: { lat: 58.3776, lon: 26.7290 },
-      radius: 8000, // 8km radius (reduced from 15km)
+      radius: cityRadius, // User-configurable radius
       feed: 'Viro',
       cityFilter: 'Tartu' // Filter routes by city name
     },
     tallinn: {
       name: 'Tallinn',
       center: { lat: 59.4370, lon: 24.7536 },
-      radius: 20000, // 20km radius
+      radius: cityRadius, // User-configurable radius
       feed: 'Viro',
       cityFilter: 'Tallinn'
     },
