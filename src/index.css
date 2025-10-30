@@ -44,3 +44,14 @@ body {
 .animate-fade-in {
   animation: fadeIn 0.3s ease-out;
 }
+
+/* Favorite cluster styling - emoji star */
+.marker-cluster-favorite-emoji {
+  background: transparent !important;
+}
+
+.marker-cluster-favorite-emoji div {
+  background: transparent !important;
+  border: none !important;
+}
+

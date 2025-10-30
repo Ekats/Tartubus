@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap, useMapEvents } from 'react-leaflet';
 import MarkerClusterGroup from 'react-leaflet-cluster';
@@ -313,6 +313,60 @@ function StopFinder({ isDarkMode, selectedStop: highlightedStop, locationSelecti
   const filterMenuRef = useRef(null);
   const openMarkerRef = useRef(null); // Track currently open marker
   const hasInitializedViewRef = useRef(false); // Track if we've panned to user location on mount
+
+  // Custom cluster icon function - must be regular function for Leaflet
+  const createClusterCustomIcon = useMemo(() => {
+    return function(cluster) {
+      const count = cluster.getChildCount();
+      let size = 'small';
+      if (count >= 100) size = 'large';
+      else if (count >= 10) size = 'medium';
+
+      // Check if cluster contains any favorite stops
+      const markers = cluster.getAllChildMarkers();
+      const favoriteMarkers = markers.filter(marker => marker.options?.isFavorited === true);
+      const hasFavorite = favoriteMarkers.length > 0;
+
+      // If cluster has favorites, adjust position towards favorite markers
+      if (hasFavorite && favoriteMarkers.length < markers.length) {
+        // Calculate center of favorite markers
+        let favLatSum = 0, favLngSum = 0;
+        favoriteMarkers.forEach(marker => {
+          const latlng = marker.getLatLng();
+          favLatSum += latlng.lat;
+          favLngSum += latlng.lng;
+        });
+        const favCenter = L.latLng(
+          favLatSum / favoriteMarkers.length,
+          favLngSum / favoriteMarkers.length
+        );
+
+        // Get current cluster center
+        const clusterCenter = cluster.getLatLng();
+
+        // Move cluster position 60% towards favorites
+        const adjustedLat = clusterCenter.lat + (favCenter.lat - clusterCenter.lat) * 0.6;
+        const adjustedLng = clusterCenter.lng + (favCenter.lng - clusterCenter.lng) * 0.6;
+
+        // Update cluster position
+        cluster.setLatLng(L.latLng(adjustedLat, adjustedLng));
+      }
+
+      if (hasFavorite) {
+        return L.divIcon({
+          html: `<div style="position: relative; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;"><span style="font-size: 40px; filter: drop-shadow(0 0 3px rgba(255, 255, 255, 1)) drop-shadow(0 0 6px rgba(255, 255, 255, 0.8)) drop-shadow(0 0 10px rgba(255, 255, 255, 0.5));">⭐</span><span style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 14px; font-weight: bold; color: #78350f; text-shadow: 0 0 3px rgba(255, 255, 255, 1);">${count}</span></div>`,
+          className: `marker-cluster-favorite-emoji`,
+          iconSize: L.point(40, 40),
+        });
+      }
+
+      return L.divIcon({
+        html: `<div><span>${count}</span></div>`,
+        className: `marker-cluster marker-cluster-${size}`,
+        iconSize: L.point(40, 40),
+      });
+    };
+  }, []);
 
   // Define city zones for filtering routes
   const CITY_ZONES = {
@@ -1102,26 +1156,14 @@ function StopFinder({ isDarkMode, selectedStop: highlightedStop, locationSelecti
         })}
 
         {/* Stop markers with clustering */}
-        {/* Sort stops so favorites render last (on top) */}
         <MarkerClusterGroup
           chunkedLoading
           maxClusterRadius={50}
-          spiderfyOnMaxZoom={true}
+          spiderfyOnMaxZoom={false}
           showCoverageOnHover={false}
           zoomToBoundsOnClick={true}
           disableClusteringAtZoom={15}
-          iconCreateFunction={(cluster) => {
-            const count = cluster.getChildCount();
-            let size = 'small';
-            if (count >= 100) size = 'large';
-            else if (count >= 10) size = 'medium';
-
-            return L.divIcon({
-              html: `<div><span>${count}</span></div>`,
-              className: `marker-cluster marker-cluster-${size}`,
-              iconSize: L.point(40, 40),
-            });
-          }}
+          iconCreateFunction={createClusterCustomIcon}
         >
         {filteredStops
           .slice()
@@ -1164,6 +1206,12 @@ function StopFinder({ isDarkMode, selectedStop: highlightedStop, locationSelecti
               icon={markerIcon}
               zIndexOffset={isFavorited ? 1000 : 0}
               eventHandlers={{
+                add: (e) => {
+                  // Set custom data when marker is added to the map
+                  const marker = e.target;
+                  marker.options.stopId = stop.gtfsId;
+                  marker.options.isFavorited = isFavorited;
+                },
                 click: (e) => {
                   // Prevent event from bubbling to map
                   L.DomEvent.stopPropagation(e);

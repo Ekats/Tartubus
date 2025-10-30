@@ -79,7 +79,8 @@
     "noDepartures": "Väljumisi pole",
     "failedToLoad": "Väljumiste laadimine nurjus",
     "viewOnMap": "Vaata kaardil",
-    "removeFromFavorites": "Eemalda lemmikutest"
+    "removeFromFavorites": "Eemalda lemmikutest",
+    "away": "kaugusel"
   },
   "settings": {
     "title": "Seaded",
@@ -87,7 +88,7 @@
     "appearance": "Välimus",
     "darkMode": "Tume režiim",
     "mapSettings": "Kaardi seaded",
-    "nearbyRadius": "Lähedal oleva raadius",
+    "nearbyRadius": "Lähedal olevate peatuste raadius",
     "nearbyRadiusDescription": "Kui kaugelt otsida lähedalasuvaid peatusi",
     "cityRadius": "Linna raadius",
     "cityRadiusDescription": "Maksimaalne kaugus linnakeskusest, kust kaardil peatusi näidata",

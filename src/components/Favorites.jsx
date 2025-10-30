@@ -188,7 +188,7 @@ function Favorites({ onNavigateToMap, manualLocation }) {
       {/* Header with refresh and clear buttons */}
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">
-          ⭐ Favorite Stops ({favorites.length})
+          ⭐ {t('favorites.title')} ({favorites.length})
         </h2>
         <div className="flex gap-2">
           <button
@@ -209,14 +209,14 @@ function Favorites({ onNavigateToMap, manualLocation }) {
                 d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
               />
             </svg>
-            {loading ? 'Refreshing...' : 'Refresh'}
+            {loading ? t('favorites.refreshing') : t('favorites.refresh')}
           </button>
           {favorites.length > 1 && (
             <button
               onClick={handleClearAll}
               className="px-3 py-1.5 text-sm bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
             >
-              Clear All
+              {t('favorites.clearAll')}
             </button>
           )}
         </div>
@@ -231,10 +231,18 @@ function Favorites({ onNavigateToMap, manualLocation }) {
 
       {/* Favorite stops list */}
       <div className="space-y-4">
-        {stopsWithDepartures.map((stop) => (
+        {stopsWithDepartures.map((stop) => {
+          // Check if stop is nearby (within 500m)
+          const isNearby = stop.distance !== undefined && stop.distance !== Infinity && stop.distance <= 500;
+
+          return (
           <div
             key={stop.gtfsId}
-            className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-4 border border-gray-200 dark:border-gray-700"
+            className={`rounded-xl shadow-md p-4 border ${
+              isNearby
+                ? 'bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-900/50'
+                : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700'
+            }`}
           >
             {/* Stop header */}
             <div className="flex items-start justify-between mb-3">
@@ -263,9 +271,11 @@ function Favorites({ onNavigateToMap, manualLocation }) {
                   )}
                 </div>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
-                  Stop {stop.code}
+                  {t('favorites.stop')} {stop.code}
                   {stop.distance !== undefined && stop.distance !== Infinity && (
-                    <> • {Math.round(stop.distance)}m away</>
+                    <span className={isNearby ? 'text-green-600 dark:text-green-400 font-medium' : ''}>
+                      {' • '}{Math.round(stop.distance)}m {t('favorites.away')}
+                    </span>
                   )}
                 </p>
               </div>
@@ -302,7 +312,7 @@ function Favorites({ onNavigateToMap, manualLocation }) {
             {stop.stoptimesWithoutPatterns && stop.stoptimesWithoutPatterns.length > 0 ? (
               <div className="space-y-2">
                 <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">
-                  Next Buses:
+                  {t('favorites.nextBuses')}
                 </p>
                 {(() => {
                   const expansionLevel = expandedStops.get(stop.gtfsId) || 0;
@@ -430,7 +440,8 @@ function Favorites({ onNavigateToMap, manualLocation }) {
               </div>
             )}
           </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
