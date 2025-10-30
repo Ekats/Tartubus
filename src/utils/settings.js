@@ -7,7 +7,6 @@ const SETTINGS_KEY = 'tartu-bus-settings';
 const DEFAULT_SETTINGS = {
   nearbyRadius: 500, // meters
   maxStopsOnMap: 100, // maximum number of stops to display on map
-  cityRadius: 8000, // meters from city center to show stops
 };
 
 /**

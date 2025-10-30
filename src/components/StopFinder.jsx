@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap, useMapEvents } from 'react-leaflet';
+import MarkerClusterGroup from 'react-leaflet-cluster';
 import L from 'leaflet';
 import 'leaflet-polylinedecorator';
 import { useGeolocation } from '../hooks/useGeolocation';
@@ -11,6 +12,8 @@ import { reverseGeocode } from '../utils/geocoding';
 import { shouldShowDeparture } from '../utils/timeFormatter';
 import CountdownTimer from './CountdownTimer';
 import 'leaflet/dist/leaflet.css';
+import 'leaflet.markercluster/dist/MarkerCluster.css';
+import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
 
 // Fix for default marker icons in React Leaflet
 delete L.Icon.Default.prototype._getIconUrl;
@@ -312,20 +315,18 @@ function StopFinder({ isDarkMode, selectedStop: highlightedStop, locationSelecti
   const hasInitializedViewRef = useRef(false); // Track if we've panned to user location on mount
 
   // Define city zones for filtering routes
-  const cityRadius = getSetting('cityRadius') || 8000;
-
   const CITY_ZONES = {
     tartu: {
       name: 'Tartu',
       center: { lat: 58.3776, lon: 26.7290 },
-      radius: cityRadius, // User-configurable radius
+      radius: 8000, // 8km radius (reduced from 15km)
       feed: 'Viro',
       cityFilter: 'Tartu' // Filter routes by city name
     },
     tallinn: {
       name: 'Tallinn',
       center: { lat: 59.4370, lon: 24.7536 },
-      radius: cityRadius, // User-configurable radius
+      radius: 20000, // 20km radius
       feed: 'Viro',
       cityFilter: 'Tallinn'
     },
@@ -1100,8 +1101,28 @@ function StopFinder({ isDarkMode, selectedStop: highlightedStop, locationSelecti
           );
         })}
 
-        {/* Stop markers with offset to prevent overlap */}
+        {/* Stop markers with clustering */}
         {/* Sort stops so favorites render last (on top) */}
+        <MarkerClusterGroup
+          chunkedLoading
+          maxClusterRadius={50}
+          spiderfyOnMaxZoom={true}
+          showCoverageOnHover={false}
+          zoomToBoundsOnClick={true}
+          disableClusteringAtZoom={15}
+          iconCreateFunction={(cluster) => {
+            const count = cluster.getChildCount();
+            let size = 'small';
+            if (count >= 100) size = 'large';
+            else if (count >= 10) size = 'medium';
+
+            return L.divIcon({
+              html: `<div><span>${count}</span></div>`,
+              className: `marker-cluster marker-cluster-${size}`,
+              iconSize: L.point(40, 40),
+            });
+          }}
+        >
         {filteredStops
           .slice()
           .sort((a, b) => {
@@ -1333,6 +1354,7 @@ function StopFinder({ isDarkMode, selectedStop: highlightedStop, locationSelecti
             </Marker>
           );
         })}
+        </MarkerClusterGroup>
       </MapContainer>
 
       {/* Top controls - Route filter */}

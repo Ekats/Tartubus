@@ -18,28 +18,10 @@ function Settings() {
     { value: 2000, label: `2km - ${t('settings.veryWide')}` },
   ];
 
-  const cityRadiusOptions = [
-    { value: 5000, label: `5km - ${t('settings.compact')}` },
-    { value: 8000, label: `8km - ${t('settings.default')}` },
-    { value: 12000, label: `12km - ${t('settings.extended')}` },
-    { value: 15000, label: `15km - ${t('settings.wideArea')}` },
-    { value: 20000, label: `20km - ${t('settings.veryWide')}` },
-  ];
-
   const handleRadiusChange = (e) => {
     const newRadius = parseInt(e.target.value);
     setSettings({ ...settings, nearbyRadius: newRadius });
     updateSetting('nearbyRadius', newRadius);
-
-    // Show saved message
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
-  };
-
-  const handleCityRadiusChange = (e) => {
-    const newRadius = parseInt(e.target.value);
-    setSettings({ ...settings, cityRadius: newRadius });
-    updateSetting('cityRadius', newRadius);
 
     // Show saved message
     setSaved(true);
@@ -191,35 +173,6 @@ function Settings() {
           )}
         </div>
 
-        {/* City Radius Setting */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 border border-gray-200 dark:border-gray-700">
-          <div className="mb-4">
-            <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-1">{t('settings.cityRadius')}</h2>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              {t('settings.cityRadiusDescription')}
-            </p>
-          </div>
-
-          <div className="space-y-3">
-            {cityRadiusOptions.map((option) => (
-              <label
-                key={option.value}
-                className="flex items-center p-3 border border-gray-200 dark:border-gray-700 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-              >
-                <input
-                  type="radio"
-                  name="cityRadius"
-                  value={option.value}
-                  checked={settings.cityRadius === option.value}
-                  onChange={handleCityRadiusChange}
-                  className="w-4 h-4 text-primary focus:ring-primary"
-                />
-                <span className="ml-3 text-gray-700 dark:text-gray-300">{option.label}</span>
-              </label>
-            ))}
-          </div>
-        </div>
-
         {/* Feedback Section */}
         <Feedback />
 
@@ -255,19 +208,22 @@ function Settings() {
             <p>• {t('settings.usesDigitransit')}</p>
             <p>• {t('settings.usesOSM')}</p>
             <p>• {t('settings.localSettings')}</p>
-            <p>• {t('settings.pageCounter')}</p>
           </div>
 
-          {/* Hit counter badge */}
-          <div className="mt-4 flex flex-col items-center gap-1">
-            <p className="text-xs text-blue-600 dark:text-blue-400 font-medium">
-              {t('settings.totalVisits')}
-            </p>
-            <img
-              src="https://hitscounter.dev/api/hit?url=https%3A%2F%2Fekats.github.io%2FTartubus&label=Tartubus&icon=bus-front&color=%23198754&message=&style=flat&tz=UTC"
-              alt="Page visits"
-              className="h-6"
-            />
+          {/* GitHub Stars Badge */}
+          <div className="mt-4 flex justify-center">
+            <a
+              href="https://github.com/ekats/Tartubus"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 hover:opacity-80 transition-opacity"
+            >
+              <img
+                src="https://img.shields.io/github/stars/ekats/Tartubus?style=social"
+                alt="GitHub stars"
+                className="h-5"
+              />
+            </a>
           </div>
         </div>
 

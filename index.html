@@ -40,14 +40,6 @@
         });
       }
 
-      // Simple page load counter (no signup, privacy-friendly)
-      // Uses hitscounter.dev - just counts page loads, no personal data
-      window.addEventListener('load', () => {
-        const img = new Image();
-        img.src = 'https://hitscounter.dev/api/hit?url=https://ekats.github.io/Tartubus&label=visits&color=0066cc';
-        img.style.display = 'none';
-        img.onerror = () => {}; // Silent fail if API is down
-      });
     </script>
   </body>
 </html>

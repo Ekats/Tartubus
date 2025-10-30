@@ -45,13 +45,11 @@ self.addEventListener('fetch', (event) => {
   // - API requests (always fetch fresh data)
   // - POST requests (can't be cached)
   // - Chrome extension requests
-  // - Analytics/tracking services
   if (event.request.method !== 'GET' ||
       event.request.url.startsWith('chrome-extension://') ||
       event.request.url.includes('digitransit.fi') ||
       event.request.url.includes('openstreetmap.org') ||
-      event.request.url.includes('nominatim.openstreetmap.org') ||
-      event.request.url.includes('hitscounter.dev')) {
+      event.request.url.includes('nominatim.openstreetmap.org')) {
     return; // Let it go through to network
   }
 
