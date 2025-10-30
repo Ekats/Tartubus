@@ -39,6 +39,12 @@
             .catch(err => console.log('Service Worker registration failed:', err));
         });
       }
+
+      // Simple page load counter (no signup, privacy-friendly)
+      window.addEventListener('load', () => {
+        fetch('https://api.countapi.xyz/hit/tartu-bussid/pageloads')
+          .catch(() => {}); // Silent fail if API is down
+      });
     </script>
   </body>
 </html>
