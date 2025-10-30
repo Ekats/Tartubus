@@ -8,10 +8,35 @@ import './i18n' // Initialize i18n
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.addEventListener('message', (event) => {
     if (event.data && event.data.type === 'FORCE_RELOAD') {
-      console.log(`🔄 New version ${event.data.version} detected - FULL CACHE CLEAR and reloading`);
+      console.log(`🔄 New version ${event.data.version} detected - SOFT CACHE CLEAR and reloading`);
 
-      // FULL CLEAR - wipe everything including favorites
+      // SOFT CLEAR - preserve favorites, settings, and important data
+      const preserveKeys = [
+        'tartu_bus_favorites',
+        'tartu-bus-settings',
+        'darkMode',
+        'i18nextLng',
+        'app_build_hash',
+        'cache_soft_clear_version',
+        'cache_full_clear_version',
+        'location_modal_seen'
+      ];
+
+      const preserved = {};
+      preserveKeys.forEach(key => {
+        const value = localStorage.getItem(key);
+        if (value !== null) {
+          preserved[key] = value;
+        }
+      });
+
+      // Clear everything
       localStorage.clear();
+
+      // Restore preserved data
+      Object.entries(preserved).forEach(([key, value]) => {
+        localStorage.setItem(key, value);
+      });
 
       // Force reload
       window.location.reload(true);
