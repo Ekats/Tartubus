@@ -1179,7 +1179,7 @@ function StopFinder({ isDarkMode, selectedStop: highlightedStop, locationSelecti
           const isFavorited = isFavorite(stop.gtfsId);
 
           // Determine marker color based on route patterns
-          let iconColor = '#6B7280'; // Default gray
+          let iconColor = '#2563EB'; // Default bright blue for non-nearby stops
 
           // Highlighted stop from Near Me gets red color (highest priority)
           if (isHighlighted) {
@@ -1615,6 +1615,17 @@ function StopFinder({ isDarkMode, selectedStop: highlightedStop, locationSelecti
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
             {/* Route to this stop section */}
             {location.lat && location.lon && nearbyStopsForRouting?.nearUser?.length > 0 && nearbyStopsForRouting?.nearDestination?.length > 0 && (() => {
+              // Calculate distance to selected stop
+              const latDiff = selectedStop.lat - location.lat;
+              const lonDiff = selectedStop.lon - location.lon;
+              const distanceToStop = Math.sqrt(latDiff * latDiff + lonDiff * lonDiff) * 111000; // meters
+
+              // Don't show "How to get here" if stop is within walking distance (500m)
+              const walkingDistanceThreshold = getSetting('nearbyRadius') || 500;
+              if (distanceToStop <= walkingDistanceThreshold) {
+                return null; // Stop is already nearby, no need for bus directions
+              }
+
               console.log('🔍 Analyzing routes to', selectedStop.name, 'area');
 
               // Create a set of destination stop IDs (all stops near the selected destination)
