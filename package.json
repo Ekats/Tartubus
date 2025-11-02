@@ -8,9 +8,16 @@
     "prebuild": "node scripts/fetchRoutes.js",
     "build": "vite build",
     "preview": "vite preview",
-    "fetch-routes": "node scripts/fetchRoutes.js"
+    "fetch-routes": "node scripts/fetchRoutes.js",
+    "android:sync": "npx cap sync android",
+    "android:open": "npx cap open android",
+    "android:build": "npm run build && npx cap sync android && npx cap open android",
+    "android:apk": "npm run build && npx cap sync android && cd android && gradlew assembleDebug"
   },
   "dependencies": {
+    "@capacitor/android": "^7.4.4",
+    "@capacitor/cli": "^7.4.4",
+    "@capacitor/core": "^7.4.4",
     "@emailjs/browser": "^4.4.1",
     "date-fns": "^4.1.0",
     "dotenv": "^17.2.3",

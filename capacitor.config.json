@@ -1,0 +1,14 @@
+{
+  "appId": "ee.tartu.bussid",
+  "appName": "Tartu Bussid",
+  "webDir": "dist",
+  "server": {
+    "androidScheme": "https"
+  },
+  "android": {
+    "buildOptions": {
+      "keystorePath": "",
+      "keystoreAlias": ""
+    }
+  }
+}

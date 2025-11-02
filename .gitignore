@@ -49,3 +49,9 @@ out/
 # Large data files (keep minified version only)
 public/data/routes.json
 bfg-1.15.0.jar
+
+# Capacitor/Android
+android/
+ios/
+*.apk
+*.aab
