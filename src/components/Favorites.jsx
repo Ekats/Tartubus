@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useFavorites } from '../hooks/useFavorites';
 import { useGeolocation } from '../hooks/useGeolocation';
 import { getStopById, getNextStopName } from '../services/digitransit';
-import { shouldShowDeparture } from '../utils/timeFormatter';
+import { shouldShowDeparture, isDepartureLate } from '../utils/timeFormatter';
 import CountdownTimer from './CountdownTimer';
 
 function Favorites({ onNavigateToMap, manualLocation }) {
@@ -334,20 +334,21 @@ function Favorites({ onNavigateToMap, manualLocation }) {
                       const allStops = departure.trip?.stoptimes || [];
                       const currentStopIndex = allStops.findIndex(st => st.stopPosition === departure.stopPosition);
                       const remainingStops = currentStopIndex >= 0 ? allStops.slice(currentStopIndex + 1) : [];
+                      const isLate = isDepartureLate(departure.scheduledArrival);
 
                       return (
-                        <div key={idx}>
+                        <div key={idx} className={isLate ? 'opacity-60' : ''}>
                           <button
                             onClick={() => remainingStops.length > 0 && toggleDepartureExpanded(stop.gtfsId, idx)}
-                            className={`w-full flex items-center justify-between gap-3 p-2 bg-gray-50 dark:bg-gray-700/50 rounded-lg text-left ${remainingStops.length > 0 ? 'hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer' : 'cursor-default'}`}
+                            className={`w-full flex items-center justify-between gap-3 p-2 ${isLate ? 'bg-gray-100 dark:bg-gray-800/50' : 'bg-gray-50 dark:bg-gray-700/50'} rounded-lg text-left ${remainingStops.length > 0 ? 'hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer' : 'cursor-default'}`}
                             disabled={remainingStops.length === 0}
                           >
                             <div className="flex items-center gap-3 flex-1 min-w-0">
-                              <span className="bg-blue-600 dark:bg-blue-500 text-white px-2.5 py-1 rounded font-bold text-sm shrink-0">
+                              <span className={`${isLate ? 'bg-gray-400 dark:bg-gray-600' : 'bg-blue-600 dark:bg-blue-500'} text-white px-2.5 py-1 rounded font-bold text-sm shrink-0`}>
                                 {departure.trip?.route?.shortName || '?'}
                               </span>
                               <div className="flex-1 min-w-0">
-                                <div className="text-sm text-gray-700 dark:text-gray-300 truncate">
+                                <div className={`text-sm ${isLate ? 'text-gray-500 dark:text-gray-500' : 'text-gray-700 dark:text-gray-300'} truncate`}>
                                   {departure.headsign || 'Unknown'}
                                 </div>
                                 {nextStop && (
@@ -358,11 +359,11 @@ function Favorites({ onNavigateToMap, manualLocation }) {
                               </div>
                             </div>
                             <div className="flex items-center gap-2 shrink-0">
-                              <span className="font-bold text-sm text-gray-900 dark:text-gray-100">
+                              <span className={`font-bold text-sm ${isLate ? 'text-gray-500 dark:text-gray-500' : 'text-gray-900 dark:text-gray-100'}`}>
                                 <CountdownTimer scheduledArrival={departure.scheduledArrival} />
                               </span>
                               {remainingStops.length > 0 && (
-                                <svg className={`w-5 h-5 transition-transform text-blue-600 dark:text-blue-400 ${isDepartureExpanded ? 'rotate-90' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg className={`w-5 h-5 transition-transform ${isLate ? 'text-gray-400 dark:text-gray-500' : 'text-blue-600 dark:text-blue-400'} ${isDepartureExpanded ? 'rotate-90' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                                 </svg>
                               )}

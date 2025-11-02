@@ -9,7 +9,7 @@ import { useFavorites } from '../hooks/useFavorites';
 import { getNearbyStops, getStopsByRoutes, getNextStopName } from '../services/digitransit';
 import { getSetting } from '../utils/settings';
 import { reverseGeocode } from '../utils/geocoding';
-import { shouldShowDeparture } from '../utils/timeFormatter';
+import { shouldShowDeparture, isDepartureLate } from '../utils/timeFormatter';
 import CountdownTimer from './CountdownTimer';
 import 'leaflet/dist/leaflet.css';
 import 'leaflet.markercluster/dist/MarkerCluster.css';
@@ -1305,17 +1305,18 @@ function StopFinder({ isDarkMode, selectedStop: highlightedStop, locationSelecti
 
                           const departureItems = validDepartures.slice(0, visibleCount).map((departure, idx) => {
                             const nextStop = getNextStopName(departure);
+                            const isLate = isDepartureLate(departure.scheduledArrival);
                             return (
                               <div
                                 key={idx}
-                                className="flex items-center justify-between gap-2 text-sm"
+                                className={`flex items-center justify-between gap-2 text-sm ${isLate ? 'opacity-60' : ''}`}
                               >
                                 <div className="flex items-center gap-2 flex-1 min-w-0">
-                                  <span className="bg-blue-600 text-white px-2 py-0.5 rounded font-bold text-xs shrink-0">
+                                  <span className={`${isLate ? 'bg-gray-400' : 'bg-blue-600'} text-white px-2 py-0.5 rounded font-bold text-xs shrink-0`}>
                                     {departure.trip?.route?.shortName || '?'}
                                   </span>
                                   <div className="flex-1 min-w-0">
-                                    <div className="text-gray-700 text-xs truncate">
+                                    <div className={`text-xs truncate ${isLate ? 'text-gray-500' : 'text-gray-700'}`}>
                                       {departure.headsign || 'Unknown'}
                                     </div>
                                     {nextStop && (
@@ -1325,7 +1326,7 @@ function StopFinder({ isDarkMode, selectedStop: highlightedStop, locationSelecti
                                     )}
                                   </div>
                                 </div>
-                                <span className="font-semibold text-xs shrink-0">
+                                <span className={`font-semibold text-xs shrink-0 ${isLate ? 'text-gray-500' : ''}`}>
                                   <CountdownTimer scheduledArrival={departure.scheduledArrival} />
                                 </span>
                               </div>
@@ -1768,18 +1769,19 @@ function StopFinder({ isDarkMode, selectedStop: highlightedStop, locationSelecti
 
                     const departureItems = validDepartures.slice(0, visibleCount).map((departure, idx) => {
                       const nextStop = getNextStopName(departure);
+                      const isLate = isDepartureLate(departure.scheduledArrival);
                       return (
                         <div
                           key={idx}
-                          className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 border border-gray-200 dark:border-gray-700"
+                          className={`${isLate ? 'bg-gray-100 dark:bg-gray-900 opacity-60' : 'bg-gray-50 dark:bg-gray-800'} rounded-lg p-3 border ${isLate ? 'border-gray-300 dark:border-gray-800' : 'border-gray-200 dark:border-gray-700'}`}
                         >
                           <div className="flex items-center justify-between gap-2">
                             <div className="flex items-center gap-3 flex-1 min-w-0">
-                              <span className="bg-blue-600 text-white px-3 py-1 rounded font-bold text-sm shrink-0">
+                              <span className={`${isLate ? 'bg-gray-400 dark:bg-gray-600' : 'bg-blue-600'} text-white px-3 py-1 rounded font-bold text-sm shrink-0`}>
                                 {departure.trip?.route?.shortName || '?'}
                               </span>
                               <div className="flex-1 min-w-0">
-                                <div className="text-gray-800 dark:text-gray-200 font-medium truncate">
+                                <div className={`font-medium truncate ${isLate ? 'text-gray-500 dark:text-gray-500' : 'text-gray-800 dark:text-gray-200'}`}>
                                   {departure.headsign || 'Unknown'}
                                 </div>
                                 {nextStop && (
@@ -1789,7 +1791,7 @@ function StopFinder({ isDarkMode, selectedStop: highlightedStop, locationSelecti
                                 )}
                               </div>
                             </div>
-                            <span className="font-bold text-lg text-blue-600 dark:text-blue-400 shrink-0">
+                            <span className={`font-bold text-lg shrink-0 ${isLate ? 'text-gray-500 dark:text-gray-500' : 'text-blue-600 dark:text-blue-400'}`}>
                               <CountdownTimer scheduledArrival={departure.scheduledArrival} />
                             </span>
                           </div>

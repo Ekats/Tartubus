@@ -112,7 +112,7 @@ export async function getNearbyStops(lat, lon, radius = 500, forceRefresh = fals
   console.log(`🔍 Fetching fresh data for ${cacheKey}, stale cache available: ${!!staleCache}`);
 
   const graphqlQuery = `
-    query GetNearbyStops($lat: Float!, $lon: Float!, $radius: Int!) {
+    query GetNearbyStops($lat: Float!, $lon: Float!, $radius: Int!, $startTime: Long!) {
       stopsByRadius(lat: $lat, lon: $lon, radius: $radius) {
         edges {
           node {
@@ -122,7 +122,7 @@ export async function getNearbyStops(lat, lon, radius = 500, forceRefresh = fals
               code
               lat
               lon
-              stoptimesWithoutPatterns(numberOfDepartures: 20, omitCanceled: false) {
+              stoptimesWithoutPatterns(numberOfDepartures: 20, startTime: $startTime, omitCanceled: false) {
                 scheduledArrival
                 scheduledDeparture
                 headsign
@@ -153,7 +153,9 @@ export async function getNearbyStops(lat, lon, radius = 500, forceRefresh = fals
   // Create the request promise
   const requestPromise = (async () => {
     try {
-      const data = await query(graphqlQuery, { lat, lon, radius });
+      // Get current time in Unix timestamp (seconds, UTC)
+      const startTime = Math.floor(Date.now() / 1000);
+      const data = await query(graphqlQuery, { lat, lon, radius, startTime });
 
       const stops = data.stopsByRadius?.edges || [];
 
@@ -163,10 +165,33 @@ export async function getNearbyStops(lat, lon, radius = 500, forceRefresh = fals
         return gtfsId.startsWith('Viro:');
       });
 
-      const result = tartuStops.map(edge => ({
-        ...edge.node.stop,
-        distance: edge.node.distance,
-      }));
+      // Get current time for client-side filtering (safety check)
+      const now = new Date();
+      const currentSecondsFromMidnight = (now.getHours() * 3600) + (now.getMinutes() * 60) + now.getSeconds();
+
+      const result = tartuStops.map(edge => {
+        const stop = edge.node.stop;
+        // Client-side safety filter: remove any departures that are clearly in the past
+        // (more than 10 minutes ago) to prevent "ghost buses"
+        const filteredDepartures = stop.stoptimesWithoutPatterns?.filter(departure => {
+          const scheduledArrival = departure.scheduledArrival;
+          const diff = scheduledArrival - currentSecondsFromMidnight;
+
+          // If more than 12 hours in the past, it's tomorrow's departure - keep it
+          if (diff < -43200) {
+            return true;
+          }
+
+          // Keep if scheduled arrival is within the last 10 minutes or in the future
+          return diff >= -600; // -600 seconds = -10 minutes
+        }) || [];
+
+        return {
+          ...stop,
+          stoptimesWithoutPatterns: filteredDepartures,
+          distance: edge.node.distance,
+        };
+      });
 
       // Cache with compressed departure data to save space
       const compressedResult = result.map(stop => ({
@@ -231,7 +256,7 @@ export async function getNearbyStops(lat, lon, radius = 500, forceRefresh = fals
  */
 export async function getStops(lat, lon, radius = 500) {
   const graphqlQuery = `
-    query GetStops($lat: Float!, $lon: Float!, $radius: Int!) {
+    query GetStops($lat: Float!, $lon: Float!, $radius: Int!, $startTime: Long!) {
       stopsByRadius(lat: $lat, lon: $lon, radius: $radius) {
         edges {
           node {
@@ -241,7 +266,7 @@ export async function getStops(lat, lon, radius = 500) {
               code
               lat
               lon
-              stoptimesWithoutPatterns(numberOfDepartures: 5) {
+              stoptimesWithoutPatterns(numberOfDepartures: 5, startTime: $startTime) {
                 scheduledArrival
                 realtimeArrival
                 arrivalDelay
@@ -262,7 +287,9 @@ export async function getStops(lat, lon, radius = 500) {
     }
   `;
 
-  const data = await query(graphqlQuery, { lat, lon, radius });
+  // Get current time in Unix timestamp (seconds, UTC)
+  const startTime = Math.floor(Date.now() / 1000);
+  const data = await query(graphqlQuery, { lat, lon, radius, startTime });
   return data.stopsByRadius?.edges || [];
 }
 
@@ -273,14 +300,14 @@ export async function getStops(lat, lon, radius = 500) {
  */
 export async function getStopById(gtfsId) {
   const graphqlQuery = `
-    query GetStop($id: String!) {
+    query GetStop($id: String!, $startTime: Long!) {
       stop(id: $id) {
         gtfsId
         name
         code
         lat
         lon
-        stoptimesWithoutPatterns(numberOfDepartures: 20, omitCanceled: false) {
+        stoptimesWithoutPatterns(numberOfDepartures: 20, startTime: $startTime, omitCanceled: false) {
           scheduledArrival
           scheduledDeparture
           headsign
@@ -305,8 +332,33 @@ export async function getStopById(gtfsId) {
   `;
 
   try {
-    const data = await query(graphqlQuery, { id: gtfsId });
-    return data.stop;
+    // Get current time in Unix timestamp (seconds, UTC)
+    const startTime = Math.floor(Date.now() / 1000);
+    const data = await query(graphqlQuery, { id: gtfsId, startTime });
+
+    if (!data.stop) return null;
+
+    // Client-side safety filter: remove any departures clearly in the past
+    const now = new Date();
+    const currentSecondsFromMidnight = (now.getHours() * 3600) + (now.getMinutes() * 60) + now.getSeconds();
+
+    const filteredDepartures = data.stop.stoptimesWithoutPatterns?.filter(departure => {
+      const scheduledArrival = departure.scheduledArrival;
+      const diff = scheduledArrival - currentSecondsFromMidnight;
+
+      // If more than 12 hours in the past, it's tomorrow's departure - keep it
+      if (diff < -43200) {
+        return true;
+      }
+
+      // Keep if scheduled arrival is within the last 10 minutes or in the future
+      return diff >= -600; // -600 seconds = -10 minutes
+    }) || [];
+
+    return {
+      ...data.stop,
+      stoptimesWithoutPatterns: filteredDepartures
+    };
   } catch (error) {
     console.error(`Error fetching stop ${gtfsId}:`, error);
     return null;

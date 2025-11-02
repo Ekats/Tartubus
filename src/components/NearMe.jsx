@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useGeolocation } from '../hooks/useGeolocation';
 import { useNearbyStops } from '../hooks/useNearbyStops';
 import { useFavorites } from '../hooks/useFavorites';
-import { formatDistance, shouldShowDeparture } from '../utils/timeFormatter';
+import { formatDistance, shouldShowDeparture, isDepartureLate } from '../utils/timeFormatter';
 import { getSetting } from '../utils/settings';
 import { reverseGeocode } from '../utils/geocoding';
 import { getNextStopName } from '../services/digitransit';
@@ -30,12 +30,12 @@ function NearMe({ onNavigateToMap, manualLocation: manualLocationProp, onClearMa
       const hasSeenModal = localStorage.getItem('location_modal_seen');
 
       if (!navigator.permissions) {
-        // Permissions API not supported - try to get location directly
-        // Only show modal if we haven't seen it before
+        // Permissions API not supported
+        // ALWAYS show modal first if not seen before, regardless of permission state
         if (!hasSeenModal) {
           setShowLocationInfo(true);
         } else {
-          // Try to get location, it will either work or fail silently
+          // Modal has been seen before, safe to request location
           getLocation();
           startWatching();
         }
@@ -51,9 +51,14 @@ function NearMe({ onNavigateToMap, manualLocation: manualLocationProp, onClearMa
             setShowLocationInfo(true);
           }
         } else if (result.state === 'granted') {
-          // Already granted - proceed directly
-          getLocation();
-          startWatching();
+          // Already granted - but still show modal first if user hasn't seen it
+          if (!hasSeenModal) {
+            setShowLocationInfo(true);
+          } else {
+            // Modal has been seen before, safe to use granted permission
+            getLocation();
+            startWatching();
+          }
         } else if (result.state === 'denied') {
           // Permission denied - show button to request again
           setLocationPermissionDenied(true);
@@ -65,8 +70,12 @@ function NearMe({ onNavigateToMap, manualLocation: manualLocationProp, onClearMa
             setLocationPermissionDenied(true);
           } else if (result.state === 'granted') {
             setLocationPermissionDenied(false);
-            getLocation();
-            startWatching();
+            // Only auto-start if modal has been seen
+            const hasSeenModal = localStorage.getItem('location_modal_seen');
+            if (hasSeenModal) {
+              getLocation();
+              startWatching();
+            }
           }
         });
       } catch (err) {
@@ -111,12 +120,12 @@ function NearMe({ onNavigateToMap, manualLocation: manualLocationProp, onClearMa
   }, [location.lat, location.lon, manualLocationProp]);
 
   // Stop watching location when manual location is set
+  // Note: We don't auto-start watching here - that's handled by the permission check
   useEffect(() => {
     if (manualLocationProp) {
       stopWatching();
-    } else {
-      startWatching();
     }
+    // Don't auto-start watching - let the permission flow handle it
   }, [manualLocationProp]);
 
   const handleFindNearby = () => {
@@ -409,20 +418,21 @@ function NearMe({ onNavigateToMap, manualLocation: manualLocationProp, onClearMa
                         const allStops = departure.trip?.stoptimes || [];
                         const currentStopIndex = allStops.findIndex(st => st.stopPosition === departure.stopPosition);
                         const remainingStops = currentStopIndex >= 0 ? allStops.slice(currentStopIndex + 1) : [];
+                        const isLate = isDepartureLate(departure.scheduledArrival);
 
                         return (
-                          <div key={idx} className="border-t border-gray-100 dark:border-gray-700">
+                          <div key={idx} className={`border-t border-gray-100 dark:border-gray-700 ${isLate ? 'opacity-60' : ''}`}>
                             <button
                               onClick={() => remainingStops.length > 0 && toggleDepartureExpanded(stop.gtfsId, idx)}
                               className={`w-full flex items-center justify-between py-2 text-left ${remainingStops.length > 0 ? 'hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer' : 'cursor-default'}`}
                               disabled={remainingStops.length === 0}
                             >
                               <div className="flex items-center gap-3 flex-1">
-                                <div className="bg-primary dark:bg-blue-600 text-white font-bold px-3 py-1 rounded-md text-sm">
+                                <div className={`${isLate ? 'bg-gray-400 dark:bg-gray-600' : 'bg-primary dark:bg-blue-600'} text-white font-bold px-3 py-1 rounded-md text-sm`}>
                                   {departure.trip?.route?.shortName || '?'}
                                 </div>
                                 <div className="text-sm flex-1">
-                                  <div className="text-gray-700 dark:text-gray-300">
+                                  <div className={`${isLate ? 'text-gray-500 dark:text-gray-500' : 'text-gray-700 dark:text-gray-300'}`}>
                                     {departure.headsign || departure.trip?.route?.longName || 'Unknown destination'}
                                   </div>
                                   {nextStop && (
@@ -433,11 +443,11 @@ function NearMe({ onNavigateToMap, manualLocation: manualLocationProp, onClearMa
                                 </div>
                               </div>
                               <div className="flex items-center gap-2">
-                                <div className="font-semibold text-gray-800 dark:text-gray-100">
+                                <div className={`font-semibold ${isLate ? 'text-gray-500 dark:text-gray-500' : 'text-gray-800 dark:text-gray-100'}`}>
                                   <CountdownTimer scheduledArrival={departure.scheduledArrival} />
                                 </div>
                                 {remainingStops.length > 0 && (
-                                  <svg className={`w-5 h-5 transition-transform text-blue-600 dark:text-blue-400 ${isDepartureExpanded ? 'rotate-90' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <svg className={`w-5 h-5 transition-transform ${isLate ? 'text-gray-400 dark:text-gray-500' : 'text-blue-600 dark:text-blue-400'} ${isDepartureExpanded ? 'rotate-90' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                                   </svg>
                                 )}
