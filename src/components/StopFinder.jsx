@@ -1334,8 +1334,14 @@ function StopFinder({ isDarkMode, selectedStop: highlightedStop, locationSelecti
                 click: (e) => {
                   // Prevent event from bubbling to map
                   L.DomEvent.stopPropagation(e);
-                  // Set selected stop to show overlay
-                  setSelectedStop(stop);
+
+                  // If in location selection mode, use the stop's location
+                  if (locationSelectionMode) {
+                    setPendingLocation({ lat: stop.lat, lon: stop.lon });
+                  } else {
+                    // Otherwise, set selected stop to show overlay
+                    setSelectedStop(stop);
+                  }
                 },
               }}
             >
