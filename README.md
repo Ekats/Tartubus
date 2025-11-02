@@ -6,10 +6,14 @@ A privacy-focused, modern live bus tracking app for Tartu, Estonia. Built to be 
 
 ## Features
 
-- 🚌 **Live bus tracking** - See all buses moving in real-time on the map
-- 📍 **Your location** - Quickly find buses near you
-- 🗺️ **OpenStreetMap** - Privacy-friendly maps with no tracking
+- 📍 **Near Me** - Find nearby bus stops with live departure times
+- 🗺️ **Interactive Map** - View all stops on the map with route filtering
+- ⭐ **Favorites** - Save your most-used stops for quick access
+- 🚌 **Journey Planning** - Multi-leg routes with transfers when no direct bus available
+- 🌐 **Multi-language** - Estonian, English, and Ukrainian support
+- 🌙 **Dark Mode** - Full dark theme with system detection
 - ⚡ **Fast & lightweight** - Built with modern React + Vite
+- 🔒 **Privacy-focused** - No tracking, all data stored locally
 - 📱 **Mobile-first** - Optimized for use on the go
 
 ## Quick Start
@@ -71,19 +75,34 @@ The production files will be in the `dist/` folder, ready to deploy to Vercel, N
 ```
 src/
 ├── components/          # React components
-│   ├── BusMap.jsx      # Main map view
-│   ├── BusMarker.jsx   # Individual bus markers
-│   └── Header.jsx      # App header
+│   ├── NearMe.jsx      # Near Me tab with nearby stops
+│   ├── StopFinder.jsx  # Map view with journey planning
+│   ├── Favorites.jsx   # Favorites tab
+│   ├── Settings.jsx    # Settings & configuration
+│   ├── Header.jsx      # App header
+│   ├── BottomNav.jsx   # Bottom navigation
+│   ├── CountdownTimer.jsx  # Live countdown timers
+│   ├── Feedback.jsx    # Feedback form
+│   └── LocationPermissionInfo.jsx  # Location permission modal
 ├── hooks/              # Custom React hooks
-│   ├── useBusLocations.js
-│   └── useGeolocation.js
+│   ├── useGeolocation.js      # GPS tracking
+│   ├── useNearbyStops.js      # Find nearby stops
+│   ├── useDarkMode.js         # Dark mode
+│   └── useFavorites.js        # Favorites management
 ├── services/           # API clients
-│   └── digitransit.js
+│   └── digitransit.js  # Digitransit GraphQL API with caching
 ├── utils/              # Helper functions
-│   └── timeFormatter.js
+│   ├── timeFormatter.js   # Time/date formatting
+│   ├── settings.js        # Settings storage
+│   └── geocoding.js       # Reverse geocoding
+├── locales/            # i18n translations
+│   ├── et.json         # Estonian
+│   ├── en.json         # English
+│   └── uk.json         # Ukrainian
 ├── App.jsx            # Main app component
-├── main.jsx           # Entry point
-└── index.css          # Global styles
+├── main.jsx           # Entry point with service worker
+├── i18n.js            # i18n configuration
+└── index.css          # Global styles with Tailwind
 ```
 
 ## Contributing
