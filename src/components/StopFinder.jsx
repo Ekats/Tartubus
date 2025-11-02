@@ -6,7 +6,7 @@ import L from 'leaflet';
 import 'leaflet-polylinedecorator';
 import { useGeolocation } from '../hooks/useGeolocation';
 import { useFavorites } from '../hooks/useFavorites';
-import { getNearbyStops, getStopsByRoutes, getNextStopName } from '../services/digitransit';
+import { getNearbyStops, getStopsByRoutes, getNextStopName, planJourney } from '../services/digitransit';
 import { getSetting } from '../utils/settings';
 import { reverseGeocode } from '../utils/geocoding';
 import { shouldShowDeparture, isDepartureLate } from '../utils/timeFormatter';
@@ -307,6 +307,8 @@ function StopFinder({ isDarkMode, selectedStop: highlightedStop, locationSelecti
   const [pendingLocationAddress, setPendingLocationAddress] = useState(null);
   const [expandedPopupStops, setExpandedPopupStops] = useState(new Map()); // Map of stopId -> expansion level
   const [nearbyStopsForRouting, setNearbyStopsForRouting] = useState([]); // Stops with departure data for routing
+  const [journeyPlans, setJourneyPlans] = useState([]); // Journey plans with transfers
+  const [loadingJourney, setLoadingJourney] = useState(false);
   const mapRef = useRef(null);
   const moveTimeoutRef = useRef(null);
   const lastMovePositionRef = useRef(null);
@@ -512,6 +514,123 @@ function StopFinder({ isDarkMode, selectedStop: highlightedStop, locationSelecti
       startWatching();
     }
   }, [manualLocation]);
+
+  // Fetch journey plans when a stop is selected
+  useEffect(() => {
+    const fetchJourneyPlans = async () => {
+      if (!selectedStop || !location.lat || !location.lon) {
+        setJourneyPlans([]);
+        return;
+      }
+
+      // Calculate distance to selected stop
+      const latDiff = selectedStop.lat - location.lat;
+      const lonDiff = selectedStop.lon - location.lon;
+      const distanceToStop = Math.sqrt(latDiff * latDiff + lonDiff * lonDiff) * 111000; // meters
+
+      // Don't fetch journey plans if stop is within walking distance
+      const walkingDistanceThreshold = getSetting('nearbyRadius') || 500;
+      if (distanceToStop <= walkingDistanceThreshold) {
+        setJourneyPlans([]);
+        return;
+      }
+
+      setLoadingJourney(true);
+      try {
+        console.log('🔍 Planning journeys to', selectedStop.name, 'and nearby stops');
+
+        // Get stops near the destination (300m radius for transfer flexibility)
+        const nearbyDestinationStops = await getNearbyStops(
+          selectedStop.lat,
+          selectedStop.lon,
+          300,
+          10
+        );
+
+        console.log('📍 Found', nearbyDestinationStops.length, 'stops near destination');
+
+        // Plan routes to the selected stop and nearby stops
+        const destinationsToTry = [
+          { lat: selectedStop.lat, lon: selectedStop.lon, name: selectedStop.name, isMain: true },
+          ...nearbyDestinationStops.slice(0, 5).map(stop => ({
+            lat: stop.lat,
+            lon: stop.lon,
+            name: stop.name,
+            isMain: false
+          }))
+        ];
+
+        // Fetch journey plans to all nearby destinations in parallel
+        // Request 3-5 itineraries per destination to get both direct and transfer options
+        const allPlansPromises = destinationsToTry.map(dest =>
+          planJourney(
+            { lat: location.lat, lon: location.lon },
+            { lat: dest.lat, lon: dest.lon },
+            { numItineraries: 5 }
+          ).then(plans => plans.map(plan => ({ ...plan, destinationName: dest.name, isMainStop: dest.isMain })))
+            .catch(err => {
+              console.warn('Failed to plan to', dest.name, err);
+              return [];
+            })
+        );
+
+        const allPlansArrays = await Promise.all(allPlansPromises);
+        const allPlans = allPlansArrays.flat();
+
+        console.log('✅ Got', allPlans.length, 'total journey options');
+
+        // Log transfer statistics
+        const transferStats = allPlans.reduce((acc, plan) => {
+          const busLegs = plan.legs.filter(leg => leg.mode === 'BUS').length;
+          const transfers = busLegs > 0 ? busLegs - 1 : 0;
+          acc[transfers] = (acc[transfers] || 0) + 1;
+          return acc;
+        }, {});
+        console.log('📊 Transfer distribution:', transferStats);
+
+        // Deduplicate similar routes (same bus lines in same order)
+        const uniquePlans = [];
+        const seenRouteSignatures = new Set();
+
+        for (const plan of allPlans) {
+          if (!plan.legs || plan.legs.length === 0) continue;
+
+          // Create a signature based on the bus routes used
+          const busLegs = plan.legs.filter(leg => leg.mode === 'BUS');
+          const signature = busLegs.map(leg => leg.route?.shortName || 'unknown').join('->');
+
+          if (!seenRouteSignatures.has(signature)) {
+            seenRouteSignatures.add(signature);
+            uniquePlans.push(plan);
+          }
+        }
+
+        console.log('🔍 After deduplication:', uniquePlans.length, 'unique routes');
+
+        // Sort by duration and take best options
+        const sortedPlans = uniquePlans
+          .sort((a, b) => {
+            const durationA = (new Date(a.end) - new Date(a.start)) / 60000;
+            const durationB = (new Date(b.end) - new Date(b.start)) / 60000;
+            // Prefer routes to the main stop if duration is similar
+            if (Math.abs(durationA - durationB) < 5) {
+              return b.isMainStop ? 1 : -1;
+            }
+            return durationA - durationB;
+          })
+          .slice(0, 3); // Show top 3 best options
+
+        setJourneyPlans(sortedPlans);
+      } catch (error) {
+        console.error('Error fetching journey plans:', error);
+        setJourneyPlans([]);
+      } finally {
+        setLoadingJourney(false);
+      }
+    };
+
+    fetchJourneyPlans();
+  }, [selectedStop, location.lat, location.lon]);
 
   // When city zone changes, reload stops for new zone
   useEffect(() => {
@@ -1613,8 +1732,102 @@ function StopFinder({ isDarkMode, selectedStop: highlightedStop, locationSelecti
 
           {/* Content */}
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
-            {/* Route to this stop section */}
-            {location.lat && location.lon && nearbyStopsForRouting?.nearUser?.length > 0 && nearbyStopsForRouting?.nearDestination?.length > 0 && (() => {
+            {/* Journey planning section with transfers */}
+            {loadingJourney && (
+              <div className="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-4 border border-blue-200 dark:border-blue-700">
+                <div className="flex items-center gap-2">
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600 dark:border-blue-400"></div>
+                  <span className="text-blue-700 dark:text-blue-300">{t('common.loading') || 'Loading...'}</span>
+                </div>
+              </div>
+            )}
+
+            {!loadingJourney && journeyPlans.length > 0 && (
+              <div className="bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20 rounded-xl p-4 border-2 border-green-200 dark:border-green-700">
+                <div className="flex items-center gap-2 mb-3">
+                  <svg className="w-6 h-6 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+                  </svg>
+                  <h3 className="font-bold text-lg text-gray-800 dark:text-gray-200">
+                    {t('map.howToGetHere') || 'How to get here'}
+                  </h3>
+                </div>
+                <div className="space-y-3">
+                  {journeyPlans.map((plan, planIdx) => {
+                    const totalDuration = Math.round((new Date(plan.end) - new Date(plan.start)) / 60000);
+                    const transitLegs = plan.legs.filter(leg => leg.mode === 'BUS');
+                    const walkLegs = plan.legs.filter(leg => leg.mode === 'WALK');
+                    const totalWalkDistance = walkLegs.reduce((sum, leg) => sum + (leg.distance || 0), 0);
+                    const goesToDifferentStop = !plan.isMainStop;
+
+                    return (
+                      <div key={planIdx} className="bg-white dark:bg-gray-800 rounded-lg p-3 border border-gray-200 dark:border-gray-700">
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="text-lg font-bold text-gray-800 dark:text-gray-200">
+                              {totalDuration} {t('nearMe.minutes') || 'min'}
+                            </span>
+                            {transitLegs.length > 1 && (
+                              <span className="bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 px-2 py-0.5 rounded-full text-xs font-semibold">
+                                {transitLegs.length - 1} {transitLegs.length === 2 ? (t('map.transfer') || 'transfer') : (t('map.transfers') || 'transfers')}
+                              </span>
+                            )}
+                            {goesToDifferentStop && (
+                              <span className="bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded-full text-xs font-semibold">
+                                {t('map.nearbyStop') || 'nearby stop'}
+                              </span>
+                            )}
+                          </div>
+                          <div className="text-xs text-gray-500 dark:text-gray-400">
+                            🚶 {Math.round(totalWalkDistance)}m
+                          </div>
+                        </div>
+                        {goesToDifferentStop && (
+                          <div className="text-xs text-blue-600 dark:text-blue-400 mb-2">
+                            → {plan.destinationName}
+                          </div>
+                        )}
+
+                        <div className="space-y-2">
+                          {plan.legs.map((leg, legIdx) => (
+                            <div key={legIdx} className="flex items-start gap-2">
+                              {leg.mode === 'WALK' ? (
+                                <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400">
+                                  <span>🚶</span>
+                                  <span>
+                                    {t('map.walkTo') || 'Walk'} {leg.to.stop?.name || leg.to.name}
+                                    ({Math.round(leg.distance)}m, ~{Math.ceil(leg.duration / 60)} min)
+                                  </span>
+                                </div>
+                              ) : (
+                                <div className="flex-1">
+                                  <div className="flex items-center gap-2">
+                                    <span className="bg-blue-600 text-white px-2 py-0.5 rounded font-bold text-xs">
+                                      {leg.route?.shortName || '?'}
+                                    </span>
+                                    <div className="flex-1 text-xs">
+                                      <div className="text-gray-700 dark:text-gray-300">
+                                        {leg.from.stop?.name} → {leg.to.stop?.name}
+                                      </div>
+                                      <div className="text-gray-500 dark:text-gray-400">
+                                        {Math.ceil(leg.duration / 60)} {t('nearMe.minutes') || 'min'}
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* OLD LOGIC - keeping as fallback */}
+            {!loadingJourney && journeyPlans.length === 0 && location.lat && location.lon && nearbyStopsForRouting?.nearUser?.length > 0 && nearbyStopsForRouting?.nearDestination?.length > 0 && (() => {
               // Calculate distance to selected stop
               const latDiff = selectedStop.lat - location.lat;
               const lonDiff = selectedStop.lon - location.lon;

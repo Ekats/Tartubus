@@ -366,80 +366,6 @@ export async function getStopById(gtfsId) {
 }
 
 /**
- * Plan a journey from origin to destination
- */
-export async function planJourney(from, to, numItineraries = 3) {
-  const graphqlQuery = `
-    query PlanRoute($fromLat: Float!, $fromLon: Float!, $toLat: Float!, $toLon: Float!, $numItineraries: Int!) {
-      plan(
-        from: { lat: $fromLat, lon: $fromLon }
-        to: { lat: $toLat, lon: $toLon }
-        numItineraries: $numItineraries
-        transportModes: [{ mode: BUS }, { mode: WALK }]
-      ) {
-        itineraries {
-          startTime
-          endTime
-          duration
-          walkDistance
-          legs {
-            mode
-            distance
-            duration
-            from {
-              name
-              lat
-              lon
-              stop {
-                name
-                code
-                gtfsId
-              }
-            }
-            to {
-              name
-              lat
-              lon
-              stop {
-                name
-                code
-                gtfsId
-              }
-            }
-            route {
-              shortName
-              longName
-              gtfsId
-            }
-            startTime
-            endTime
-            realTime
-            intermediateStops {
-              name
-              lat
-              lon
-            }
-            legGeometry {
-              points
-            }
-          }
-        }
-      }
-    }
-  `;
-
-  const data = await query(graphqlQuery, {
-    fromLat: from.lat,
-    fromLon: from.lon,
-    toLat: to.lat,
-    toLon: to.lon,
-    numItineraries,
-  });
-
-  return data.plan?.itineraries || [];
-}
-
-/**
  * Get the next stop name from a stoptime object
  * @param {Object} stoptime - Stoptime object with trip.stoptimes data
  * @returns {string|null} - Name of the next stop, or null if not available
@@ -1129,5 +1055,164 @@ export async function getStopsByRoutes(routeShortNames, cityBounds = null) {
   } catch (error) {
     console.error('Error fetching stops by routes:', error);
     throw error;
+  }
+}
+
+/**
+ * Plan a journey with transfers using the planConnection query
+ * @param {Object} from - Origin coordinates {lat, lon}
+ * @param {Object} to - Destination coordinates {lat, lon}
+ * @param {Object} options - Optional parameters (dateTime, numItineraries, etc.)
+ * @returns {Promise<Array>} Array of journey itineraries with legs and transfers
+ */
+export async function planJourney(from, to, options = {}) {
+  try {
+    const now = new Date();
+    const dateTime = options.dateTime || now.toISOString();
+    const numItineraries = options.numItineraries || 3;
+
+    const planQuery = `
+      query PlanJourney(
+        $origin: PlanLabeledLocationInput!
+        $destination: PlanLabeledLocationInput!
+        $numItineraries: Int!
+      ) {
+        planConnection(
+          origin: $origin
+          destination: $destination
+          first: $numItineraries
+          modes: {
+            direct: [WALK]
+            transit: {
+              transit: [
+                { mode: BUS }
+              ]
+            }
+          }
+          preferences: {
+            street: {
+              walk: {
+                speed: 1.4
+                reluctance: 2.0
+              }
+            }
+          }
+        ) {
+          edges {
+            node {
+              start
+              end
+              legs {
+                mode
+                duration
+                distance
+                from {
+                  name
+                  lat
+                  lon
+                  stop {
+                    gtfsId
+                    name
+                  }
+                }
+                to {
+                  name
+                  lat
+                  lon
+                  stop {
+                    gtfsId
+                    name
+                  }
+                }
+                route {
+                  gtfsId
+                  shortName
+                  longName
+                }
+                trip {
+                  gtfsId
+                }
+                legGeometry {
+                  points
+                }
+              }
+            }
+          }
+        }
+      }
+    `;
+
+    const variables = {
+      origin: {
+        location: {
+          coordinate: {
+            latitude: from.lat,
+            longitude: from.lon
+          }
+        }
+      },
+      destination: {
+        location: {
+          coordinate: {
+            latitude: to.lat,
+            longitude: to.lon
+          }
+        }
+      },
+      numItineraries
+    };
+
+    const data = await query(planQuery, variables, 30000);
+
+    if (!data?.planConnection?.edges) {
+      console.warn('⚠️ No journey plan found in API response:', data);
+      return [];
+    }
+
+    if (data.planConnection.edges.length === 0) {
+      console.warn('⚠️ API returned empty edges array');
+      return [];
+    }
+
+    // Extract and format itineraries
+    const itineraries = data.planConnection.edges.map(edge => {
+      const node = edge.node;
+
+      return {
+        start: node.start,
+        end: node.end,
+        legs: node.legs.map(leg => ({
+          mode: leg.mode,
+          duration: leg.duration,
+          distance: leg.distance,
+          from: {
+            name: leg.from.name,
+            lat: leg.from.lat,
+            lon: leg.from.lon,
+            stop: leg.from.stop
+          },
+          to: {
+            name: leg.to.name,
+            lat: leg.to.lat,
+            lon: leg.to.lon,
+            stop: leg.to.stop
+          },
+          route: leg.route ? {
+            gtfsId: leg.route.gtfsId,
+            shortName: leg.route.shortName,
+            longName: leg.route.longName
+          } : null,
+          trip: leg.trip,
+          geometry: leg.legGeometry?.points
+        }))
+      };
+    });
+
+    console.log('✅ Found', itineraries.length, 'journey options with transfers');
+    return itineraries;
+  } catch (error) {
+    console.error('❌ Error planning journey:', error);
+    console.error('Query variables were:', { from, to, options });
+    return [];
   }
 }

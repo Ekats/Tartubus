@@ -63,7 +63,11 @@
     "selectedLocation": "Вибране місцезнаходження",
     "apply": "Застосувати",
     "routeToStop": "Отримати маршрут до цієї зупинки",
-    "howToGetHere": "Як сюди дістатися"
+    "howToGetHere": "Як сюди дістатися",
+    "transfer": "пересадка",
+    "transfers": "пересадок",
+    "walkTo": "Йти до",
+    "nearbyStop": "зупинка поруч"
   },
   "favorites": {
     "title": "Обрані зупинки",

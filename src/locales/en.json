@@ -63,7 +63,11 @@
     "selectedLocation": "Selected location",
     "apply": "Apply",
     "routeToStop": "Get directions to this stop",
-    "howToGetHere": "How to get here"
+    "howToGetHere": "How to get here",
+    "transfer": "transfer",
+    "transfers": "transfers",
+    "walkTo": "Walk to",
+    "nearbyStop": "nearby stop"
   },
   "favorites": {
     "title": "Favorite Stops",
