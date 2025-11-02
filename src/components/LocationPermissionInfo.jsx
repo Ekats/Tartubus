@@ -3,6 +3,28 @@ import { useTranslation } from 'react-i18next';
 function LocationPermissionInfo({ onAccept, onDecline }) {
   const { t } = useTranslation();
 
+  // Helper to render text with GitHub link
+  const renderWithGitHubLink = (text) => {
+    const parts = text.split(/<github>|<\/github>/);
+    if (parts.length === 3) {
+      return (
+        <>
+          {parts[0]}
+          <a
+            href="https://github.com/ekats/Tartubus"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-green-800 dark:text-green-300 underline hover:text-green-900 dark:hover:text-green-200 font-semibold"
+          >
+            {parts[1]}
+          </a>
+          {parts[2]}
+        </>
+      );
+    }
+    return text;
+  };
+
   return (
     <div className="fixed inset-0 bg-black/50 dark:bg-black/70 z-[2000] flex items-center justify-center p-4">
       <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-md w-full p-6 border border-gray-200 dark:border-gray-700">
@@ -30,7 +52,7 @@ function LocationPermissionInfo({ onAccept, onDecline }) {
               <p>• {t('locationInfo.noTracking') || 'No tracking or data collection'}</p>
               <p>• {t('locationInfo.neverStored') || 'Your location is never stored or sent to servers'}</p>
               <p>• {t('locationInfo.localOnly') || 'Used only on your device for finding nearby stops'}</p>
-              <p>• {t('locationInfo.openSource') || 'Fully open source - see the code yourself'}</p>
+              <p>• {renderWithGitHubLink(t('locationInfo.openSource') || 'Fully open source - see the code yourself')}</p>
             </div>
           </div>
 

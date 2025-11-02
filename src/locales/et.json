@@ -67,7 +67,8 @@
     "transfer": "ümberistumine",
     "transfers": "ümberistumist",
     "walkTo": "Kõnni",
-    "nearbyStop": "lähedal peatus"
+    "nearbyStop": "lähipeatus",
+    "destination": "sihtkohta"
   },
   "favorites": {
     "title": "Lemmikpeatused",
@@ -157,10 +158,10 @@
     "title": "Asukoha luba",
     "description": "Vajame sinu asukohta, et näidata lähedalolevaid bussipeatusi ja reaalajas väljumisaegu.",
     "privacyTitle": "Sinu privaatsus on kaitstud",
-    "noTracking": "Ei jälgimist ega andmete kogumist",
-    "neverStored": "Sinu asukohta ei salvestata ega saadeta serveritesse",
-    "localOnly": "Kasutatakse ainult sinu seadmes lähedalasuvate peatuste leidmiseks",
-    "openSource": "Täielikult avatud lähtekoodiga - vaata koodi ise",
+    "noTracking": "Ei jälgi sind ega kogu isikuandmeid",
+    "neverStored": "Sinu asukohta ei salvestata - kasutatakse ainult lähedalolevate peatuste leidmiseks",
+    "localOnly": "Asukoht jääb sinu seadmesse, saadame ainult koordinaadid bussisõiduplaanide pärimiseks",
+    "openSource": "Täielikult avatud lähtekoodiga - vaata koodi <github>GitHubis</github>",
     "canDecline": "Võid keelduda ja seada oma asukoha käsitsi kaardil, kui soovid.",
     "allow": "Luba asukohale juurdepääs",
     "decline": "Kasuta käsitsi asukohta"

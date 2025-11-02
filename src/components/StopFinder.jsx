@@ -1801,7 +1801,7 @@ function StopFinder({ isDarkMode, selectedStop: highlightedStop, locationSelecti
                                 <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400">
                                   <span>🚶</span>
                                   <span>
-                                    {t('map.walkTo') || 'Walk'} {leg.to.stop?.name || leg.to.name}
+                                    {t('map.walkTo') || 'Walk'} {leg.to.stop?.name || (leg.to.name === 'Destination' ? t('map.destination') : leg.to.name)}
                                     ({Math.round(leg.distance)}m, ~{Math.ceil(leg.duration / 60)} min)
                                   </span>
                                 </div>

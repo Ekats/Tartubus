@@ -67,7 +67,8 @@
     "transfer": "transfer",
     "transfers": "transfers",
     "walkTo": "Walk to",
-    "nearbyStop": "nearby stop"
+    "nearbyStop": "nearby stop",
+    "destination": "destination"
   },
   "favorites": {
     "title": "Favorite Stops",
@@ -157,10 +158,10 @@
     "title": "Location Permission",
     "description": "We need your location to show you nearby bus stops and live departure times.",
     "privacyTitle": "Your Privacy is Safe",
-    "noTracking": "No tracking or data collection",
-    "neverStored": "Your location is never stored or sent to servers",
-    "localOnly": "Used only on your device for finding nearby stops",
-    "openSource": "Fully open source - see the code yourself",
+    "noTracking": "We don't track you or collect personal data",
+    "neverStored": "Your location is not stored - only used to find nearby stops",
+    "localOnly": "Location stays on your device, we only send coordinates to fetch bus schedules",
+    "openSource": "Fully open source - see the code on <github>GitHub</github>",
     "canDecline": "You can decline and set your location manually on the map if preferred.",
     "allow": "Allow Location Access",
     "decline": "Use Manual Location"
