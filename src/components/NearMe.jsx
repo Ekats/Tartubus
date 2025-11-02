@@ -22,6 +22,7 @@ function NearMe({ onNavigateToMap, manualLocation: manualLocationProp, onClearMa
   const [showLocationPicker, setShowLocationPicker] = useState(false);
   const [showLocationInfo, setShowLocationInfo] = useState(false);
   const [locationPermissionDenied, setLocationPermissionDenied] = useState(false);
+  const [showPermissionHelp, setShowPermissionHelp] = useState(false);
 
   // Check if browser will ask for permission (not already granted)
   useEffect(() => {
@@ -259,14 +260,11 @@ function NearMe({ onNavigateToMap, manualLocation: manualLocationProp, onClearMa
                 </button>
               ) : locationPermissionDenied ? (
                 <button
-                  onClick={() => {
-                    getLocation();
-                    startWatching();
-                  }}
-                  className="px-2.5 py-1.5 text-xs bg-green-600 dark:bg-green-500 text-white rounded hover:bg-green-700 dark:hover:bg-green-600 transition-colors whitespace-nowrap flex items-center gap-1"
+                  onClick={() => setShowPermissionHelp(true)}
+                  className="px-2.5 py-1.5 text-xs bg-amber-600 dark:bg-amber-500 text-white rounded hover:bg-amber-700 dark:hover:bg-amber-600 transition-colors whitespace-nowrap flex items-center gap-1"
                   title={t('nearMe.requestLocation')}
                 >
-                  <span>📍</span>
+                  <span>⚠️</span>
                   <span>{t('nearMe.requestLocation')}</span>
                 </button>
               ) : null}
@@ -580,6 +578,55 @@ function NearMe({ onNavigateToMap, manualLocation: manualLocationProp, onClearMa
             >
               {t('nearMe.cancel')}
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Permission Help Modal */}
+      {showPermissionHelp && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full p-6 animate-fade-in">
+            <h2 className="text-xl font-bold mb-4 text-gray-900 dark:text-white">
+              ⚠️ Location Permission Blocked
+            </h2>
+
+            <div className="space-y-4 text-sm text-gray-700 dark:text-gray-300">
+              <p>
+                Your browser has blocked location access. To enable it:
+              </p>
+
+              <div className="bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-700 rounded-lg p-3">
+                <p className="font-semibold mb-2">🔧 How to fix:</p>
+                <ol className="list-decimal list-inside space-y-1 text-xs">
+                  <li>Click the 🔒 lock icon in your browser's address bar</li>
+                  <li>Find "Location" permissions</li>
+                  <li>Change from "Block" to "Allow"</li>
+                  <li>Reload this page</li>
+                </ol>
+              </div>
+
+              <p className="text-xs text-gray-600 dark:text-gray-400">
+                Or use <strong>"Set location"</strong> to manually choose your location on the map.
+              </p>
+            </div>
+
+            <div className="flex gap-2 mt-6">
+              <button
+                onClick={() => setShowPermissionHelp(false)}
+                className="flex-1 px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors font-medium"
+              >
+                Close
+              </button>
+              <button
+                onClick={() => {
+                  setShowPermissionHelp(false);
+                  handleSetManualLocation();
+                }}
+                className="flex-1 px-4 py-2 bg-blue-600 dark:bg-blue-500 text-white rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors font-medium"
+              >
+                Set Location
+              </button>
+            </div>
           </div>
         </div>
       )}
