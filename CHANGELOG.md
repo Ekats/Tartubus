@@ -5,6 +5,18 @@ All notable changes to Tartu Bussid will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.2] - 2025-11-04
+
+### Fixed
+- 🎯 **GPS drift filtering** - Location only updates when user moves >10 meters, preventing constant refreshes
+- 🔋 **Better battery life** - Significantly reduced unnecessary location updates and API calls
+- 🗺️ **Journey planner stability** - "How to get there" no longer refreshes when standing still
+
+### Technical
+- Added distance-based filtering in `useGeolocation` hook with 10m threshold
+- Location state only updates on significant movement, not GPS noise
+- Console logs show filtered drift: "📍 GPS drift detected (X.Xm), ignoring..."
+
 ## [1.4.1] - 2025-11-04
 
 ### Fixed
