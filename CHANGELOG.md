@@ -5,6 +5,31 @@ All notable changes to Tartu Bussid will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.0] - 2025-11-04
+
+### Added
+- 📅 **Daily timetable view** - new green calendar button shows full day schedule for any stop, grouped by route
+- ⏰ **Clock time subtitles** - buses showing "X min" now also display arrival time underneath
+- 📍 **Upcoming stop times** - expandable departure list now shows scheduled arrival time for each upcoming stop
+
+### Changed
+- 🕐 **Departed bus display** - departed buses now show their scheduled time (e.g., "15:30") instead of "Late"
+- ⏱️ **Extended visibility** - departed buses remain visible for 10 minutes (unchanged, but now with clock time)
+- 🎨 **Dark mode timetable** - daily timetable times use dark blue background with white text in dark mode
+
+### Fixed
+- 🔄 **Critical: Fixed infinite refresh loop** - GPS drift no longer triggers constant timetable refreshes
+- 🚌 **Journey planner now works** - fixed blocking issue where constant refreshing prevented route planning
+- 📱 **Scrollable modals** - all modals now scrollable on small screens (fixes accessibility issue where users couldn't get past location modal)
+- 💾 **Cache expandable stops** - fixed buttons disappearing after tab switch (now caches full stop data including upcoming stops)
+- 🗺️ **Large map cache skip** - map queries with 8km radius no longer cached to prevent quota issues
+
+### Technical
+- Intervals only restart if location changes >100m (prevents GPS drift refresh storms)
+- Cache format updated to include all stoptimes from current position onwards
+- Added `useRef` and `useCallback` to stabilize refresh intervals
+- Modal containers now have `overflow-y-auto` and `max-h-[90vh]` for proper scrolling
+
 ## [1.3.1] - 2025-11-02
 
 ### Fixed

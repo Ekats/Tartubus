@@ -1,4 +1,4 @@
-const CACHE_VERSION = '1.3.1'; // Update this to force cache clear on all clients
+const CACHE_VERSION = '1.4.0'; // Update this to force cache clear on all clients
 const CACHE_NAME = `tartu-bussid-v${CACHE_VERSION}`;
 
 // Detect base path from service worker location

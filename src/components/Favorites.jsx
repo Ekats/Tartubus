@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useFavorites } from '../hooks/useFavorites';
 import { useGeolocation } from '../hooks/useGeolocation';
@@ -109,15 +109,20 @@ function Favorites({ onNavigateToMap, manualLocation }) {
   }, [favorites.length, location.lat, location.lon]); // Re-fetch when favorites list or location changes
 
   // Auto-refresh departure times every 30 seconds
+  // Wrap fetchDepartures to make it stable
+  const stableFetchDepartures = useCallback(() => {
+    fetchDepartures();
+  }, [favorites.length, location.lat, location.lon]);
+
   useEffect(() => {
     if (favorites.length === 0) return;
 
     const interval = setInterval(() => {
-      fetchDepartures();
+      stableFetchDepartures();
     }, 30000); // 30 seconds
 
     return () => clearInterval(interval);
-  }, [favorites.length]);
+  }, [favorites.length, stableFetchDepartures]);
 
   // Handle manual refresh
   const handleRefresh = () => {

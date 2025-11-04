@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useGeolocation } from '../hooks/useGeolocation';
 import { useNearbyStops } from '../hooks/useNearbyStops';
@@ -225,18 +225,34 @@ function NearMe({ onNavigateToMap, manualLocation: manualLocationProp, onClearMa
   }, [activeLocation.lat, activeLocation.lon, hasSearched, manualLocationProp]);
 
   // Auto-refresh departure times every 30 seconds
+  // Use ref to track interval location so we don't restart on small GPS updates
+  const intervalLocationRef = useRef(null);
+
   useEffect(() => {
     const loc = activeLocation;
     if (!loc.lat || !loc.lon) return;
 
+    // Only create new interval if location changed significantly (>100m) or first time
+    const lastLoc = intervalLocationRef.current;
+    const locationChanged = !lastLoc ||
+      Math.abs(lastLoc.lat - loc.lat) > 0.001 ||
+      Math.abs(lastLoc.lon - loc.lon) > 0.001;
+
+    if (!locationChanged) return; // Don't restart interval for tiny GPS updates
+
+    intervalLocationRef.current = { lat: loc.lat, lon: loc.lon };
+
     const interval = setInterval(() => {
       const radius = getSetting('nearbyRadius') || 500;
-      // Refresh without force (use cache if available < 2 min old)
-      fetchNearbyStops(loc.lat, loc.lon, radius, false);
+      const currentLoc = intervalLocationRef.current;
+      if (currentLoc) {
+        // Refresh without force (use cache if available < 2 min old)
+        fetchNearbyStops(currentLoc.lat, currentLoc.lon, radius, false);
+      }
     }, 30000); // 30 seconds
 
     return () => clearInterval(interval);
-  }, [activeLocation.lat, activeLocation.lon, manualLocationProp]);
+  }, [activeLocation.lat, activeLocation.lon, fetchNearbyStops]);
 
   const loading = locationLoading || stopsLoading;
   const error = locationError || stopsError;
@@ -578,8 +594,8 @@ function NearMe({ onNavigateToMap, manualLocation: manualLocationProp, onClearMa
 
       {/* Location Picker Modal */}
       {showLocationPicker && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-md w-full p-6">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto p-6 my-auto">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">{t('nearMe.setLocationTitle')}</h2>
               <button
@@ -615,8 +631,8 @@ function NearMe({ onNavigateToMap, manualLocation: manualLocationProp, onClearMa
 
       {/* Permission Help Modal */}
       {showPermissionHelp && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full p-6 animate-fade-in">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto p-6 animate-fade-in my-auto">
             <h2 className="text-xl font-bold mb-4 text-gray-900 dark:text-white">
               ⚠️ Location Permission Blocked
             </h2>
@@ -664,8 +680,8 @@ function NearMe({ onNavigateToMap, manualLocation: manualLocationProp, onClearMa
 
       {/* Daily Timetable Modal */}
       {showTimetable && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full max-h-[80vh] overflow-hidden flex flex-col">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col my-auto">
             <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
               <div>
                 <h2 className="text-xl font-bold text-gray-900 dark:text-white">
