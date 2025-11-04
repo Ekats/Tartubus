@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useFavorites } from '../hooks/useFavorites';
 import { useGeolocation } from '../hooks/useGeolocation';
 import { getStopById, getNextStopName } from '../services/digitransit';
-import { shouldShowDeparture, isDepartureLate } from '../utils/timeFormatter';
+import { shouldShowDeparture, isDepartureLate, formatArrivalTime, formatClockTime } from '../utils/timeFormatter';
 import CountdownTimer from './CountdownTimer';
 
 function Favorites({ onNavigateToMap, manualLocation }) {
@@ -374,9 +374,16 @@ function Favorites({ onNavigateToMap, manualLocation }) {
                               <div className="bg-gray-100 dark:bg-gray-800 rounded p-2 space-y-1">
                                 <div className="font-semibold text-gray-700 dark:text-gray-300 mb-1">{t('nearMe.upcomingStops')}</div>
                                 {remainingStops.slice(0, 10).map((stopTime, sIdx) => (
-                                  <div key={sIdx} className="text-gray-600 dark:text-gray-400 flex items-center gap-1">
-                                    <span className="text-gray-400">•</span>
-                                    <span>{stopTime.stop?.name || 'Unknown'}</span>
+                                  <div key={sIdx} className="text-gray-600 dark:text-gray-400 flex items-center justify-between gap-2">
+                                    <div className="flex items-center gap-1 flex-1 min-w-0">
+                                      <span className="text-gray-400">•</span>
+                                      <span className="truncate">{stopTime.stop?.name || 'Unknown'}</span>
+                                    </div>
+                                    {stopTime.scheduledArrival !== undefined && (
+                                      <span className="text-gray-500 dark:text-gray-500 font-mono text-xs shrink-0">
+                                        {formatClockTime(stopTime.scheduledArrival)}
+                                      </span>
+                                    )}
                                   </div>
                                 ))}
                                 {remainingStops.length > 10 && (

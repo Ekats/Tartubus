@@ -86,9 +86,10 @@ export async function getNearbyStops(lat, lon, radius = 500, forceRefresh = fals
               longName: st.routeLongName,
               gtfsId: st.routeGtfsId
             },
-            stoptimes: st.nextStops?.map(ns => ({
+            stoptimes: st.allStoptimes?.map(ns => ({
               stop: { gtfsId: null, name: ns.name },
-              stopPosition: ns.position
+              stopPosition: ns.position,
+              scheduledArrival: ns.scheduledArrival
             })) || []
           }
         })) || []
@@ -139,6 +140,8 @@ export async function getNearbyStops(lat, lon, radius = 500, forceRefresh = fals
                       name
                     }
                     stopPosition
+                    scheduledArrival
+                    scheduledDeparture
                   }
                 }
               }
@@ -153,8 +156,9 @@ export async function getNearbyStops(lat, lon, radius = 500, forceRefresh = fals
   // Create the request promise
   const requestPromise = (async () => {
     try {
-      // Get current time in Unix timestamp (seconds, UTC)
-      const startTime = Math.floor(Date.now() / 1000);
+      // Get current time minus 10 minutes in Unix timestamp (seconds, UTC)
+      // This allows us to fetch departed buses from the last 10 minutes
+      const startTime = Math.floor(Date.now() / 1000) - (10 * 60); // 10 minutes ago
       const data = await query(graphqlQuery, { lat, lon, radius, startTime });
 
       const stops = data.stopsByRadius?.edges || [];
@@ -172,7 +176,7 @@ export async function getNearbyStops(lat, lon, radius = 500, forceRefresh = fals
       const result = tartuStops.map(edge => {
         const stop = edge.node.stop;
         // Client-side safety filter: remove any departures that are clearly in the past
-        // (more than 10 minutes ago) to prevent "ghost buses"
+        // (more than 10 minutes ago) to keep departed buses visible
         const filteredDepartures = stop.stoptimesWithoutPatterns?.filter(departure => {
           const scheduledArrival = departure.scheduledArrival;
           const diff = scheduledArrival - currentSecondsFromMidnight;
@@ -210,15 +214,25 @@ export async function getNearbyStops(lat, lon, radius = 500, forceRefresh = fals
           routeShortName: st.trip?.route?.shortName,
           routeLongName: st.trip?.route?.longName,
           routeGtfsId: st.trip?.route?.gtfsId,
-          // Store only next stops, not full trip.stoptimes array
-          nextStops: st.trip?.stoptimes
-            ?.filter(s => s.stopPosition > st.stopPosition)
-            ?.slice(0, 3)  // Only keep next 3 stops
-            ?.map(s => ({ name: s.stop?.name, position: s.stopPosition })) || []
+          // Store ALL stoptimes from current stop onwards (needed for expandable list)
+          // We need to include the current stop so findIndex can locate it
+          allStoptimes: st.trip?.stoptimes
+            ?.filter(s => s.stopPosition >= st.stopPosition)
+            ?.map(s => ({
+              name: s.stop?.name,
+              position: s.stopPosition,
+              scheduledArrival: s.scheduledArrival
+            })) || []
         })) || []
       }));
 
-      setCachedNearbyStops(lat, lon, radius, compressedResult);
+      // Only cache small radius queries (< 2km) to avoid quota issues
+      // Map view with 8km radius loads 500+ stops which is too large
+      if (radius < 2000) {
+        setCachedNearbyStops(lat, lon, radius, compressedResult);
+      } else {
+        console.log(`⚠️ Skipping cache for large radius query (${radius}m) to avoid quota issues`);
+      }
 
       // Remove from in-flight tracking
       inFlightRequests.delete(cacheKey);
@@ -294,6 +308,51 @@ export async function getStops(lat, lon, radius = 500) {
 }
 
 /**
+ * Get full daily timetable for a stop (all departures for the day)
+ * @param {string} gtfsId - The GTFS ID of the stop
+ * @returns {Promise<Array>} Array of all departures for the day
+ */
+export async function getDailyTimetable(gtfsId) {
+  const graphqlQuery = `
+    query GetDailyTimetable($id: String!, $startTime: Long!) {
+      stop(id: $id) {
+        gtfsId
+        name
+        code
+        stoptimesWithoutPatterns(numberOfDepartures: 200, startTime: $startTime, omitCanceled: false) {
+          scheduledArrival
+          scheduledDeparture
+          headsign
+          trip {
+            route {
+              shortName
+              longName
+              gtfsId
+            }
+          }
+        }
+      }
+    }
+  `;
+
+  try {
+    // Get start of day (midnight) in Unix timestamp
+    const now = new Date();
+    const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
+    const startTime = Math.floor(startOfDay.getTime() / 1000);
+
+    const data = await query(graphqlQuery, { id: gtfsId, startTime });
+
+    if (!data.stop) return [];
+
+    return data.stop.stoptimesWithoutPatterns || [];
+  } catch (error) {
+    console.error(`Error fetching daily timetable for ${gtfsId}:`, error);
+    return [];
+  }
+}
+
+/**
  * Get a specific stop by its GTFS ID with departure times
  * @param {string} gtfsId - The GTFS ID of the stop (e.g., "Viro:7820134-1")
  * @returns {Promise<Object|null>} Stop object with departures, or null if not found
@@ -324,6 +383,8 @@ export async function getStopById(gtfsId) {
                 name
               }
               stopPosition
+              scheduledArrival
+              scheduledDeparture
             }
           }
         }
@@ -332,8 +393,9 @@ export async function getStopById(gtfsId) {
   `;
 
   try {
-    // Get current time in Unix timestamp (seconds, UTC)
-    const startTime = Math.floor(Date.now() / 1000);
+    // Get current time minus 10 minutes in Unix timestamp (seconds, UTC)
+    // This allows us to fetch departed buses from the last 10 minutes
+    const startTime = Math.floor(Date.now() / 1000) - (10 * 60); // 10 minutes ago
     const data = await query(graphqlQuery, { id: gtfsId, startTime });
 
     if (!data.stop) return null;
@@ -588,7 +650,7 @@ export function initializeCaches() {
   // One-time migration flags for cache clear
   // Soft clear: Clears cache but preserves favorites, settings, dark mode, language
   // Full clear: Clears EVERYTHING including favorites (nuclear option)
-  const SOFT_CLEAR_VERSION = 'v1.1-soft-clear';
+  const SOFT_CLEAR_VERSION = 'v1.3.2-cache-format-update'; // Updated: new cache format with arrival times
   const FULL_CLEAR_VERSION = 'v1.1-full-clear'; // Full wipe - clears everything including favorites
   const SOFT_CLEAR_KEY = 'cache_soft_clear_version';
   const FULL_CLEAR_KEY = 'cache_full_clear_version';

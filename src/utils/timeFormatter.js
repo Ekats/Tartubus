@@ -1,6 +1,18 @@
 import { format, formatDistanceToNow, differenceInMinutes } from 'date-fns';
 
 /**
+ * Format time as clock format only (e.g., "15:45")
+ * Used for upcoming stops list where we always want clock time
+ * @param {number} secondsSinceMidnight - Seconds since midnight (e.g., 43200 = 12:00 PM)
+ */
+export function formatClockTime(secondsSinceMidnight) {
+  const arrivalTime = new Date();
+  arrivalTime.setHours(0, 0, 0, 0);
+  arrivalTime.setSeconds(secondsSinceMidnight);
+  return format(arrivalTime, 'HH:mm');
+}
+
+/**
  * Format arrival time nicely (e.g., "2 min", "15:45")
  * @param {number} secondsSinceMidnight - Seconds since midnight (e.g., 43200 = 12:00 PM)
  */
@@ -31,9 +43,9 @@ export function formatArrivalTime(secondsSinceMidnight) {
     }
   }
 
-  // Show "Late" for buses that are past their scheduled time (up to 12 hours)
+  // Show clock time for buses that are past their scheduled time (up to 12 hours)
   if (minutesUntil < 0) {
-    return 'Late';
+    return format(arrivalTime, 'HH:mm');
   }
   // Show "Arriving" for buses under 2 minutes (matching physical displays at stops)
   else if (minutesUntil < 2) {
@@ -70,7 +82,7 @@ export function formatDistance(meters) {
 
 /**
  * Check if a departure should still be visible (not too far in the past)
- * Keep departures visible for up to 10 minutes after scheduled time (for late buses)
+ * Keep departures visible for up to 10 minutes after scheduled time (for departed buses)
  * @param {number} scheduledArrival - Seconds since midnight
  * @returns {boolean} - true if departure should be shown
  */
@@ -90,7 +102,7 @@ export function shouldShowDeparture(scheduledArrival) {
     return true; // It's tomorrow's departure, show it
   }
 
-  // Show departures that are up to 10 minutes in the past (for late buses)
+  // Show departures that are up to 10 minutes in the past (for departed buses)
   // and all future departures
   return minutesUntil >= -10;
 }
