@@ -515,11 +515,31 @@ function StopFinder({ isDarkMode, selectedStop: highlightedStop, locationSelecti
     }
   }, [manualLocation]);
 
+  // Ref to track last journey planning parameters to prevent constant refetching
+  const lastJourneyParamsRef = useRef(null);
+
   // Fetch journey plans when a stop is selected
   useEffect(() => {
     const fetchJourneyPlans = async () => {
       if (!selectedStop || !location.lat || !location.lon) {
         setJourneyPlans([]);
+        lastJourneyParamsRef.current = null;
+        return;
+      }
+
+      // Check if we already have plans for this exact location/stop combination
+      const currentParams = {
+        stopId: selectedStop.gtfsId,
+        lat: Math.round(location.lat * 1000) / 1000, // Round to ~100m precision
+        lon: Math.round(location.lon * 1000) / 1000
+      };
+
+      const lastParams = lastJourneyParamsRef.current;
+      if (lastParams &&
+          lastParams.stopId === currentParams.stopId &&
+          lastParams.lat === currentParams.lat &&
+          lastParams.lon === currentParams.lon) {
+        // Same parameters, don't refetch
         return;
       }
 
@@ -532,6 +552,7 @@ function StopFinder({ isDarkMode, selectedStop: highlightedStop, locationSelecti
       const walkingDistanceThreshold = getSetting('nearbyRadius') || 500;
       if (distanceToStop <= walkingDistanceThreshold) {
         setJourneyPlans([]);
+        lastJourneyParamsRef.current = currentParams;
         return;
       }
 
@@ -621,9 +642,11 @@ function StopFinder({ isDarkMode, selectedStop: highlightedStop, locationSelecti
           .slice(0, 3); // Show top 3 best options
 
         setJourneyPlans(sortedPlans);
+        lastJourneyParamsRef.current = currentParams;
       } catch (error) {
         console.error('Error fetching journey plans:', error);
         setJourneyPlans([]);
+        lastJourneyParamsRef.current = currentParams; // Still mark as attempted
       } finally {
         setLoadingJourney(false);
       }

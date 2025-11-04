@@ -5,6 +5,12 @@ All notable changes to Tartu Bussid will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.1] - 2025-11-04
+
+### Fixed
+- 🗺️ **Journey planner refresh loop** - "How to get there" no longer constantly refreshes due to GPS drift
+- Journey plans now only refetch when location changes >100m or different stop is selected
+
 ## [1.4.0] - 2025-11-04
 
 ### Added
