@@ -495,7 +495,7 @@ export async function getRoutes() {
 /**
  * Decode polyline encoded string to lat/lng coordinates
  */
-function decodePolyline(encoded) {
+export function decodePolyline(encoded) {
   if (!encoded) return [];
 
   const poly = [];
@@ -1168,6 +1168,8 @@ export async function planJourney(from, to, options = {}) {
                 mode
                 duration
                 distance
+                startTime
+                endTime
                 from {
                   name
                   lat
@@ -1185,6 +1187,12 @@ export async function planJourney(from, to, options = {}) {
                     gtfsId
                     name
                   }
+                }
+                intermediateStops {
+                  name
+                  lat
+                  lon
+                  gtfsId
                 }
                 route {
                   gtfsId
@@ -1247,6 +1255,8 @@ export async function planJourney(from, to, options = {}) {
           mode: leg.mode,
           duration: leg.duration,
           distance: leg.distance,
+          startTime: leg.startTime,
+          endTime: leg.endTime,
           from: {
             name: leg.from.name,
             lat: leg.from.lat,
@@ -1259,6 +1269,7 @@ export async function planJourney(from, to, options = {}) {
             lon: leg.to.lon,
             stop: leg.to.stop
           },
+          intermediateStops: leg.intermediateStops || [],
           route: leg.route ? {
             gtfsId: leg.route.gtfsId,
             shortName: leg.route.shortName,

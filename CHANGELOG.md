@@ -5,6 +5,42 @@ All notable changes to Tartu Bussid will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.0] - 2025-11-05
+
+### Added
+- 🗺️ **Interactive journey route visualization** - "How to get here" journey cards are now clickable
+  - Click any journey plan to see the full route displayed on the map
+  - Blue polylines for bus routes, dashed green polylines for walking segments
+  - Yellow stop markers for ALL stops along the route (boarding, transfers, intermediate stops, destination)
+  - Permanent tooltips for key stops showing exact times and instructions
+  - "Exit Route View" button to return to normal map view
+- 🔄 **Smart combined transfer tooltips** - Transfer points show single tooltip with both actions
+  - "⬇️ Get off 🚌 [route] at [time]"
+  - "⬆️ Board 🚌 [route] at [time]"
+  - Prevents duplicate markers at the same location
+- 🌐 **Full multilingual route support** - All journey route tooltips translated
+  - Added translation keys for: `boardHere`, `getOffHere`, `getOff`, `board`, `at`, `arrives`, `transferPoint`, `estimatedTime`, `exitRouteView`
+  - Supports English, Estonian, Ukrainian, and Russian
+- 🔍 **Auto-zoom to route** - Map automatically fits entire journey in view when route is selected
+- 💾 **Persistent route view** - Route visualization persists when switching between tabs
+  - Lifted `selectedJourney` state to App component
+  - Route view remains intact when navigating to other tabs and back
+- ⏰ **Time displays on all stops** - Shows exact boarding/alighting times and estimated times for intermediate stops
+- 🧭 **Clean route view** - All other bus stops are hidden when viewing a journey route for clarity
+
+### Fixed
+- 🗺️ **Map blank screen** - Fixed issue where keeping components mounted with CSS `hidden` broke Leaflet map initialization
+- 🔍 **Map zoom reset** - Fixed map zooming to center instead of route when switching back to map tab
+  - Added 100ms delay to fitBounds to ensure map is fully initialized
+  - Modified LocationMarker to not zoom to user location when journey route is selected
+- 🎯 **State persistence** - Route visualization no longer lost when switching tabs
+
+### Technical
+- Lifted `selectedJourney` state from StopFinder to App component for persistence
+- Added `selectedJourney` prop to LocationMarker to prevent conflicting zoom behavior
+- Enhanced journey visualization with combined transfer logic and duplicate prevention
+- Updated all language files (en.json, et.json, uk.json, ru.json) with route visualization translations
+
 ## [1.4.2] - 2025-11-04
 
 ### Fixed

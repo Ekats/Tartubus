@@ -3,6 +3,9 @@
     "title": "Tartu Bussid",
     "subtitle": "Reaalajas bussijälgija"
   },
+  "header": {
+    "searchAddress": "Kuhu soovid minna?"
+  },
   "tabs": {
     "nearMe": "Lähedal",
     "map": "Kaart",
@@ -68,7 +71,17 @@
     "transfers": "ümberistumist",
     "walkTo": "Kõnni",
     "nearbyStop": "lähipeatus",
-    "destination": "sihtkohta"
+    "destination": "sihtkohta",
+    "searchDestination": "Otsingu sihtkoht",
+    "boardHere": "Istu peale siin",
+    "getOffHere": "Välju siin",
+    "getOff": "Välju",
+    "board": "Istu peale",
+    "at": "kell",
+    "arrives": "saabub",
+    "transferPoint": "Ümberistumiskoht",
+    "estimatedTime": "Eeldatav aeg",
+    "exitRouteView": "Välju marsruudi vaatest"
   },
   "favorites": {
     "title": "Lemmikpeatused",
@@ -107,6 +120,7 @@
     "estonian": "Eesti",
     "english": "Inglise",
     "ukrainian": "Ukraina",
+    "russian": "Vene",
     "veryClose": "Väga lähedal",
     "default": "Vaikimisi",
     "nearby": "Lähedal",

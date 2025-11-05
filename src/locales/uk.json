@@ -3,6 +3,9 @@
     "title": "Автобуси Тарту",
     "subtitle": "Відстеження автобусів у реальному часі"
   },
+  "header": {
+    "searchAddress": "Куди ви хочете піти?"
+  },
   "tabs": {
     "nearMe": "Поруч",
     "map": "Карта",
@@ -68,7 +71,17 @@
     "transfers": "пересадок",
     "walkTo": "Йти до",
     "nearbyStop": "зупинка поруч",
-    "destination": "пункт призначення"
+    "destination": "пункт призначення",
+    "searchDestination": "Пункт призначення пошуку",
+    "boardHere": "Сідайте тут",
+    "getOffHere": "Виходьте тут",
+    "getOff": "Виходьте",
+    "board": "Сідайте",
+    "at": "о",
+    "arrives": "прибуває",
+    "transferPoint": "Місце пересадки",
+    "estimatedTime": "Орієнтовний час",
+    "exitRouteView": "Вийти з перегляду маршруту"
   },
   "favorites": {
     "title": "Обрані зупинки",
@@ -107,6 +120,7 @@
     "estonian": "Естонська",
     "english": "Англійська",
     "ukrainian": "Українська",
+    "russian": "Російська",
     "veryClose": "Дуже близько",
     "default": "За замовчуванням",
     "nearby": "Поруч",

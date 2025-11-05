@@ -146,6 +146,19 @@ function Settings() {
               />
               <span className="ml-3 text-gray-700 dark:text-gray-300">🇺🇦 {t('settings.ukrainian')}</span>
             </label>
+            <label
+              className="flex items-center p-3 border border-gray-200 dark:border-gray-700 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+            >
+              <input
+                type="radio"
+                name="language"
+                value="ru"
+                checked={i18n.language === 'ru'}
+                onChange={() => handleLanguageChange('ru')}
+                className="w-4 h-4 text-primary focus:ring-primary"
+              />
+              <span className="ml-3 text-gray-700 dark:text-gray-300">🇷🇺 {t('settings.russian')}</span>
+            </label>
           </div>
         </div>
 
@@ -287,7 +300,7 @@ function Settings() {
 
         {/* Version info */}
         <div className="text-center text-xs text-gray-500 dark:text-gray-400 pb-4">
-          Tartu Bussid v1.4.2
+          Tartu Bussid v1.5.0
         </div>
       </div>
     </div>

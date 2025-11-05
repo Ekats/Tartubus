@@ -14,11 +14,31 @@ function App() {
   const [selectedStop, setSelectedStop] = useState(null)
   const [locationSelectionMode, setLocationSelectionMode] = useState(false)
   const [manualLocation, setManualLocation] = useState(null)
+  const [selectedJourney, setSelectedJourney] = useState(null) // Lifted state for journey route view
 
   // Initialize caches on app startup
   useEffect(() => {
     initializeCaches();
   }, [])
+
+  // Handle destination search - user searches for where they want to GO
+  const handleDestinationSelect = (location) => {
+    // Create a virtual "stop" at the searched destination
+    const destinationStop = {
+      gtfsId: `search:${location.lat}:${location.lon}`,
+      name: location.display_name || 'Search Result',
+      lat: location.lat,
+      lon: location.lon,
+      isSearchResult: true
+    };
+
+    console.log('🎯 Destination selected:', destinationStop);
+
+    // Open map view with this destination selected (will show "How to get here")
+    setSelectedStop(destinationStop);
+    setActiveView('map');
+    setLocationSelectionMode(false);
+  };
 
   const renderView = () => {
     switch (activeView) {
@@ -43,6 +63,8 @@ function App() {
           selectedStop={selectedStop}
           locationSelectionMode={locationSelectionMode}
           manualLocation={manualLocation}
+          selectedJourney={selectedJourney}
+          onJourneyChange={setSelectedJourney}
           onLocationSelected={(location) => {
             setManualLocation(location)
             setLocationSelectionMode(false)
@@ -70,7 +92,11 @@ function App() {
 
   return (
     <div className="w-full h-full flex flex-col bg-gray-50 dark:bg-gray-900 transition-colors">
-      <Header isDarkMode={isDarkMode} toggleDarkMode={toggleDarkMode} />
+      <Header
+        isDarkMode={isDarkMode}
+        toggleDarkMode={toggleDarkMode}
+        onDestinationSelect={handleDestinationSelect}
+      />
       <div className="flex-1 overflow-hidden">
         {renderView()}
       </div>

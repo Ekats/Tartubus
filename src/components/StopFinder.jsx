@@ -1,12 +1,12 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap, useMapEvents } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, Tooltip, Polyline, useMap, useMapEvents } from 'react-leaflet';
 import MarkerClusterGroup from 'react-leaflet-cluster';
 import L from 'leaflet';
 import 'leaflet-polylinedecorator';
 import { useGeolocation } from '../hooks/useGeolocation';
 import { useFavorites } from '../hooks/useFavorites';
-import { getNearbyStops, getStopsByRoutes, getNextStopName, planJourney } from '../services/digitransit';
+import { getNearbyStops, getStopsByRoutes, getNextStopName, planJourney, decodePolyline } from '../services/digitransit';
 import { getSetting } from '../utils/settings';
 import { reverseGeocode } from '../utils/geocoding';
 import { shouldShowDeparture, isDepartureLate } from '../utils/timeFormatter';
@@ -105,8 +105,26 @@ const locationPinIcon = new L.Icon({
   popupAnchor: [0, -50],
 });
 
+// Custom destination pin icon for search results - green
+const destinationPinIcon = new L.Icon({
+  iconUrl: 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(`
+    <svg width="40" height="50" viewBox="0 0 40 50" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <filter id="dest-shadow">
+          <feDropShadow dx="0" dy="2" stdDeviation="3" flood-opacity="0.4"/>
+        </filter>
+      </defs>
+      <path d="M20 0C11.716 0 5 6.716 5 15c0 8.284 15 35 15 35s15-26.716 15-35C35 6.716 28.284 0 20 0z" fill="#10B981" stroke="white" stroke-width="2" filter="url(#dest-shadow)"/>
+      <circle cx="20" cy="15" r="6" fill="white"/>
+    </svg>
+  `),
+  iconSize: [40, 50],
+  iconAnchor: [20, 50],
+  popupAnchor: [0, -50],
+});
+
 // Component to update map view when location changes
-function LocationMarker({ position, onLocationUpdate, mapRef }) {
+function LocationMarker({ position, onLocationUpdate, mapRef, selectedJourney }) {
   const map = useMap();
   const hasZoomedRef = useRef(false);
 
@@ -119,8 +137,9 @@ function LocationMarker({ position, onLocationUpdate, mapRef }) {
 
   useEffect(() => {
     if (position) {
-      // Only zoom to location on first update, not continuous tracking updates
-      if (!hasZoomedRef.current) {
+      // Only zoom to location on first update if there's no selected journey
+      // If there's a journey selected, let the journey zoom effect handle it
+      if (!hasZoomedRef.current && !selectedJourney) {
         map.setView([position.lat, position.lon], 15);
         hasZoomedRef.current = true;
       }
@@ -130,7 +149,7 @@ function LocationMarker({ position, onLocationUpdate, mapRef }) {
         onLocationUpdate(position.lat, position.lon);
       }
     }
-  }, [position, map]);
+  }, [position, map, selectedJourney]);
 
   if (!position) return null;
 
@@ -282,8 +301,23 @@ function RouteLineWithArrows({ positions, color, headsign, routeName, stopCount 
   return null;
 }
 
-function StopFinder({ isDarkMode, selectedStop: highlightedStop, locationSelectionMode, manualLocation, onLocationSelected, onCancelLocationSelection }) {
+function StopFinder({
+  isDarkMode,
+  selectedStop: highlightedStop,
+  locationSelectionMode,
+  manualLocation,
+  selectedJourney,
+  onJourneyChange,
+  onLocationSelected,
+  onCancelLocationSelection
+}) {
   const { t } = useTranslation();
+
+  // Log when component receives highlightedStop prop
+  useEffect(() => {
+    console.log('🗺️ StopFinder received highlightedStop:', highlightedStop);
+  }, [highlightedStop]);
+
   const { location: gpsLocation, getLocation, startWatching, stopWatching, watching } = useGeolocation();
 
   // Use manual location if available, otherwise use GPS location
@@ -309,6 +343,7 @@ function StopFinder({ isDarkMode, selectedStop: highlightedStop, locationSelecti
   const [nearbyStopsForRouting, setNearbyStopsForRouting] = useState([]); // Stops with departure data for routing
   const [journeyPlans, setJourneyPlans] = useState([]); // Journey plans with transfers
   const [loadingJourney, setLoadingJourney] = useState(false);
+  // selectedJourney state is now lifted to App.jsx and passed as prop
   const mapRef = useRef(null);
   const moveTimeoutRef = useRef(null);
   const lastMovePositionRef = useRef(null);
@@ -468,9 +503,37 @@ function StopFinder({ isDarkMode, selectedStop: highlightedStop, locationSelecti
     setLoading(true);
     setError(null);
     try {
-      // Load ALL stops in the city zone radius
-      const zoneStops = await getNearbyStops(zone.center.lat, zone.center.lon, zone.radius);
-      console.log(`✅ Loaded ${zoneStops.length} stops for ${zone.name}`);
+      // Load stops from lightweight JSON file (104KB vs 147MB routes.json)
+      console.log('📦 Loading stops from stops.json...');
+      const response = await fetch('/Tartubus/data/stops.json');
+      if (!response.ok) {
+        throw new Error(`Failed to load stops.json: ${response.status}`);
+      }
+      const allStops = await response.json();
+
+      // Filter stops within the city zone radius
+      const calculateDistance = (lat1, lon1, lat2, lon2) => {
+        const R = 6371000; // Earth's radius in meters
+        const dLat = (lat2 - lat1) * Math.PI / 180;
+        const dLon = (lon2 - lon1) * Math.PI / 180;
+        const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                  Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                  Math.sin(dLon/2) * Math.sin(dLon/2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        return R * c;
+      };
+
+      const zoneStops = allStops
+        .filter(stop => {
+          const distance = calculateDistance(zone.center.lat, zone.center.lon, stop.lat, stop.lon);
+          return distance <= zone.radius;
+        })
+        .map(stop => ({
+          ...stop,
+          stoptimesWithoutPatterns: [] // No departure times yet - will be loaded on demand
+        }));
+
+      console.log(`✅ Loaded ${zoneStops.length} stops for ${zone.name} from stops.json`);
       setAllZoneStops(zoneStops); // Store all stops
       setStops(zoneStops); // Initially show all (will be filtered by viewport)
       setCityZoneStopsLoaded(true);
@@ -515,6 +578,95 @@ function StopFinder({ isDarkMode, selectedStop: highlightedStop, locationSelecti
     }
   }, [manualLocation]);
 
+  // Fetch departure times for stops that don't have them yet (loaded from stops.json)
+  useEffect(() => {
+    const fetchDepartureData = async () => {
+      if (!selectedStop) return;
+
+      // If stop already has departure data, skip
+      if (selectedStop.stoptimesWithoutPatterns && selectedStop.stoptimesWithoutPatterns.length > 0) {
+        console.log('✅ Stop already has departure data');
+        return;
+      }
+
+      // If it's a search result (virtual stop), skip
+      if (selectedStop.isSearchResult) {
+        console.log('📍 Search result - no departures needed');
+        return;
+      }
+
+      console.log('🔄 Fetching departure data for:', selectedStop.name);
+
+      try {
+        // Fetch stop with departure times from API
+        const { getStopById } = await import('../services/digitransit');
+        const stopWithDepartures = await getStopById(selectedStop.gtfsId);
+
+        if (stopWithDepartures) {
+          console.log('✅ Loaded', stopWithDepartures.stoptimesWithoutPatterns?.length || 0, 'departures for', selectedStop.name);
+          // Update the selected stop with departure data
+          setSelectedStop(prev => prev && prev.gtfsId === selectedStop.gtfsId ? {
+            ...prev,
+            ...stopWithDepartures
+          } : prev);
+
+          // Also update the stop in the stops array so future clicks don't re-fetch
+          setStops(prevStops => prevStops.map(stop =>
+            stop.gtfsId === selectedStop.gtfsId ? { ...stop, ...stopWithDepartures } : stop
+          ));
+        }
+      } catch (error) {
+        console.error('❌ Error fetching departure data:', error);
+      }
+    };
+
+    fetchDepartureData();
+  }, [selectedStop?.gtfsId]); // Only re-run when selected stop changes
+
+  // Auto-zoom map to fit the selected journey route
+  useEffect(() => {
+    if (!selectedJourney) return;
+
+    console.log('🗺️ Auto-zooming map to fit journey route');
+
+    // Small delay to ensure map is fully initialized after component mount
+    const zoomTimeout = setTimeout(() => {
+      if (!mapRef.current) {
+        console.log('⚠️ Map ref not ready, skipping zoom');
+        return;
+      }
+
+      // Collect all coordinates from the journey legs
+      const allCoords = [];
+
+      selectedJourney.legs.forEach(leg => {
+        // Add start point
+        allCoords.push([leg.from.lat, leg.from.lon]);
+
+        // Decode polyline if available
+        if (leg.geometry) {
+          const decoded = decodePolyline(leg.geometry);
+          allCoords.push(...decoded);
+        }
+
+        // Add end point
+        allCoords.push([leg.to.lat, leg.to.lon]);
+      });
+
+      if (allCoords.length > 0) {
+        try {
+          const bounds = L.latLngBounds(allCoords);
+          mapRef.current.fitBounds(bounds, { padding: [50, 50], maxZoom: 15 });
+          console.log('✅ Map zoomed to journey bounds');
+        } catch (error) {
+          console.error('Error fitting bounds:', error);
+        }
+      }
+    }, 100); // 100ms delay to allow map to initialize
+
+    return () => clearTimeout(zoomTimeout);
+  }, [selectedJourney]);
+
   // Ref to track last journey planning parameters to prevent constant refetching
   const lastJourneyParamsRef = useRef(null);
 
@@ -522,6 +674,7 @@ function StopFinder({ isDarkMode, selectedStop: highlightedStop, locationSelecti
   useEffect(() => {
     const fetchJourneyPlans = async () => {
       if (!selectedStop || !location.lat || !location.lon) {
+        console.log('❌ Journey planning skipped: missing data', { selectedStop: !!selectedStop, location: !!location.lat });
         setJourneyPlans([]);
         lastJourneyParamsRef.current = null;
         return;
@@ -539,6 +692,7 @@ function StopFinder({ isDarkMode, selectedStop: highlightedStop, locationSelecti
           lastParams.stopId === currentParams.stopId &&
           lastParams.lat === currentParams.lat &&
           lastParams.lon === currentParams.lon) {
+        console.log('❌ Journey planning skipped: same parameters');
         // Same parameters, don't refetch
         return;
       }
@@ -548,13 +702,17 @@ function StopFinder({ isDarkMode, selectedStop: highlightedStop, locationSelecti
       const lonDiff = selectedStop.lon - location.lon;
       const distanceToStop = Math.sqrt(latDiff * latDiff + lonDiff * lonDiff) * 111000; // meters
 
-      // Don't fetch journey plans if stop is within walking distance
+      // Don't fetch journey plans if stop is within walking distance (unless it's a search result)
       const walkingDistanceThreshold = getSetting('nearbyRadius') || 500;
-      if (distanceToStop <= walkingDistanceThreshold) {
+      if (distanceToStop <= walkingDistanceThreshold && !selectedStop.isSearchResult) {
+        console.log(`❌ Journey planning skipped: within walking distance (${distanceToStop.toFixed(0)}m < ${walkingDistanceThreshold}m)`);
         setJourneyPlans([]);
         lastJourneyParamsRef.current = currentParams;
         return;
       }
+
+      console.log(`✅ Starting journey planning to ${selectedStop.name} (${distanceToStop.toFixed(0)}m away, isSearchResult: ${!!selectedStop.isSearchResult})`);
+      console.log('📍 User location:', { lat: location.lat, lon: location.lon }, 'Destination:', { lat: selectedStop.lat, lon: selectedStop.lon });
 
       setLoadingJourney(true);
       try {
@@ -689,11 +847,18 @@ function StopFinder({ isDarkMode, selectedStop: highlightedStop, locationSelecti
 
   // Center map on highlighted stop when navigating from Near Me, or on user location when just opening map
   useEffect(() => {
-    if (highlightedStop && mapRef.current) {
-      // Center on stop and zoom in
-      mapRef.current.setView([highlightedStop.lat, highlightedStop.lon], 16);
-      // Set as selected stop to show popup
+    if (highlightedStop) {
+      console.log('📌 Setting highlighted stop as selected:', highlightedStop.name, 'isSearchResult:', highlightedStop.isSearchResult);
+
+      // Set as selected stop to show overlay immediately (for both search results and regular stops)
       setSelectedStop(highlightedStop);
+
+      // Center on stop and zoom in (if map is ready)
+      if (mapRef.current) {
+        mapRef.current.setView([highlightedStop.lat, highlightedStop.lon], 16);
+      } else {
+        console.log('⏳ Map not ready yet, will center when map loads');
+      }
     }
   }, [highlightedStop]);
 
@@ -1269,7 +1434,29 @@ function StopFinder({ isDarkMode, selectedStop: highlightedStop, locationSelecti
         )}
 
         {/* User location marker */}
-        {location.lat && !locationSelectionMode && <LocationMarker position={location} onLocationUpdate={handleLocationUpdate} mapRef={mapRef} />}
+        {location.lat && !locationSelectionMode && <LocationMarker position={location} onLocationUpdate={handleLocationUpdate} mapRef={mapRef} selectedJourney={selectedJourney} />}
+
+        {/* Destination marker for search results */}
+        {highlightedStop && highlightedStop.isSearchResult && (
+          <Marker
+            position={[highlightedStop.lat, highlightedStop.lon]}
+            icon={destinationPinIcon}
+            zIndexOffset={2000}
+            eventHandlers={{
+              click: (e) => {
+                L.DomEvent.stopPropagation(e);
+                setSelectedStop(highlightedStop);
+              }
+            }}
+          >
+            <Popup>
+              <div className="text-sm">
+                <div className="font-semibold mb-1">{t('map.destination') || 'Destination'}</div>
+                <div className="text-gray-600">{highlightedStop.name}</div>
+              </div>
+            </Popup>
+          </Marker>
+        )}
 
         {/* Route lines with direction arrows */}
         {routePatterns.map((pattern, idx) => {
@@ -1297,17 +1484,241 @@ function StopFinder({ isDarkMode, selectedStop: highlightedStop, locationSelecti
           );
         })}
 
-        {/* Stop markers with clustering */}
-        <MarkerClusterGroup
-          chunkedLoading
-          maxClusterRadius={50}
-          spiderfyOnMaxZoom={false}
-          showCoverageOnHover={false}
-          zoomToBoundsOnClick={true}
-          disableClusteringAtZoom={15}
-          iconCreateFunction={createClusterCustomIcon}
-        >
-        {filteredStops
+        {/* Journey route visualization */}
+        {selectedJourney && selectedJourney.legs && selectedJourney.legs.map((leg, legIdx) => {
+          // Decode the polyline geometry for this leg
+          const positions = leg.geometry ? decodePolyline(leg.geometry) : [];
+
+          if (positions.length === 0) {
+            // Fallback: draw straight line between from/to
+            positions.push([leg.from.lat, leg.from.lon]);
+            positions.push([leg.to.lat, leg.to.lon]);
+          }
+
+          // Different colors for walk vs bus
+          const color = leg.mode === 'WALK' ? '#10B981' : '#3B82F6'; // Green for walk, blue for bus
+          const weight = leg.mode === 'WALK' ? 4 : 6;
+          const dashArray = leg.mode === 'WALK' ? '8, 8' : null; // Dashed for walking
+
+          return (
+            <Polyline
+              key={`journey-leg-${legIdx}`}
+              positions={positions}
+              pathOptions={{
+                color: color,
+                weight: weight,
+                opacity: 0.8,
+                dashArray: dashArray
+              }}
+            />
+          );
+        })}
+
+        {/* Journey stop markers with times - ALL stops along the route */}
+        {selectedJourney && selectedJourney.legs && (() => {
+          const stopMarkers = [];
+          const transitLegs = selectedJourney.legs.filter(leg => leg.mode === 'BUS');
+
+          // Track which stops we've already rendered to avoid duplicates at transfer points
+          const renderedStops = new Set();
+
+          selectedJourney.legs.forEach((leg, legIdx) => {
+            // Only show stops for BUS legs
+            if (leg.mode !== 'BUS') return;
+
+            // Use the leg's actual start/end times from the API
+            const legStartTime = leg.startTime ? new Date(leg.startTime) : new Date(selectedJourney.start);
+            const legEndTime = leg.endTime ? new Date(leg.endTime) : new Date(selectedJourney.end);
+
+            // Determine if this is the first boarding stop
+            const busLegsSoFar = selectedJourney.legs.slice(0, legIdx).filter(l => l.mode === 'BUS').length;
+            const isFirstLeg = busLegsSoFar === 0;
+
+            // Check if the next bus leg starts at the same location (transfer point)
+            const nextBusLeg = selectedJourney.legs.slice(legIdx + 1).find(l => l.mode === 'BUS');
+            const isTransferStop = nextBusLeg &&
+              leg.to.stop?.gtfsId === nextBusLeg.from.stop?.gtfsId;
+
+            // Add "from" stop (boarding stop) only if it's NOT a transfer from previous leg
+            if (leg.from.stop && !renderedStops.has(leg.from.stop.gtfsId)) {
+              const timeStr = legStartTime.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+
+              stopMarkers.push(
+                <Marker
+                  key={`journey-stop-from-${legIdx}`}
+                  position={[leg.from.lat, leg.from.lon]}
+                  icon={createStopIcon('#FBBF24', true)} // Larger yellow icon
+                  zIndexOffset={3000}
+                >
+                  {/* Permanent tooltip for first boarding stop only */}
+                  {isFirstLeg && (
+                    <Tooltip permanent direction="top" className="journey-stop-tooltip">
+                      <div className="text-xs font-semibold">
+                        <div className="font-bold">{leg.from.stop.name}</div>
+                        <div className="text-amber-600">
+                          🚌 {leg.route?.shortName} {t('map.at')} {timeStr}
+                        </div>
+                        <div className="text-green-600">
+                          📍 {t('map.boardHere')}
+                        </div>
+                      </div>
+                    </Tooltip>
+                  )}
+                  {/* Regular popup for all stops */}
+                  <Popup>
+                    <div className="text-sm">
+                      <div className="font-bold">{leg.from.stop.name}</div>
+                      <div className="text-amber-600 font-semibold">
+                        🚌 {leg.route?.shortName} {t('map.at')} {timeStr}
+                      </div>
+                      <div className="text-green-600 text-xs font-semibold">
+                        📍 {t('map.boardHere')}
+                      </div>
+                    </div>
+                  </Popup>
+                </Marker>
+              );
+              renderedStops.add(leg.from.stop.gtfsId);
+            }
+
+            // Add all intermediate stops
+            if (leg.intermediateStops && leg.intermediateStops.length > 0) {
+              // Calculate approximate time for each intermediate stop
+              // Distribute the leg duration evenly across all stops
+              const totalStops = leg.intermediateStops.length + 2; // +2 for from and to stops
+              const timePerStop = (legEndTime - legStartTime) / totalStops;
+
+              leg.intermediateStops.forEach((stop, stopIdx) => {
+                // Estimate arrival time for this intermediate stop
+                const estimatedTime = new Date(legStartTime.getTime() + timePerStop * (stopIdx + 1));
+                const timeStr = estimatedTime.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+
+                stopMarkers.push(
+                  <Marker
+                    key={`journey-stop-intermediate-${legIdx}-${stopIdx}`}
+                    position={[stop.lat, stop.lon]}
+                    icon={createStopIcon('#FBBF24', false)} // Regular size yellow icon
+                    zIndexOffset={2900}
+                  >
+                    <Popup>
+                      <div className="text-sm">
+                        <div className="font-bold">{stop.name}</div>
+                        <div className="text-amber-600 font-semibold">
+                          🚌 {leg.route?.shortName} ~{timeStr}
+                        </div>
+                        <div className="text-gray-500 text-xs">{t('map.estimatedTime')}</div>
+                      </div>
+                    </Popup>
+                  </Marker>
+                );
+              });
+            }
+
+            // Add "to" stop (alighting stop - larger, highlighted)
+            if (leg.to.stop) {
+              const alightTimeStr = legEndTime.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+
+              // Check if there are more BUS legs after this one
+              const hasMoreBusLegs = selectedJourney.legs.slice(legIdx + 1).some(l => l.mode === 'BUS');
+              const isLastBusLeg = !hasMoreBusLegs;
+
+              // If this is a transfer point, combine the tooltip info
+              if (isTransferStop && nextBusLeg) {
+                const boardTimeStr = new Date(nextBusLeg.startTime).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+
+                stopMarkers.push(
+                  <Marker
+                    key={`journey-stop-transfer-${legIdx}`}
+                    position={[leg.to.lat, leg.to.lon]}
+                    icon={createStopIcon('#FBBF24', true)} // Larger yellow icon
+                    zIndexOffset={3000}
+                  >
+                    {/* Combined permanent tooltip for transfer points */}
+                    <Tooltip permanent direction="top" className="journey-stop-tooltip">
+                      <div className="text-xs font-semibold">
+                        <div className="font-bold">{leg.to.stop.name}</div>
+                        <div className="text-orange-600">
+                          ⬇️ {t('map.getOff')} 🚌 {leg.route?.shortName} {t('map.at')} {alightTimeStr}
+                        </div>
+                        <div className="text-green-600">
+                          ⬆️ {t('map.board')} 🚌 {nextBusLeg.route?.shortName} {t('map.at')} {boardTimeStr}
+                        </div>
+                      </div>
+                    </Tooltip>
+                    {/* Regular popup */}
+                    <Popup>
+                      <div className="text-sm">
+                        <div className="font-bold">{leg.to.stop.name}</div>
+                        <div className="text-orange-600 font-semibold text-xs mb-1">
+                          🔄 {t('map.transferPoint')}
+                        </div>
+                        <div className="text-gray-700 dark:text-gray-300 text-xs">
+                          ⬇️ {t('map.getOff')} 🚌 {leg.route?.shortName} {t('map.at')} {alightTimeStr}
+                        </div>
+                        <div className="text-gray-700 dark:text-gray-300 text-xs">
+                          ⬆️ {t('map.board')} 🚌 {nextBusLeg.route?.shortName} {t('map.at')} {boardTimeStr}
+                        </div>
+                      </div>
+                    </Popup>
+                  </Marker>
+                );
+                renderedStops.add(leg.to.stop.gtfsId);
+              } else {
+                // Final destination - show simple tooltip
+                stopMarkers.push(
+                  <Marker
+                    key={`journey-stop-to-${legIdx}`}
+                    position={[leg.to.lat, leg.to.lon]}
+                    icon={createStopIcon('#FBBF24', true)} // Larger yellow icon
+                    zIndexOffset={3000}
+                  >
+                    {/* Permanent tooltip for final destination */}
+                    {isLastBusLeg && (
+                      <Tooltip permanent direction="top" className="journey-stop-tooltip">
+                        <div className="text-xs font-semibold">
+                          <div className="font-bold">{leg.to.stop.name}</div>
+                          <div className="text-amber-600">
+                            🚌 {leg.route?.shortName} {t('map.arrives')} {alightTimeStr}
+                          </div>
+                          <div className="text-red-600">
+                            📍 {t('map.getOffHere')}
+                          </div>
+                        </div>
+                      </Tooltip>
+                    )}
+                    {/* Regular popup for all stops */}
+                    <Popup>
+                      <div className="text-sm">
+                        <div className="font-bold">{leg.to.stop.name}</div>
+                        <div className="text-amber-600 font-semibold">
+                          🚌 {leg.route?.shortName} {t('map.arrives')} {alightTimeStr}
+                        </div>
+                        <div className="text-red-600 text-xs font-semibold">
+                          {isLastBusLeg ? `📍 ${t('map.getOffHere')}` : `📍 ${t('map.stop')}`}
+                        </div>
+                      </div>
+                    </Popup>
+                  </Marker>
+                );
+              }
+            }
+          });
+
+          return stopMarkers;
+        })()}
+
+        {/* Stop markers with clustering - hide when viewing a journey route */}
+        {!selectedJourney && (
+          <MarkerClusterGroup
+            chunkedLoading
+            maxClusterRadius={60}
+            spiderfyOnMaxZoom={false}
+            showCoverageOnHover={false}
+            zoomToBoundsOnClick={true}
+            disableClusteringAtZoom={15}
+            iconCreateFunction={createClusterCustomIcon}
+          >
+          {filteredStops
           .slice()
           .sort((a, b) => {
             const aIsFav = isFavorite(a.gtfsId);
@@ -1551,7 +1962,8 @@ function StopFinder({ isDarkMode, selectedStop: highlightedStop, locationSelecti
             </Marker>
           );
         })}
-        </MarkerClusterGroup>
+          </MarkerClusterGroup>
+        )}
       </MapContainer>
 
       {/* Top controls - Route filter */}
@@ -1633,6 +2045,19 @@ function StopFinder({ isDarkMode, selectedStop: highlightedStop, locationSelecti
 
       {/* Bottom right - Location control */}
       <div className="absolute bottom-24 right-4 z-[1000] flex flex-col items-end gap-2">
+        {/* Exit route view button */}
+        {selectedJourney && (
+          <button
+            onClick={() => onJourneyChange(null)}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg shadow-lg transition-colors flex items-center gap-2 font-medium"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+            {t('map.exitRouteView')}
+          </button>
+        )}
+
         {/* Toast message */}
         {locationMessage && (
           <div className="bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 px-4 py-2 rounded-lg shadow-lg text-sm font-medium animate-fade-in">
@@ -1730,24 +2155,30 @@ function StopFinder({ isDarkMode, selectedStop: highlightedStop, locationSelecti
       {selectedStop && !locationSelectionMode && (
         <div className="absolute inset-x-0 top-0 bottom-24 z-[2000] bg-white dark:bg-gray-900 flex flex-col rounded-b-3xl shadow-2xl animate-slide-down">
           {/* Header */}
-          <div className="bg-blue-600 dark:bg-blue-700 text-white px-4 py-3 flex items-center justify-between shadow-lg">
+          <div className={`${selectedStop.isSearchResult ? 'bg-green-600 dark:bg-green-700' : 'bg-blue-600 dark:bg-blue-700'} text-white px-4 py-3 flex items-center justify-between shadow-lg`}>
             <div className="flex-1 min-w-0">
               <h2 className="font-bold text-lg truncate">{selectedStop.name}</h2>
-              <p className="text-sm text-blue-100">Stop {selectedStop.code}</p>
+              {selectedStop.isSearchResult ? (
+                <p className="text-sm text-green-100">{t('map.searchDestination') || 'Search destination'}</p>
+              ) : (
+                <p className="text-sm text-blue-100">Stop {selectedStop.code}</p>
+              )}
             </div>
             <div className="flex items-center gap-2">
-              <button
-                onClick={() => toggleFavorite(selectedStop)}
-                className={`p-2 rounded-lg transition-colors ${
-                  isFavorite(selectedStop.gtfsId)
-                    ? 'bg-yellow-400 text-yellow-900'
-                    : 'bg-white/20 hover:bg-white/30 text-white'
-                }`}
-              >
-                <svg className="w-6 h-6" fill={isFavorite(selectedStop.gtfsId) ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
-                </svg>
-              </button>
+              {!selectedStop.isSearchResult && (
+                <button
+                  onClick={() => toggleFavorite(selectedStop)}
+                  className={`p-2 rounded-lg transition-colors ${
+                    isFavorite(selectedStop.gtfsId)
+                      ? 'bg-yellow-400 text-yellow-900'
+                      : 'bg-white/20 hover:bg-white/30 text-white'
+                  }`}
+                >
+                  <svg className="w-6 h-6" fill={isFavorite(selectedStop.gtfsId) ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+                  </svg>
+                </button>
+              )}
               <button
                 onClick={() => setSelectedStop(null)}
                 className="p-2 rounded-lg bg-white/20 hover:bg-white/30 transition-colors"
@@ -1790,7 +2221,17 @@ function StopFinder({ isDarkMode, selectedStop: highlightedStop, locationSelecti
                     const goesToDifferentStop = !plan.isMainStop;
 
                     return (
-                      <div key={planIdx} className="bg-white dark:bg-gray-800 rounded-lg p-3 border border-gray-200 dark:border-gray-700">
+                      <button
+                        key={planIdx}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          console.log('🗺️ Showing route on map for journey plan:', plan);
+                          onJourneyChange(plan);
+                          setSelectedStop(null); // Close the overlay to show the map
+                        }}
+                        className="w-full bg-white dark:bg-gray-800 rounded-lg p-3 border border-gray-200 dark:border-gray-700 hover:border-blue-500 dark:hover:border-blue-400 hover:shadow-lg transition-all cursor-pointer text-left pointer-events-auto"
+                        style={{ WebkitTapHighlightColor: 'transparent' }}
+                      >
                         <div className="flex items-center justify-between mb-2">
                           <div className="flex items-center gap-2 flex-wrap">
                             <span className="text-lg font-bold text-gray-800 dark:text-gray-200">
@@ -1848,7 +2289,7 @@ function StopFinder({ isDarkMode, selectedStop: highlightedStop, locationSelecti
                             </div>
                           ))}
                         </div>
-                      </div>
+                      </button>
                     );
                   })}
                 </div>

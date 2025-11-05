@@ -3,6 +3,7 @@ import { initReactI18next } from 'react-i18next';
 import et from './locales/et.json';
 import en from './locales/en.json';
 import uk from './locales/uk.json';
+import ru from './locales/ru.json';
 
 // Get saved language or detect browser language, default to Estonian
 const getSavedLanguage = () => {
@@ -10,12 +11,13 @@ const getSavedLanguage = () => {
   console.log('🌐 Saved language from localStorage:', saved);
   if (saved) return saved;
 
-  // Check browser language - detect English, Ukrainian, or default to Estonian
+  // Check browser language - detect English, Ukrainian, Russian, or default to Estonian
   const browserLang = navigator.language.split('-')[0];
   console.log('🌐 Browser language detected:', browserLang);
   let selectedLang = 'et'; // Default to Estonian
   if (browserLang === 'en') selectedLang = 'en';
   else if (browserLang === 'uk') selectedLang = 'uk';
+  else if (browserLang === 'ru') selectedLang = 'ru';
   console.log('🌐 Using language:', selectedLang);
   return selectedLang;
 };
@@ -27,6 +29,7 @@ i18n
       et: { translation: et },
       en: { translation: en },
       uk: { translation: uk },
+      ru: { translation: ru },
     },
     lng: getSavedLanguage(),
     fallbackLng: 'et', // Default to Estonian

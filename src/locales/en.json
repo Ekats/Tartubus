@@ -3,6 +3,9 @@
     "title": "Tartu Buses",
     "subtitle": "Live Bus Tracker"
   },
+  "header": {
+    "searchAddress": "Where do you want to go?"
+  },
   "tabs": {
     "nearMe": "Near Me",
     "map": "Map",
@@ -68,7 +71,17 @@
     "transfers": "transfers",
     "walkTo": "Walk to",
     "nearbyStop": "nearby stop",
-    "destination": "destination"
+    "destination": "destination",
+    "searchDestination": "Search destination",
+    "boardHere": "Board here",
+    "getOffHere": "Get off here",
+    "getOff": "Get off",
+    "board": "Board",
+    "at": "at",
+    "arrives": "arrives",
+    "transferPoint": "Transfer Point",
+    "estimatedTime": "Estimated time",
+    "exitRouteView": "Exit Route View"
   },
   "favorites": {
     "title": "Favorite Stops",
@@ -107,6 +120,7 @@
     "estonian": "Estonian",
     "english": "English",
     "ukrainian": "Ukrainian",
+    "russian": "Russian",
     "veryClose": "Very close",
     "default": "Default",
     "nearby": "Nearby",

@@ -1,0 +1,5679 @@
+[
+  {
+    "gtfsId": "Viro:26377",
+    "name": "Raeplats",
+    "code": "7820196-1",
+    "lat": 58.3811397,
+    "lon": 26.7248057
+  },
+  {
+    "gtfsId": "Viro:26378",
+    "name": "Raeplats",
+    "code": "7820197-1",
+    "lat": 58.3797479,
+    "lon": 26.7257699
+  },
+  {
+    "gtfsId": "Viro:26125",
+    "name": "Vabaduse puiestee",
+    "code": "7820293-1",
+    "lat": 58.3790936,
+    "lon": 26.7272721
+  },
+  {
+    "gtfsId": "Viro:25339",
+    "name": "Lai",
+    "code": "7820121-1",
+    "lat": 58.3832965,
+    "lon": 26.7187471
+  },
+  {
+    "gtfsId": "Viro:24709",
+    "name": "Atlantis",
+    "code": "7820020-1",
+    "lat": 58.3812279,
+    "lon": 26.7288961
+  },
+  {
+    "gtfsId": "Viro:24871",
+    "name": "Kesklinn V",
+    "code": "7820085-1",
+    "lat": 58.3774234,
+    "lon": 26.7275562
+  },
+  {
+    "gtfsId": "Viro:24734",
+    "name": "Kesklinn VI",
+    "code": "7820084-1",
+    "lat": 58.3769096,
+    "lon": 26.72651
+  },
+  {
+    "gtfsId": "Viro:24879",
+    "name": "Linnamuuseum",
+    "code": "7820093-1",
+    "lat": 58.3825316,
+    "lon": 26.7280689
+  },
+  {
+    "gtfsId": "Viro:26069",
+    "name": "Kesklinn I",
+    "code": "7820039-1",
+    "lat": 58.3767741,
+    "lon": 26.7268626
+  },
+  {
+    "gtfsId": "Viro:149230",
+    "name": "Palmihoone",
+    "code": "7820176-2",
+    "lat": 58.3840726,
+    "lon": 26.7221444
+  },
+  {
+    "gtfsId": "Viro:128917",
+    "name": "Kesklinn IV",
+    "code": "7820085-2",
+    "lat": 58.3775985,
+    "lon": 26.7279281
+  },
+  {
+    "gtfsId": "Viro:131462",
+    "name": "Kesklinn",
+    "code": "7820088-2",
+    "lat": 58.3772071,
+    "lon": 26.7278447
+  },
+  {
+    "gtfsId": "Viro:24876",
+    "name": "Kesklinn II",
+    "code": "7820088-1",
+    "lat": 58.3772402,
+    "lon": 26.7279019
+  },
+  {
+    "gtfsId": "Viro:26235",
+    "name": "Palmihoone",
+    "code": "7820176-1",
+    "lat": 58.3836047,
+    "lon": 26.7233927
+  },
+  {
+    "gtfsId": "Viro:144371",
+    "name": "Vabadussild",
+    "code": "7820367-1",
+    "lat": 58.3833663,
+    "lon": 26.7236519
+  },
+  {
+    "gtfsId": "Viro:25810",
+    "name": "Vallikraavi",
+    "code": "7820240-1",
+    "lat": 58.3765878,
+    "lon": 26.7149197
+  },
+  {
+    "gtfsId": "Viro:25937",
+    "name": "Vallikraavi",
+    "code": "7820241-1",
+    "lat": 58.3766212,
+    "lon": 26.7145735
+  },
+  {
+    "gtfsId": "Viro:24878",
+    "name": "Kesklinn III",
+    "code": "7820089-1",
+    "lat": 58.3775152,
+    "lon": 26.7285696
+  },
+  {
+    "gtfsId": "Viro:24881",
+    "name": "Kloostri",
+    "code": "7820096-1",
+    "lat": 58.3840782,
+    "lon": 26.7164925
+  },
+  {
+    "gtfsId": "Viro:122997",
+    "name": "Soola",
+    "code": "7820248-1",
+    "lat": 58.3774619,
+    "lon": 26.7301979
+  },
+  {
+    "gtfsId": "Viro:26376",
+    "name": "Raatuse",
+    "code": "7820195-1",
+    "lat": 58.3823387,
+    "lon": 26.7322933
+  },
+  {
+    "gtfsId": "Viro:154124",
+    "name": "Raatuse",
+    "code": "7820377-1",
+    "lat": 58.382438,
+    "lon": 26.7324849
+  },
+  {
+    "gtfsId": "Viro:26234",
+    "name": "Palmihoone",
+    "code": "7820175-1",
+    "lat": 58.3851847,
+    "lon": 26.7228707
+  },
+  {
+    "gtfsId": "Viro:130363",
+    "name": "Soola II",
+    "code": "7820249-3",
+    "lat": 58.3768359,
+    "lon": 26.7307058
+  },
+  {
+    "gtfsId": "Viro:125595",
+    "name": "Soola I",
+    "code": "7820249-2",
+    "lat": 58.377313,
+    "lon": 26.7298244
+  },
+  {
+    "gtfsId": "Viro:26122",
+    "name": "Soola I",
+    "code": "7820249-1",
+    "lat": 58.3771684,
+    "lon": 26.7300578
+  },
+  {
+    "gtfsId": "Viro:24888",
+    "name": "Kroonuaia",
+    "code": "7820107-1",
+    "lat": 58.3850985,
+    "lon": 26.7194671
+  },
+  {
+    "gtfsId": "Viro:26123",
+    "name": "Turu",
+    "code": "7820289-1",
+    "lat": 58.3780267,
+    "lon": 26.7337157
+  },
+  {
+    "gtfsId": "Viro:33385",
+    "name": "Tartu bussijaam",
+    "code": "7820271-1",
+    "lat": 58.3779553,
+    "lon": 26.7321419
+  },
+  {
+    "gtfsId": "Viro:125565",
+    "name": "Turu",
+    "code": "7820289-2",
+    "lat": 58.3779208,
+    "lon": 26.7339643
+  },
+  {
+    "gtfsId": "Viro:26241",
+    "name": "Pepleri",
+    "code": "7820183-1",
+    "lat": 58.37553,
+    "lon": 26.7180352
+  },
+  {
+    "gtfsId": "Viro:26075",
+    "name": "Hurda",
+    "code": "7820047-1",
+    "lat": 58.3835049,
+    "lon": 26.7096461
+  },
+  {
+    "gtfsId": "Viro:26260",
+    "name": "Vene",
+    "code": "7820302-1",
+    "lat": 58.3857865,
+    "lon": 26.7263942
+  },
+  {
+    "gtfsId": "Viro:25025",
+    "name": "Kuperjanovi",
+    "code": "7820113-1",
+    "lat": 58.3759515,
+    "lon": 26.7104388
+  },
+  {
+    "gtfsId": "Viro:144830",
+    "name": "Lille",
+    "code": "7820353-1",
+    "lat": 58.3736677,
+    "lon": 26.7249005
+  },
+  {
+    "gtfsId": "Viro:26074",
+    "name": "Hurda",
+    "code": "7820046-1",
+    "lat": 58.3837366,
+    "lon": 26.7085839
+  },
+  {
+    "gtfsId": "Viro:26397",
+    "name": "Riiamäe",
+    "code": "7820219-1",
+    "lat": 58.3738278,
+    "lon": 26.7218741
+  },
+  {
+    "gtfsId": "Viro:123047",
+    "name": "Näituse",
+    "code": "7820167-1",
+    "lat": 58.3789342,
+    "lon": 26.7084644
+  },
+  {
+    "gtfsId": "Viro:26230",
+    "name": "Näituse",
+    "code": "7820168-1",
+    "lat": 58.3788895,
+    "lon": 26.7078962
+  },
+  {
+    "gtfsId": "Viro:26070",
+    "name": "Herne",
+    "code": "7820041-1",
+    "lat": 58.3859725,
+    "lon": 26.7148557
+  },
+  {
+    "gtfsId": "Viro:26398",
+    "name": "Riiamäe",
+    "code": "7820220-1",
+    "lat": 58.3729612,
+    "lon": 26.7228707
+  },
+  {
+    "gtfsId": "Viro:26130",
+    "name": "Pepleri",
+    "code": "7820182-1",
+    "lat": 58.3739658,
+    "lon": 26.7194089
+  },
+  {
+    "gtfsId": "Viro:144471",
+    "name": "Kroonuaia",
+    "code": "7820350-1",
+    "lat": 58.3859291,
+    "lon": 26.7195258
+  },
+  {
+    "gtfsId": "Viro:31940",
+    "name": "Aura veekeskus",
+    "code": "7820021-1",
+    "lat": 58.3756697,
+    "lon": 26.7330458
+  },
+  {
+    "gtfsId": "Viro:147922",
+    "name": "AHHAA",
+    "code": "7820371-1",
+    "lat": 58.3769713,
+    "lon": 26.7335596
+  },
+  {
+    "gtfsId": "Viro:26525",
+    "name": "Meltsiveski",
+    "code": "7820145-1",
+    "lat": 58.3868988,
+    "lon": 26.7244548
+  },
+  {
+    "gtfsId": "Viro:26112",
+    "name": "Vene",
+    "code": "7820301-1",
+    "lat": 58.3866684,
+    "lon": 26.7268563
+  },
+  {
+    "gtfsId": "Viro:144470",
+    "name": "Herne",
+    "code": "7820347-1",
+    "lat": 58.3862746,
+    "lon": 26.7140249
+  },
+  {
+    "gtfsId": "Viro:26244",
+    "name": "Pikk",
+    "code": "7820187-1",
+    "lat": 58.3811379,
+    "lon": 26.7369457
+  },
+  {
+    "gtfsId": "Viro:26243",
+    "name": "Pikk",
+    "code": "7820186-1",
+    "lat": 58.3803855,
+    "lon": 26.7378628
+  },
+  {
+    "gtfsId": "Viro:142069",
+    "name": "Raudteejaam",
+    "code": "7820208-3",
+    "lat": 58.3739472,
+    "lon": 26.7068625
+  },
+  {
+    "gtfsId": "Viro:123046",
+    "name": "Raudteejaam",
+    "code": "7820208-1",
+    "lat": 58.3739745,
+    "lon": 26.7068214
+  },
+  {
+    "gtfsId": "Viro:128668",
+    "name": "Raudteejaam",
+    "code": "7820208-2",
+    "lat": 58.3740126,
+    "lon": 26.7067425
+  },
+  {
+    "gtfsId": "Viro:26388",
+    "name": "Raudteejaam",
+    "code": "7820207-1",
+    "lat": 58.3737415,
+    "lon": 26.707197
+  },
+  {
+    "gtfsId": "Viro:133806",
+    "name": "Jaama",
+    "code": "7820328-1",
+    "lat": 58.3840735,
+    "lon": 26.7402712
+  },
+  {
+    "gtfsId": "Viro:158082",
+    "name": "Raudteejaam IV",
+    "code": "7820385-1",
+    "lat": 58.3735562,
+    "lon": 26.7079272
+  },
+  {
+    "gtfsId": "Viro:25473",
+    "name": "Lootuse",
+    "code": "7820133-1",
+    "lat": 58.370784,
+    "lon": 26.72156
+  },
+  {
+    "gtfsId": "Viro:158081",
+    "name": "Raudteejaam III",
+    "code": "7820384-1",
+    "lat": 58.3735,
+    "lon": 26.7079036
+  },
+  {
+    "gtfsId": "Viro:26082",
+    "name": "Jaama",
+    "code": "7820056-1",
+    "lat": 58.3839401,
+    "lon": 26.7403782
+  },
+  {
+    "gtfsId": "Viro:34112",
+    "name": "Tartu",
+    "code": "7890025-1",
+    "lat": 58.3739301,
+    "lon": 26.7061845
+  },
+  {
+    "gtfsId": "Viro:25942",
+    "name": "Karlova kool",
+    "code": "7820074-1",
+    "lat": 58.3717357,
+    "lon": 26.7329498
+  },
+  {
+    "gtfsId": "Viro:34210",
+    "name": "Tartu",
+    "code": "7890026-1",
+    "lat": 58.3737919,
+    "lon": 26.7061322
+  },
+  {
+    "gtfsId": "Viro:26238",
+    "name": "Peetri kirik",
+    "code": "7820179-1",
+    "lat": 58.3899214,
+    "lon": 26.7278263
+  },
+  {
+    "gtfsId": "Viro:26239",
+    "name": "Peetri kirik",
+    "code": "7820180-1",
+    "lat": 58.3899605,
+    "lon": 26.7274399
+  },
+  {
+    "gtfsId": "Viro:26240",
+    "name": "Peetri",
+    "code": "7820181-1",
+    "lat": 58.3900765,
+    "lon": 26.7291326
+  },
+  {
+    "gtfsId": "Viro:25475",
+    "name": "Kasarmu",
+    "code": "7820075-1",
+    "lat": 58.3865938,
+    "lon": 26.7371989
+  },
+  {
+    "gtfsId": "Viro:26236",
+    "name": "Pauluse",
+    "code": "7820177-1",
+    "lat": 58.3715285,
+    "lon": 26.7162841
+  },
+  {
+    "gtfsId": "Viro:25961",
+    "name": "Taara pst.",
+    "code": "7820260-1",
+    "lat": 58.3816162,
+    "lon": 26.702713
+  },
+  {
+    "gtfsId": "Viro:25477",
+    "name": "Kasarmu",
+    "code": "7820076-1",
+    "lat": 58.3868514,
+    "lon": 26.7362258
+  },
+  {
+    "gtfsId": "Viro:26849",
+    "name": "Aida",
+    "code": "7820007-1",
+    "lat": 58.373232,
+    "lon": 26.7368342
+  },
+  {
+    "gtfsId": "Viro:26671",
+    "name": "Narvamäe",
+    "code": "7820162-1",
+    "lat": 58.3890734,
+    "lon": 26.7302188
+  },
+  {
+    "gtfsId": "Viro:123048",
+    "name": "Taara pst.",
+    "code": "7820259-1",
+    "lat": 58.3814078,
+    "lon": 26.7035445
+  },
+  {
+    "gtfsId": "Viro:144469",
+    "name": "Piiri",
+    "code": "7820360-1",
+    "lat": 58.388259,
+    "lon": 26.7088574
+  },
+  {
+    "gtfsId": "Viro:144829",
+    "name": "Eha",
+    "code": "7820345-1",
+    "lat": 58.3702702,
+    "lon": 26.727561
+  },
+  {
+    "gtfsId": "Viro:26127",
+    "name": "Vaksali",
+    "code": "7820296-1",
+    "lat": 58.3772705,
+    "lon": 26.7018397
+  },
+  {
+    "gtfsId": "Viro:26242",
+    "name": "Piiri",
+    "code": "7820185-1",
+    "lat": 58.3885167,
+    "lon": 26.708278
+  },
+  {
+    "gtfsId": "Viro:162938",
+    "name": "Aida",
+    "code": "7820397-1",
+    "lat": 58.3731552,
+    "lon": 26.7373111
+  },
+  {
+    "gtfsId": "Viro:26670",
+    "name": "Narvamäe",
+    "code": "7820161-1",
+    "lat": 58.3888888,
+    "lon": 26.7305139
+  },
+  {
+    "gtfsId": "Viro:26370",
+    "name": "Puiestee",
+    "code": "7820189-1",
+    "lat": 58.3845182,
+    "lon": 26.7430286
+  },
+  {
+    "gtfsId": "Viro:25598",
+    "name": "Lootuse",
+    "code": "7820134-1",
+    "lat": 58.3694228,
+    "lon": 26.7215238
+  },
+  {
+    "gtfsId": "Viro:26237",
+    "name": "Pauluse",
+    "code": "7820178-1",
+    "lat": 58.3710759,
+    "lon": 26.7156237
+  },
+  {
+    "gtfsId": "Viro:24726",
+    "name": "Eha",
+    "code": "7820077-1",
+    "lat": 58.3698114,
+    "lon": 26.7277942
+  },
+  {
+    "gtfsId": "Viro:26126",
+    "name": "Vaksali",
+    "code": "7820295-1",
+    "lat": 58.3768482,
+    "lon": 26.7026672
+  },
+  {
+    "gtfsId": "Viro:26232",
+    "name": "Orava",
+    "code": "7820173-1",
+    "lat": 58.391503,
+    "lon": 26.7303941
+  },
+  {
+    "gtfsId": "Viro:162395",
+    "name": "Puiestee",
+    "code": "7820396-1",
+    "lat": 58.3840415,
+    "lon": 26.7440903
+  },
+  {
+    "gtfsId": "Viro:144468",
+    "name": "Laululava",
+    "code": "7820352-1",
+    "lat": 58.3890063,
+    "lon": 26.7049524
+  },
+  {
+    "gtfsId": "Viro:136288",
+    "name": "Roosi",
+    "code": "7820335-1",
+    "lat": 58.3892422,
+    "lon": 26.7384028
+  },
+  {
+    "gtfsId": "Viro:26211",
+    "name": "Kanali",
+    "code": "7820068-1",
+    "lat": 58.376694,
+    "lon": 26.7445772
+  },
+  {
+    "gtfsId": "Viro:26394",
+    "name": "Riia",
+    "code": "7820216-1",
+    "lat": 58.3698686,
+    "lon": 26.7161222
+  },
+  {
+    "gtfsId": "Viro:24886",
+    "name": "Kreutzwaldi",
+    "code": "7820105-1",
+    "lat": 58.3856589,
+    "lon": 26.7005575
+  },
+  {
+    "gtfsId": "Viro:24894",
+    "name": "Laululava",
+    "code": "7820125-1",
+    "lat": 58.3891952,
+    "lon": 26.7047036
+  },
+  {
+    "gtfsId": "Viro:122522",
+    "name": "Liiva",
+    "code": "7820128-1",
+    "lat": 58.3909508,
+    "lon": 26.725116
+  },
+  {
+    "gtfsId": "Viro:24887",
+    "name": "Kreutzwaldi",
+    "code": "7820106-1",
+    "lat": 58.3854715,
+    "lon": 26.7016431
+  },
+  {
+    "gtfsId": "Viro:26084",
+    "name": "Jänese",
+    "code": "7820058-1",
+    "lat": 58.3923433,
+    "lon": 26.7317795
+  },
+  {
+    "gtfsId": "Viro:26513",
+    "name": "Salemi",
+    "code": "7820231-1",
+    "lat": 58.3686484,
+    "lon": 26.7343286
+  },
+  {
+    "gtfsId": "Viro:136287",
+    "name": "Roosi",
+    "code": "7820334-1",
+    "lat": 58.3897867,
+    "lon": 26.7393294
+  },
+  {
+    "gtfsId": "Viro:26210",
+    "name": "Kanali",
+    "code": "7820067-1",
+    "lat": 58.3758471,
+    "lon": 26.7458952
+  },
+  {
+    "gtfsId": "Viro:24895",
+    "name": "Lembitu",
+    "code": "7820126-1",
+    "lat": 58.3692925,
+    "lon": 26.7107381
+  },
+  {
+    "gtfsId": "Viro:26083",
+    "name": "Jõe",
+    "code": "7820057-1",
+    "lat": 58.3705689,
+    "lon": 26.73947
+  },
+  {
+    "gtfsId": "Viro:26401",
+    "name": "Risti",
+    "code": "7820223-1",
+    "lat": 58.3918772,
+    "lon": 26.7220962
+  },
+  {
+    "gtfsId": "Viro:26521",
+    "name": "Silla II",
+    "code": "7820239-1",
+    "lat": 58.3687858,
+    "lon": 26.7362797
+  },
+  {
+    "gtfsId": "Viro:133805",
+    "name": "Paju",
+    "code": "7820329-1",
+    "lat": 58.3826116,
+    "lon": 26.7457778
+  },
+  {
+    "gtfsId": "Viro:26231",
+    "name": "Lõuna",
+    "code": "7820169-1",
+    "lat": 58.3748658,
+    "lon": 26.6970737
+  },
+  {
+    "gtfsId": "Viro:144828",
+    "name": "Linda",
+    "code": "7820354-1",
+    "lat": 58.3671024,
+    "lon": 26.729717
+  },
+  {
+    "gtfsId": "Viro:26680",
+    "name": "Lõuna",
+    "code": "7820170-1",
+    "lat": 58.3748065,
+    "lon": 26.6973526
+  },
+  {
+    "gtfsId": "Viro:24897",
+    "name": "Linda",
+    "code": "7820129-1",
+    "lat": 58.3669492,
+    "lon": 26.7296752
+  },
+  {
+    "gtfsId": "Viro:26507",
+    "name": "Risti",
+    "code": "7820224-1",
+    "lat": 58.3920868,
+    "lon": 26.7216749
+  },
+  {
+    "gtfsId": "Viro:26524",
+    "name": "Maaülikool",
+    "code": "7820144-1",
+    "lat": 58.387306,
+    "lon": 26.6965385
+  },
+  {
+    "gtfsId": "Viro:26233",
+    "name": "Paju",
+    "code": "7820174-1",
+    "lat": 58.3823356,
+    "lon": 26.7468251
+  },
+  {
+    "gtfsId": "Viro:123049",
+    "name": "Hiie",
+    "code": "7820042-1",
+    "lat": 58.3831698,
+    "lon": 26.6967341
+  },
+  {
+    "gtfsId": "Viro:26393",
+    "name": "Rebase",
+    "code": "7820215-1",
+    "lat": 58.3692175,
+    "lon": 26.7417275
+  },
+  {
+    "gtfsId": "Viro:26520",
+    "name": "Silla I",
+    "code": "7820238-1",
+    "lat": 58.3691032,
+    "lon": 26.7401717
+  },
+  {
+    "gtfsId": "Viro:26072",
+    "name": "Hiie",
+    "code": "7820043-1",
+    "lat": 58.3829431,
+    "lon": 26.6965884
+  },
+  {
+    "gtfsId": "Viro:26853",
+    "name": "Anne",
+    "code": "7820011-1",
+    "lat": 58.3771135,
+    "lon": 26.7507477
+  },
+  {
+    "gtfsId": "Viro:25033",
+    "name": "Külmhoone",
+    "code": "7820120-1",
+    "lat": 58.3675086,
+    "lon": 26.7196834
+  },
+  {
+    "gtfsId": "Viro:24733",
+    "name": "Kaubajaam",
+    "code": "7820083-1",
+    "lat": 58.3697246,
+    "lon": 26.7074461
+  },
+  {
+    "gtfsId": "Viro:26120",
+    "name": "Tuglase",
+    "code": "7820287-1",
+    "lat": 58.3862124,
+    "lon": 26.694992
+  },
+  {
+    "gtfsId": "Viro:26071",
+    "name": "Jannseni",
+    "code": "7820044-1",
+    "lat": 58.3811943,
+    "lon": 26.6949683
+  },
+  {
+    "gtfsId": "Viro:26121",
+    "name": "Tuglase",
+    "code": "7820288-1",
+    "lat": 58.386213,
+    "lon": 26.6947278
+  },
+  {
+    "gtfsId": "Viro:24728",
+    "name": "Kastani",
+    "code": "7820078-1",
+    "lat": 58.3657167,
+    "lon": 26.7215113
+  },
+  {
+    "gtfsId": "Viro:26073",
+    "name": "Jannseni",
+    "code": "7820045-1",
+    "lat": 58.3819429,
+    "lon": 26.693982
+  },
+  {
+    "gtfsId": "Viro:26113",
+    "name": "Tartu Näitused",
+    "code": "7820275-1",
+    "lat": 58.3888528,
+    "lon": 26.6943856
+  },
+  {
+    "gtfsId": "Viro:25029",
+    "name": "Kuu",
+    "code": "7820115-1",
+    "lat": 58.3665764,
+    "lon": 26.7362476
+  },
+  {
+    "gtfsId": "Viro:26111",
+    "name": "Tartu Näitused",
+    "code": "7820274-1",
+    "lat": 58.3891392,
+    "lon": 26.6944295
+  },
+  {
+    "gtfsId": "Viro:26852",
+    "name": "Anne",
+    "code": "7820010-1",
+    "lat": 58.3780764,
+    "lon": 26.7517682
+  },
+  {
+    "gtfsId": "Viro:26117",
+    "name": "Tervishoiu",
+    "code": "7820283-1",
+    "lat": 58.3731642,
+    "lon": 26.6997552
+  },
+  {
+    "gtfsId": "Viro:25008",
+    "name": "Ilmatsalu",
+    "code": "7820131-1",
+    "lat": 58.3767542,
+    "lon": 26.6903543
+  },
+  {
+    "gtfsId": "Viro:33509",
+    "name": "Rebase",
+    "code": "7820214-1",
+    "lat": 58.3673588,
+    "lon": 26.7406918
+  },
+  {
+    "gtfsId": "Viro:26375",
+    "name": "Raadi",
+    "code": "7820194-1",
+    "lat": 58.3963332,
+    "lon": 26.732443
+  },
+  {
+    "gtfsId": "Viro:24729",
+    "name": "Kastani",
+    "code": "7820079-1",
+    "lat": 58.3647939,
+    "lon": 26.7211686
+  },
+  {
+    "gtfsId": "Viro:24898",
+    "name": "Ilmatsalu",
+    "code": "7820130-1",
+    "lat": 58.3771345,
+    "lon": 26.6888988
+  },
+  {
+    "gtfsId": "Viro:26679",
+    "name": "Nurme",
+    "code": "7820164-1",
+    "lat": 58.3933065,
+    "lon": 26.7180432
+  },
+  {
+    "gtfsId": "Viro:26373",
+    "name": "Purde",
+    "code": "7820190-1",
+    "lat": 58.3635148,
+    "lon": 26.7305106
+  },
+  {
+    "gtfsId": "Viro:26118",
+    "name": "Tervishoiu",
+    "code": "7820284-1",
+    "lat": 58.3724182,
+    "lon": 26.7000216
+  },
+  {
+    "gtfsId": "Viro:144384",
+    "name": "Killustiku",
+    "code": "7820349-1",
+    "lat": 58.3973251,
+    "lon": 26.7342705
+  },
+  {
+    "gtfsId": "Viro:24718",
+    "name": "Eeden",
+    "code": "7820027-1",
+    "lat": 58.373833,
+    "lon": 26.7513613
+  },
+  {
+    "gtfsId": "Viro:26088",
+    "name": "Puusepa",
+    "code": "7820062-1",
+    "lat": 58.3666977,
+    "lon": 26.7036461
+  },
+  {
+    "gtfsId": "Viro:24713",
+    "name": "Betooni",
+    "code": "7820025-1",
+    "lat": 58.3835782,
+    "lon": 26.6915908
+  },
+  {
+    "gtfsId": "Viro:25939",
+    "name": "Vaba",
+    "code": "7820252-1",
+    "lat": 58.3655899,
+    "lon": 26.7344872
+  },
+  {
+    "gtfsId": "Viro:26374",
+    "name": "Raadi",
+    "code": "7820193-1",
+    "lat": 58.39664,
+    "lon": 26.7310239
+  },
+  {
+    "gtfsId": "Viro:26085",
+    "name": "Kaare",
+    "code": "7820059-1",
+    "lat": 58.3661407,
+    "lon": 26.7031089
+  },
+  {
+    "gtfsId": "Viro:26087",
+    "name": "Kaare",
+    "code": "7820061-1",
+    "lat": 58.3665285,
+    "lon": 26.7043633
+  },
+  {
+    "gtfsId": "Viro:33514",
+    "name": "Killustiku",
+    "code": "7820090-1",
+    "lat": 58.3978639,
+    "lon": 26.7333254
+  },
+  {
+    "gtfsId": "Viro:25950",
+    "name": "Sõpruse puiestee",
+    "code": "7820257-1",
+    "lat": 58.3811681,
+    "lon": 26.7530318
+  },
+  {
+    "gtfsId": "Viro:26086",
+    "name": "Kesk kaar",
+    "code": "7820060-1",
+    "lat": 58.365848,
+    "lon": 26.704127
+  },
+  {
+    "gtfsId": "Viro:26245",
+    "name": "Polikliiniku",
+    "code": "7820188-1",
+    "lat": 58.3683335,
+    "lon": 26.7033867
+  },
+  {
+    "gtfsId": "Viro:152343",
+    "name": "ERM",
+    "code": "7801359-1",
+    "lat": 58.3940795,
+    "lon": 26.7448456
+  },
+  {
+    "gtfsId": "Viro:26124",
+    "name": "Alevi",
+    "code": "7820291-1",
+    "lat": 58.3620185,
+    "lon": 26.730635
+  },
+  {
+    "gtfsId": "Viro:25948",
+    "name": "Männi",
+    "code": "7820254-1",
+    "lat": 58.3805794,
+    "lon": 26.7534698
+  },
+  {
+    "gtfsId": "Viro:119592",
+    "name": "Luha",
+    "code": "7820135-1",
+    "lat": 58.3722363,
+    "lon": 26.753619
+  },
+  {
+    "gtfsId": "Viro:26107",
+    "name": "Tarmeko",
+    "code": "7820267-1",
+    "lat": 58.3652096,
+    "lon": 26.7404915
+  },
+  {
+    "gtfsId": "Viro:26262",
+    "name": "Tulbi",
+    "code": "7820304-1",
+    "lat": 58.3713563,
+    "lon": 26.6944796
+  },
+  {
+    "gtfsId": "Viro:153703",
+    "name": "Eesti Rahva Muuseum",
+    "code": "7820375-1",
+    "lat": 58.3956167,
+    "lon": 26.7428013
+  },
+  {
+    "gtfsId": "Viro:24712",
+    "name": "Betooni",
+    "code": "7820024-1",
+    "lat": 58.3836082,
+    "lon": 26.6913245
+  },
+  {
+    "gtfsId": "Viro:136290",
+    "name": "ERM",
+    "code": "7820337-1",
+    "lat": 58.3950692,
+    "lon": 26.7411679
+  },
+  {
+    "gtfsId": "Viro:162777",
+    "name": "Eesti Rahva Muuseum",
+    "code": "7820375-2",
+    "lat": 58.3955427,
+    "lon": 26.7427096
+  },
+  {
+    "gtfsId": "Viro:26848",
+    "name": "Aiandi",
+    "code": "7820004-1",
+    "lat": 58.3944035,
+    "lon": 26.7160297
+  },
+  {
+    "gtfsId": "Viro:25949",
+    "name": "Sõpruse puiestee",
+    "code": "7820255-1",
+    "lat": 58.3807097,
+    "lon": 26.7549169
+  },
+  {
+    "gtfsId": "Viro:24719",
+    "name": "Eeden",
+    "code": "7820028-1",
+    "lat": 58.3738068,
+    "lon": 26.7523417
+  },
+  {
+    "gtfsId": "Viro:25941",
+    "name": "Sõbra",
+    "code": "7820253-1",
+    "lat": 58.3644963,
+    "lon": 26.7350127
+  },
+  {
+    "gtfsId": "Viro:152342",
+    "name": "ERM",
+    "code": "7801360-1",
+    "lat": 58.3936179,
+    "lon": 26.7457462
+  },
+  {
+    "gtfsId": "Viro:145561",
+    "name": "Saekoja",
+    "code": "7820370-1",
+    "lat": 58.3635531,
+    "lon": 26.7346507
+  },
+  {
+    "gtfsId": "Viro:26523",
+    "name": "Maarjamõisa haigla",
+    "code": "7820143-1",
+    "lat": 58.3699823,
+    "lon": 26.6980558
+  },
+  {
+    "gtfsId": "Viro:128656",
+    "name": "Metsamaja",
+    "code": "7820313-1",
+    "lat": 58.3917563,
+    "lon": 26.6922302
+  },
+  {
+    "gtfsId": "Viro:26261",
+    "name": "Tulbi",
+    "code": "7820303-1",
+    "lat": 58.3712447,
+    "lon": 26.6937599
+  },
+  {
+    "gtfsId": "Viro:26227",
+    "name": "Maarjamõisa",
+    "code": "7820140-1",
+    "lat": 58.3696016,
+    "lon": 26.7017286
+  },
+  {
+    "gtfsId": "Viro:26108",
+    "name": "Tarmeko",
+    "code": "7820268-1",
+    "lat": 58.3640689,
+    "lon": 26.7400788
+  },
+  {
+    "gtfsId": "Viro:26229",
+    "name": "Maarjamõisa haigla",
+    "code": "7820142-1",
+    "lat": 58.3693673,
+    "lon": 26.6982402
+  },
+  {
+    "gtfsId": "Viro:123017",
+    "name": "Visa hall",
+    "code": "7820184-1",
+    "lat": 58.3785467,
+    "lon": 26.6837054
+  },
+  {
+    "gtfsId": "Viro:25351",
+    "name": "Visa hall",
+    "code": "7820070-1",
+    "lat": 58.3788886,
+    "lon": 26.6840274
+  },
+  {
+    "gtfsId": "Viro:26383",
+    "name": "Raua",
+    "code": "7820202-1",
+    "lat": 58.363961,
+    "lon": 26.736427
+  },
+  {
+    "gtfsId": "Viro:26228",
+    "name": "Maarjamõisa",
+    "code": "7820141-1",
+    "lat": 58.3699501,
+    "lon": 26.7016504
+  },
+  {
+    "gtfsId": "Viro:144383",
+    "name": "Mõisapargi",
+    "code": "7820359-1",
+    "lat": 58.3998979,
+    "lon": 26.729291
+  },
+  {
+    "gtfsId": "Viro:25944",
+    "name": "Soinaste I",
+    "code": "7820243-1",
+    "lat": 58.3643735,
+    "lon": 26.6991973
+  },
+  {
+    "gtfsId": "Viro:24714",
+    "name": "Metsamaja",
+    "code": "7820026-1",
+    "lat": 58.3935765,
+    "lon": 26.6911426
+  },
+  {
+    "gtfsId": "Viro:26212",
+    "name": "Kannikese",
+    "code": "7820071-1",
+    "lat": 58.3770031,
+    "lon": 26.6837968
+  },
+  {
+    "gtfsId": "Viro:24715",
+    "name": "Kannikese",
+    "code": "7820069-1",
+    "lat": 58.3767704,
+    "lon": 26.6835923
+  },
+  {
+    "gtfsId": "Viro:26090",
+    "name": "Kalda tee",
+    "code": "7820064-1",
+    "lat": 58.3725221,
+    "lon": 26.7575157
+  },
+  {
+    "gtfsId": "Viro:145459",
+    "name": "Teguri",
+    "code": "7820365-1",
+    "lat": 58.3618259,
+    "lon": 26.7212519
+  },
+  {
+    "gtfsId": "Viro:26263",
+    "name": "Viljandi maantee",
+    "code": "7820305-1",
+    "lat": 58.3697298,
+    "lon": 26.6908057
+  },
+  {
+    "gtfsId": "Viro:23104",
+    "name": "Mõisavärava",
+    "code": "7800566-1",
+    "lat": 58.4010379,
+    "lon": 26.7397914
+  },
+  {
+    "gtfsId": "Viro:24716",
+    "name": "E-Kaubamaja",
+    "code": "7820032-1",
+    "lat": 58.3590712,
+    "lon": 26.7308899
+  },
+  {
+    "gtfsId": "Viro:158865",
+    "name": "Viljandi maantee",
+    "code": "7820386-1",
+    "lat": 58.3697202,
+    "lon": 26.6910031
+  },
+  {
+    "gtfsId": "Viro:155432",
+    "name": "Tüve (kesklinna suunas)",
+    "code": "7820380-1",
+    "lat": 58.3842866,
+    "lon": 26.7562227
+  },
+  {
+    "gtfsId": "Viro:26391",
+    "name": "Nisu",
+    "code": "7820211-1",
+    "lat": 58.3730889,
+    "lon": 26.6853921
+  },
+  {
+    "gtfsId": "Viro:25972",
+    "name": "Tamme kool",
+    "code": "7820262-1",
+    "lat": 58.3640271,
+    "lon": 26.7065821
+  },
+  {
+    "gtfsId": "Viro:119583",
+    "name": "Tehase",
+    "code": "7820279-1",
+    "lat": 58.3614305,
+    "lon": 26.7339259
+  },
+  {
+    "gtfsId": "Viro:145460",
+    "name": "Teguri",
+    "code": "7820366-1",
+    "lat": 58.3609293,
+    "lon": 26.7212414
+  },
+  {
+    "gtfsId": "Viro:155433",
+    "name": "Tüve (Ihaste suunas)",
+    "code": "7820381-1",
+    "lat": 58.3844263,
+    "lon": 26.7568052
+  },
+  {
+    "gtfsId": "Viro:25943",
+    "name": "Soinaste II",
+    "code": "7820242-1",
+    "lat": 58.3638942,
+    "lon": 26.6974331
+  },
+  {
+    "gtfsId": "Viro:26390",
+    "name": "Ravila",
+    "code": "7820210-1",
+    "lat": 58.3699037,
+    "lon": 26.6898023
+  },
+  {
+    "gtfsId": "Viro:25022",
+    "name": "Kruusamäe",
+    "code": "7820109-1",
+    "lat": 58.3982076,
+    "lon": 26.7245813
+  },
+  {
+    "gtfsId": "Viro:24717",
+    "name": "E-Kaubamaja",
+    "code": "7820033-1",
+    "lat": 58.3584934,
+    "lon": 26.7307822
+  },
+  {
+    "gtfsId": "Viro:25945",
+    "name": "Soinaste III",
+    "code": "7820244-1",
+    "lat": 58.3635663,
+    "lon": 26.698779
+  },
+  {
+    "gtfsId": "Viro:33522",
+    "name": "Mõisapargi",
+    "code": "7820153-1",
+    "lat": 58.4008313,
+    "lon": 26.7271943
+  },
+  {
+    "gtfsId": "Viro:26392",
+    "name": "Nisu",
+    "code": "7820212-1",
+    "lat": 58.3727213,
+    "lon": 26.6857876
+  },
+  {
+    "gtfsId": "Viro:161814",
+    "name": "Tüve",
+    "code": "7820394-1",
+    "lat": 58.384886,
+    "lon": 26.7569505
+  },
+  {
+    "gtfsId": "Viro:161815",
+    "name": "Tüve",
+    "code": "7820395-1",
+    "lat": 58.3849812,
+    "lon": 26.7568456
+  },
+  {
+    "gtfsId": "Viro:26389",
+    "name": "Ravila",
+    "code": "7820209-1",
+    "lat": 58.3697983,
+    "lon": 26.6892725
+  },
+  {
+    "gtfsId": "Viro:26115",
+    "name": "Tehase",
+    "code": "7820280-1",
+    "lat": 58.3613194,
+    "lon": 26.7347647
+  },
+  {
+    "gtfsId": "Viro:25962",
+    "name": "Tamme kool",
+    "code": "7820261-1",
+    "lat": 58.3635769,
+    "lon": 26.7070653
+  },
+  {
+    "gtfsId": "Viro:24889",
+    "name": "Kruusamäe",
+    "code": "7820108-1",
+    "lat": 58.398325,
+    "lon": 26.7236367
+  },
+  {
+    "gtfsId": "Viro:33517",
+    "name": "Tref",
+    "code": "7820285-1",
+    "lat": 58.3612567,
+    "lon": 26.7404025
+  },
+  {
+    "gtfsId": "Viro:125609",
+    "name": "Zoomeedikum",
+    "code": "7820258-2",
+    "lat": 58.3932507,
+    "lon": 26.687403
+  },
+  {
+    "gtfsId": "Viro:25960",
+    "name": "Zoomeedikum",
+    "code": "7820258-1",
+    "lat": 58.3931165,
+    "lon": 26.6873756
+  },
+  {
+    "gtfsId": "Viro:26089",
+    "name": "Kalda tee",
+    "code": "7820063-1",
+    "lat": 58.372088,
+    "lon": 26.7596634
+  },
+  {
+    "gtfsId": "Viro:26673",
+    "name": "Nooruse",
+    "code": "7820163-1",
+    "lat": 58.3664319,
+    "lon": 26.6952715
+  },
+  {
+    "gtfsId": "Viro:26514",
+    "name": "Salvest",
+    "code": "7820232-1",
+    "lat": 58.398523,
+    "lon": 26.709011
+  },
+  {
+    "gtfsId": "Viro:26119",
+    "name": "Tref",
+    "code": "7820286-1",
+    "lat": 58.3608127,
+    "lon": 26.7403929
+  },
+  {
+    "gtfsId": "Viro:123019",
+    "name": "Tartu Maja III",
+    "code": "7820272-1",
+    "lat": 58.38204,
+    "lon": 26.6856793
+  },
+  {
+    "gtfsId": "Viro:26246",
+    "name": "Põllu",
+    "code": "7820191-1",
+    "lat": 58.398408,
+    "lon": 26.7098437
+  },
+  {
+    "gtfsId": "Viro:28722",
+    "name": "Salvest",
+    "code": "7820233-1",
+    "lat": 58.3988563,
+    "lon": 26.7089571
+  },
+  {
+    "gtfsId": "Viro:33511",
+    "name": "Tartu Maja IV",
+    "code": "7820273-1",
+    "lat": 58.3818319,
+    "lon": 26.6853927
+  },
+  {
+    "gtfsId": "Viro:33507",
+    "name": "Tehnoloogiainstituut",
+    "code": "7820281-1",
+    "lat": 58.3666207,
+    "lon": 26.6947885
+  },
+  {
+    "gtfsId": "Viro:26247",
+    "name": "Põllu",
+    "code": "7820192-1",
+    "lat": 58.3987267,
+    "lon": 26.7104336
+  },
+  {
+    "gtfsId": "Viro:23103",
+    "name": "Mõisavärava",
+    "code": "7800565-1",
+    "lat": 58.4020332,
+    "lon": 26.7417571
+  },
+  {
+    "gtfsId": "Viro:136547",
+    "name": "Pärna",
+    "code": "7801276-1",
+    "lat": 58.4035154,
+    "lon": 26.7415861
+  },
+  {
+    "gtfsId": "Viro:33503",
+    "name": "Kivilinna",
+    "code": "7820094-1",
+    "lat": 58.3801481,
+    "lon": 26.7638494
+  },
+  {
+    "gtfsId": "Viro:24880",
+    "name": "Kivilinna",
+    "code": "7820095-1",
+    "lat": 58.3800279,
+    "lon": 26.7638711
+  },
+  {
+    "gtfsId": "Viro:26092",
+    "name": "Rahu",
+    "code": "7820066-1",
+    "lat": 58.3583861,
+    "lon": 26.7219473
+  },
+  {
+    "gtfsId": "Viro:136548",
+    "name": "Pärna",
+    "code": "7801275-1",
+    "lat": 58.4036209,
+    "lon": 26.7419035
+  },
+  {
+    "gtfsId": "Viro:26091",
+    "name": "Kabeli",
+    "code": "7820065-1",
+    "lat": 58.3591712,
+    "lon": 26.7213677
+  },
+  {
+    "gtfsId": "Viro:24874",
+    "name": "Kaunase puiestee",
+    "code": "7820087-1",
+    "lat": 58.3716627,
+    "lon": 26.7638548
+  },
+  {
+    "gtfsId": "Viro:144381",
+    "name": "Melissi",
+    "code": "7820357-1",
+    "lat": 58.4018411,
+    "lon": 26.7222109
+  },
+  {
+    "gtfsId": "Viro:144123",
+    "name": "Kummeli",
+    "code": "7820351-1",
+    "lat": 58.4012616,
+    "lon": 26.7210632
+  },
+  {
+    "gtfsId": "Viro:26512",
+    "name": "Ropkamõisa",
+    "code": "7820230-1",
+    "lat": 58.3558369,
+    "lon": 26.7289206
+  },
+  {
+    "gtfsId": "Viro:24708",
+    "name": "Arhitekti",
+    "code": "7820019-1",
+    "lat": 58.3681868,
+    "lon": 26.6832783
+  },
+  {
+    "gtfsId": "Viro:26110",
+    "name": "Tartu Maja II",
+    "code": "7820270-1",
+    "lat": 58.3823374,
+    "lon": 26.6836974
+  },
+  {
+    "gtfsId": "Viro:26109",
+    "name": "Tartu Maja I",
+    "code": "7820269-1",
+    "lat": 58.3827308,
+    "lon": 26.6834147
+  },
+  {
+    "gtfsId": "Viro:144442",
+    "name": "Linnupargi",
+    "code": "7820356-1",
+    "lat": 58.3666717,
+    "lon": 26.761299
+  },
+  {
+    "gtfsId": "Viro:144382",
+    "name": "Melissi",
+    "code": "7820358-1",
+    "lat": 58.4019184,
+    "lon": 26.7213516
+  },
+  {
+    "gtfsId": "Viro:24707",
+    "name": "Arhitekti",
+    "code": "7820018-1",
+    "lat": 58.3681791,
+    "lon": 26.6827666
+  },
+  {
+    "gtfsId": "Viro:26529",
+    "name": "Muru",
+    "code": "7820149-1",
+    "lat": 58.3996063,
+    "lon": 26.717
+  },
+  {
+    "gtfsId": "Viro:26382",
+    "name": "Raja",
+    "code": "7820201-1",
+    "lat": 58.3617643,
+    "lon": 26.6914912
+  },
+  {
+    "gtfsId": "Viro:161496",
+    "name": "Lehe",
+    "code": "7820390-1",
+    "lat": 58.3866749,
+    "lon": 26.7585521
+  },
+  {
+    "gtfsId": "Viro:161497",
+    "name": "Lehe",
+    "code": "7820391-1",
+    "lat": 58.3867105,
+    "lon": 26.7584004
+  },
+  {
+    "gtfsId": "Viro:24872",
+    "name": "Kaunase puiestee",
+    "code": "7820086-1",
+    "lat": 58.3715483,
+    "lon": 26.7665181
+  },
+  {
+    "gtfsId": "Viro:26381",
+    "name": "Raja",
+    "code": "7820200-1",
+    "lat": 58.3613576,
+    "lon": 26.6900322
+  },
+  {
+    "gtfsId": "Viro:26116",
+    "name": "Televisiooni",
+    "code": "7820282-1",
+    "lat": 58.3611733,
+    "lon": 26.7017863
+  },
+  {
+    "gtfsId": "Viro:24873",
+    "name": "Annelinna keskus",
+    "code": "7820014-1",
+    "lat": 58.3704532,
+    "lon": 26.7667044
+  },
+  {
+    "gtfsId": "Viro:26510",
+    "name": "Ropkamõisa",
+    "code": "7820228-1",
+    "lat": 58.3556542,
+    "lon": 26.7272105
+  },
+  {
+    "gtfsId": "Viro:144441",
+    "name": "Linnupargi",
+    "code": "7820355-1",
+    "lat": 58.3663165,
+    "lon": 26.7625864
+  },
+  {
+    "gtfsId": "Viro:26530",
+    "name": "Muru",
+    "code": "7820150-1",
+    "lat": 58.3998695,
+    "lon": 26.7168757
+  },
+  {
+    "gtfsId": "Viro:31432",
+    "name": "Kummeli",
+    "code": "7820110-1",
+    "lat": 58.4010944,
+    "lon": 26.7194218
+  },
+  {
+    "gtfsId": "Viro:144359",
+    "name": "Välja",
+    "code": "7820368-1",
+    "lat": 58.4000384,
+    "lon": 26.7142733
+  },
+  {
+    "gtfsId": "Viro:144360",
+    "name": "Välja",
+    "code": "7820369-1",
+    "lat": 58.4001663,
+    "lon": 26.714476
+  },
+  {
+    "gtfsId": "Viro:26855",
+    "name": "Annelinna gümnaasium",
+    "code": "7820013-1",
+    "lat": 58.3755108,
+    "lon": 26.7696816
+  },
+  {
+    "gtfsId": "Viro:152344",
+    "name": "Raadiraja",
+    "code": "7801348-1",
+    "lat": 58.3951232,
+    "lon": 26.7544216
+  },
+  {
+    "gtfsId": "Viro:140318",
+    "name": "Roheline park",
+    "code": "7820341-1",
+    "lat": 58.3965297,
+    "lon": 26.6853365
+  },
+  {
+    "gtfsId": "Viro:25024",
+    "name": "Kungla",
+    "code": "7820112-1",
+    "lat": 58.3605213,
+    "lon": 26.7129771
+  },
+  {
+    "gtfsId": "Viro:140382",
+    "name": "Roheline park",
+    "code": "7820341-2",
+    "lat": 58.3967052,
+    "lon": 26.6851502
+  },
+  {
+    "gtfsId": "Viro:33513",
+    "name": "Ihaste tee I",
+    "code": "7820053-1",
+    "lat": 58.3651786,
+    "lon": 26.7587969
+  },
+  {
+    "gtfsId": "Viro:26857",
+    "name": "Annelinna keskus",
+    "code": "7820015-1",
+    "lat": 58.3695091,
+    "lon": 26.7675426
+  },
+  {
+    "gtfsId": "Viro:144465",
+    "name": "Puidu",
+    "code": "7820361-1",
+    "lat": 58.3911417,
+    "lon": 26.6800895
+  },
+  {
+    "gtfsId": "Viro:26854",
+    "name": "Annelinna gümnaasium",
+    "code": "7820012-1",
+    "lat": 58.375926,
+    "lon": 26.7704
+  },
+  {
+    "gtfsId": "Viro:25023",
+    "name": "Kungla",
+    "code": "7820111-1",
+    "lat": 58.3603288,
+    "lon": 26.7135213
+  },
+  {
+    "gtfsId": "Viro:33512",
+    "name": "Ihaste tee I",
+    "code": "7820052-1",
+    "lat": 58.3648992,
+    "lon": 26.7586572
+  },
+  {
+    "gtfsId": "Viro:152345",
+    "name": "Raadiraja",
+    "code": "7801349-1",
+    "lat": 58.3953839,
+    "lon": 26.7553274
+  },
+  {
+    "gtfsId": "Viro:26259",
+    "name": "Vahi",
+    "code": "7820294-1",
+    "lat": 58.4043314,
+    "lon": 26.708449
+  },
+  {
+    "gtfsId": "Viro:130293",
+    "name": "Kaupmehe",
+    "code": "7801230-1",
+    "lat": 58.4071951,
+    "lon": 26.7457689
+  },
+  {
+    "gtfsId": "Viro:144466",
+    "name": "Puidu",
+    "code": "7820362-1",
+    "lat": 58.3909365,
+    "lon": 26.6794611
+  },
+  {
+    "gtfsId": "Viro:24710",
+    "name": "Autokeskus",
+    "code": "7820022-1",
+    "lat": 58.3553663,
+    "lon": 26.7196715
+  },
+  {
+    "gtfsId": "Viro:34122",
+    "name": "Kirsi",
+    "code": "7890009-1",
+    "lat": 58.3575015,
+    "lon": 26.7153997
+  },
+  {
+    "gtfsId": "Viro:26847",
+    "name": "Aardla",
+    "code": "7820003-1",
+    "lat": 58.3548423,
+    "lon": 26.7229582
+  },
+  {
+    "gtfsId": "Viro:33521",
+    "name": "Aardla",
+    "code": "7820001-1",
+    "lat": 58.3544562,
+    "lon": 26.7210501
+  },
+  {
+    "gtfsId": "Viro:24896",
+    "name": "Lemmatsi",
+    "code": "7820127-1",
+    "lat": 58.359238,
+    "lon": 26.7028669
+  },
+  {
+    "gtfsId": "Viro:34209",
+    "name": "Kirsi",
+    "code": "7890010-1",
+    "lat": 58.357379,
+    "lon": 26.7152482
+  },
+  {
+    "gtfsId": "Viro:26379",
+    "name": "Rahumäe",
+    "code": "7820198-1",
+    "lat": 58.3786334,
+    "lon": 26.770506
+  },
+  {
+    "gtfsId": "Viro:26846",
+    "name": "Aardla",
+    "code": "7820002-1",
+    "lat": 58.3547008,
+    "lon": 26.7227903
+  },
+  {
+    "gtfsId": "Viro:130292",
+    "name": "Kaupmehe",
+    "code": "7801229-1",
+    "lat": 58.4074865,
+    "lon": 26.7462175
+  },
+  {
+    "gtfsId": "Viro:144379",
+    "name": "Sinepi",
+    "code": "7820363-1",
+    "lat": 58.4026563,
+    "lon": 26.7163669
+  },
+  {
+    "gtfsId": "Viro:144380",
+    "name": "Sinepi",
+    "code": "7820364-1",
+    "lat": 58.4026746,
+    "lon": 26.7159603
+  },
+  {
+    "gtfsId": "Viro:25959",
+    "name": "Suur kaar",
+    "code": "7820251-1",
+    "lat": 58.3576736,
+    "lon": 26.7136499
+  },
+  {
+    "gtfsId": "Viro:149241",
+    "name": "Ropka tee",
+    "code": "7820372-1",
+    "lat": 58.3559057,
+    "lon": 26.7408544
+  },
+  {
+    "gtfsId": "Viro:25951",
+    "name": "Suur kaar",
+    "code": "7820250-1",
+    "lat": 58.3577432,
+    "lon": 26.7139684
+  },
+  {
+    "gtfsId": "Viro:26380",
+    "name": "Rahumäe",
+    "code": "7820199-1",
+    "lat": 58.3790753,
+    "lon": 26.7732917
+  },
+  {
+    "gtfsId": "Viro:155010",
+    "name": "Mõisa puiestee",
+    "code": "7801392-1",
+    "lat": 58.4066446,
+    "lon": 26.7211086
+  },
+  {
+    "gtfsId": "Viro:34123",
+    "name": "Aardla",
+    "code": "7890001-1",
+    "lat": 58.3577123,
+    "lon": 26.7145729
+  },
+  {
+    "gtfsId": "Viro:155012",
+    "name": "Erminurme",
+    "code": "7801394-1",
+    "lat": 58.3995103,
+    "lon": 26.7546202
+  },
+  {
+    "gtfsId": "Viro:149437",
+    "name": "Ropka tee",
+    "code": "7820373-1",
+    "lat": 58.3548759,
+    "lon": 26.7406899
+  },
+  {
+    "gtfsId": "Viro:155013",
+    "name": "Erminurme",
+    "code": "7801395-1",
+    "lat": 58.3998005,
+    "lon": 26.754078
+  },
+  {
+    "gtfsId": "Viro:34153",
+    "name": "Aardla",
+    "code": "7890002-1",
+    "lat": 58.3578674,
+    "lon": 26.7148851
+  },
+  {
+    "gtfsId": "Viro:157328",
+    "name": "Lammimõisa",
+    "code": "7820383-1",
+    "lat": 58.3672347,
+    "lon": 26.7686437
+  },
+  {
+    "gtfsId": "Viro:28721",
+    "name": "Kvissentali tee",
+    "code": "7820118-1",
+    "lat": 58.4064001,
+    "lon": 26.7084893
+  },
+  {
+    "gtfsId": "Viro:20025",
+    "name": "Kvissentali tee",
+    "code": "7820117-1",
+    "lat": 58.4063374,
+    "lon": 26.708261
+  },
+  {
+    "gtfsId": "Viro:24852",
+    "name": "Kandiküla",
+    "code": "7800206-1",
+    "lat": 58.3793811,
+    "lon": 26.6698653
+  },
+  {
+    "gtfsId": "Viro:157327",
+    "name": "Lammimõisa",
+    "code": "7820382-1",
+    "lat": 58.3663758,
+    "lon": 26.768107
+  },
+  {
+    "gtfsId": "Viro:24711",
+    "name": "Autokeskus",
+    "code": "7820023-1",
+    "lat": 58.3551196,
+    "lon": 26.7170051
+  },
+  {
+    "gtfsId": "Viro:26502",
+    "name": "Vorbuse tee",
+    "code": "7801134-1",
+    "lat": 58.3998266,
+    "lon": 26.6840538
+  },
+  {
+    "gtfsId": "Viro:26396",
+    "name": "Riia ring",
+    "code": "7820218-1",
+    "lat": 58.3587233,
+    "lon": 26.6849223
+  },
+  {
+    "gtfsId": "Viro:144467",
+    "name": "Kaubabaas",
+    "code": "7820348-1",
+    "lat": 58.3854552,
+    "lon": 26.6805502
+  },
+  {
+    "gtfsId": "Viro:33501",
+    "name": "Annemõisa",
+    "code": "7820016-1",
+    "lat": 58.3784902,
+    "lon": 26.7760042
+  },
+  {
+    "gtfsId": "Viro:155011",
+    "name": "Mõisa puiestee",
+    "code": "7801393-1",
+    "lat": 58.4070292,
+    "lon": 26.7207681
+  },
+  {
+    "gtfsId": "Viro:135330",
+    "name": "Lammi ring",
+    "code": "7820332-1",
+    "lat": 58.3642418,
+    "lon": 26.769189
+  },
+  {
+    "gtfsId": "Viro:25337",
+    "name": "Käo",
+    "code": "7820119-1",
+    "lat": 58.3577352,
+    "lon": 26.7039727
+  },
+  {
+    "gtfsId": "Viro:24732",
+    "name": "Kaubabaas",
+    "code": "7820082-1",
+    "lat": 58.3856959,
+    "lon": 26.6805719
+  },
+  {
+    "gtfsId": "Viro:26395",
+    "name": "Riia ring",
+    "code": "7820217-1",
+    "lat": 58.3585654,
+    "lon": 26.6841488
+  },
+  {
+    "gtfsId": "Viro:27678",
+    "name": "Eerika",
+    "code": "7800070-1",
+    "lat": 58.3661711,
+    "lon": 26.6750705
+  },
+  {
+    "gtfsId": "Viro:26081",
+    "name": "Ihaste tee II",
+    "code": "7820055-1",
+    "lat": 58.3611697,
+    "lon": 26.7597484
+  },
+  {
+    "gtfsId": "Viro:130354",
+    "name": "Eerika",
+    "code": "7820327-1",
+    "lat": 58.3660991,
+    "lon": 26.6742218
+  },
+  {
+    "gtfsId": "Viro:33516",
+    "name": "Aianduse",
+    "code": "7820005-1",
+    "lat": 58.3513379,
+    "lon": 26.7187442
+  },
+  {
+    "gtfsId": "Viro:130353",
+    "name": "Eerika",
+    "code": "7820326-1",
+    "lat": 58.3660779,
+    "lon": 26.6741614
+  },
+  {
+    "gtfsId": "Viro:27677",
+    "name": "Eerika",
+    "code": "7800071-1",
+    "lat": 58.3660528,
+    "lon": 26.6740937
+  },
+  {
+    "gtfsId": "Viro:26503",
+    "name": "Vorbuse tee",
+    "code": "7801133-1",
+    "lat": 58.4010657,
+    "lon": 26.6828207
+  },
+  {
+    "gtfsId": "Viro:149423",
+    "name": "Klaose",
+    "code": "7820374-1",
+    "lat": 58.406409,
+    "lon": 26.7038608
+  },
+  {
+    "gtfsId": "Viro:26527",
+    "name": "Mõisavahe",
+    "code": "7820155-1",
+    "lat": 58.3695115,
+    "lon": 26.7753096
+  },
+  {
+    "gtfsId": "Viro:26080",
+    "name": "Ihaste tee II",
+    "code": "7820054-1",
+    "lat": 58.3600697,
+    "lon": 26.759602
+  },
+  {
+    "gtfsId": "Viro:152347",
+    "name": "Nõlvakaare",
+    "code": "7801351-1",
+    "lat": 58.4066694,
+    "lon": 26.7510381
+  },
+  {
+    "gtfsId": "Viro:26528",
+    "name": "Mõisavahe",
+    "code": "7820156-1",
+    "lat": 58.3693672,
+    "lon": 26.7753533
+  },
+  {
+    "gtfsId": "Viro:26387",
+    "name": "Raudtee IV",
+    "code": "7820206-1",
+    "lat": 58.355226,
+    "lon": 26.7075463
+  },
+  {
+    "gtfsId": "Viro:26386",
+    "name": "Raudtee II",
+    "code": "7820205-1",
+    "lat": 58.3546445,
+    "lon": 26.7074719
+  },
+  {
+    "gtfsId": "Viro:161082",
+    "name": "Klaose",
+    "code": "7820389-1",
+    "lat": 58.4064285,
+    "lon": 26.7029425
+  },
+  {
+    "gtfsId": "Viro:26856",
+    "name": "Annemõisa",
+    "code": "7820017-1",
+    "lat": 58.3767549,
+    "lon": 26.7779143
+  },
+  {
+    "gtfsId": "Viro:152346",
+    "name": "Nõlvakaare",
+    "code": "7801350-1",
+    "lat": 58.406342,
+    "lon": 26.7518523
+  },
+  {
+    "gtfsId": "Viro:26516",
+    "name": "Aianduse",
+    "code": "7820006-1",
+    "lat": 58.3503351,
+    "lon": 26.7177342
+  },
+  {
+    "gtfsId": "Viro:26384",
+    "name": "Raudtee I",
+    "code": "7820203-1",
+    "lat": 58.3550163,
+    "lon": 26.7076884
+  },
+  {
+    "gtfsId": "Viro:27004",
+    "name": "Haigla",
+    "code": "7820038-1",
+    "lat": 58.3635462,
+    "lon": 26.6779073
+  },
+  {
+    "gtfsId": "Viro:26274",
+    "name": "Kandiküla",
+    "code": "7800207-1",
+    "lat": 58.3792119,
+    "lon": 26.670649
+  },
+  {
+    "gtfsId": "Viro:122429",
+    "name": "Kraavi",
+    "code": "7820100-1",
+    "lat": 58.3537767,
+    "lon": 26.7082036
+  },
+  {
+    "gtfsId": "Viro:128646",
+    "name": "Kraavi",
+    "code": "7820102-1",
+    "lat": 58.3535015,
+    "lon": 26.7075046
+  },
+  {
+    "gtfsId": "Viro:26385",
+    "name": "Raudtee III",
+    "code": "7820204-1",
+    "lat": 58.3546742,
+    "lon": 26.7070841
+  },
+  {
+    "gtfsId": "Viro:135331",
+    "name": "Lammi ring",
+    "code": "7820333-1",
+    "lat": 58.3617242,
+    "lon": 26.771412
+  },
+  {
+    "gtfsId": "Viro:25352",
+    "name": "Karete",
+    "code": "7820073-1",
+    "lat": 58.3500228,
+    "lon": 26.7232052
+  },
+  {
+    "gtfsId": "Viro:26509",
+    "name": "Prisma",
+    "code": "7820227-1",
+    "lat": 58.3760942,
+    "lon": 26.7787898
+  },
+  {
+    "gtfsId": "Viro:26672",
+    "name": "Nõlvaku",
+    "code": "7820166-1",
+    "lat": 58.3727583,
+    "lon": 26.7805418
+  },
+  {
+    "gtfsId": "Viro:33506",
+    "name": "Nõlvaku",
+    "code": "7820165-1",
+    "lat": 58.372206,
+    "lon": 26.7801901
+  },
+  {
+    "gtfsId": "Viro:138205",
+    "name": "Hotell Sophia",
+    "code": "7820340-1",
+    "lat": 58.3567784,
+    "lon": 26.6787166
+  },
+  {
+    "gtfsId": "Viro:26226",
+    "name": "Teaduspark",
+    "code": "7820277-1",
+    "lat": 58.3550526,
+    "lon": 26.6795699
+  },
+  {
+    "gtfsId": "Viro:31837",
+    "name": "Vahi tee",
+    "code": "7801029-1",
+    "lat": 58.4116758,
+    "lon": 26.7213597
+  },
+  {
+    "gtfsId": "Viro:142511",
+    "name": "Mileedi",
+    "code": "7820343-1",
+    "lat": 58.3631919,
+    "lon": 26.6750943
+  },
+  {
+    "gtfsId": "Viro:25350",
+    "name": "Karete",
+    "code": "7820072-1",
+    "lat": 58.349133,
+    "lon": 26.723408
+  },
+  {
+    "gtfsId": "Viro:144120",
+    "name": "Mileedi",
+    "code": "7820344-1",
+    "lat": 58.3629794,
+    "lon": 26.6749446
+  },
+  {
+    "gtfsId": "Viro:25601",
+    "name": "Teaduspark",
+    "code": "7820276-1",
+    "lat": 58.355021,
+    "lon": 26.6791405
+  },
+  {
+    "gtfsId": "Viro:26851",
+    "name": "Alasi",
+    "code": "7820009-1",
+    "lat": 58.3479703,
+    "lon": 26.7170395
+  },
+  {
+    "gtfsId": "Viro:155008",
+    "name": "Vahipargi",
+    "code": "7801386-1",
+    "lat": 58.4124244,
+    "lon": 26.7180625
+  },
+  {
+    "gtfsId": "Viro:128212",
+    "name": "Salu tee",
+    "code": "7801199-1",
+    "lat": 58.3824282,
+    "lon": 26.7794758
+  },
+  {
+    "gtfsId": "Viro:25373",
+    "name": "Vahi tee",
+    "code": "7801030-1",
+    "lat": 58.4110804,
+    "lon": 26.7157659
+  },
+  {
+    "gtfsId": "Viro:26850",
+    "name": "Alasi",
+    "code": "7820008-1",
+    "lat": 58.3478465,
+    "lon": 26.7172679
+  },
+  {
+    "gtfsId": "Viro:155009",
+    "name": "Vahipargi",
+    "code": "7801387-1",
+    "lat": 58.4125737,
+    "lon": 26.7178001
+  },
+  {
+    "gtfsId": "Viro:26068",
+    "name": "Haigla",
+    "code": "7820037-1",
+    "lat": 58.363475,
+    "lon": 26.6776625
+  },
+  {
+    "gtfsId": "Viro:135329",
+    "name": "Viadukti",
+    "code": "7820331-1",
+    "lat": 58.3547098,
+    "lon": 26.7627042
+  },
+  {
+    "gtfsId": "Viro:24722",
+    "name": "FI",
+    "code": "7820036-1",
+    "lat": 58.353491,
+    "lon": 26.6808458
+  },
+  {
+    "gtfsId": "Viro:26093",
+    "name": "Tamme puiestee",
+    "code": "7820263-1",
+    "lat": 58.3541417,
+    "lon": 26.6960768
+  },
+  {
+    "gtfsId": "Viro:26104",
+    "name": "Tamme puiestee",
+    "code": "7820264-1",
+    "lat": 58.3541503,
+    "lon": 26.6970706
+  },
+  {
+    "gtfsId": "Viro:159715",
+    "name": "Kvissentali",
+    "code": "7820116-2",
+    "lat": 58.4064943,
+    "lon": 26.696627
+  },
+  {
+    "gtfsId": "Viro:25030",
+    "name": "Kvissentali",
+    "code": "7820116-1",
+    "lat": 58.4065178,
+    "lon": 26.6965782
+  },
+  {
+    "gtfsId": "Viro:161501",
+    "name": "Ropka tööstuspark I",
+    "code": null,
+    "lat": 58.352068,
+    "lon": 26.7448148
+  },
+  {
+    "gtfsId": "Viro:161500",
+    "name": "Ropka tööstuspark I",
+    "code": null,
+    "lat": 58.3525424,
+    "lon": 26.7446269
+  },
+  {
+    "gtfsId": "Viro:122420",
+    "name": "Lõunakeskus",
+    "code": "7820139-1",
+    "lat": 58.358815,
+    "lon": 26.6732762
+  },
+  {
+    "gtfsId": "Viro:24721",
+    "name": "Fi",
+    "code": "7820035-1",
+    "lat": 58.3533812,
+    "lon": 26.6810383
+  },
+  {
+    "gtfsId": "Viro:125616",
+    "name": "FI",
+    "code": "7820035-2",
+    "lat": 58.353355,
+    "lon": 26.6807575
+  },
+  {
+    "gtfsId": "Viro:24882",
+    "name": "Kopli",
+    "code": "7820099-1",
+    "lat": 58.348631,
+    "lon": 26.7101061
+  },
+  {
+    "gtfsId": "Viro:125530",
+    "name": "Lõunakeskus",
+    "code": "7820139-2",
+    "lat": 58.3588991,
+    "lon": 26.6729244
+  },
+  {
+    "gtfsId": "Viro:128367",
+    "name": "Postimaja",
+    "code": "7820317-1",
+    "lat": 58.3452509,
+    "lon": 26.7148811
+  },
+  {
+    "gtfsId": "Viro:24893",
+    "name": "Lammi",
+    "code": "7820123-1",
+    "lat": 58.3595404,
+    "lon": 26.7778517
+  },
+  {
+    "gtfsId": "Viro:21914",
+    "name": "Aiandi tee",
+    "code": "7800020-1",
+    "lat": 58.3753586,
+    "lon": 26.7851327
+  },
+  {
+    "gtfsId": "Viro:156410",
+    "name": "Soojuse tee",
+    "code": "7801401-1",
+    "lat": 58.370982,
+    "lon": 26.784992
+  },
+  {
+    "gtfsId": "Viro:26518",
+    "name": "Sepa turg",
+    "code": "7820235-1",
+    "lat": 58.3497937,
+    "lon": 26.7411376
+  },
+  {
+    "gtfsId": "Viro:155006",
+    "name": "Savimäe",
+    "code": "7801388-1",
+    "lat": 58.4140788,
+    "lon": 26.7188592
+  },
+  {
+    "gtfsId": "Viro:156411",
+    "name": "Soojuse tee",
+    "code": "7801402-1",
+    "lat": 58.371063,
+    "lon": 26.785285
+  },
+  {
+    "gtfsId": "Viro:128044",
+    "name": "Postimaja",
+    "code": "7820316-1",
+    "lat": 58.3453778,
+    "lon": 26.7146178
+  },
+  {
+    "gtfsId": "Viro:26531",
+    "name": "Männimetsa",
+    "code": "7820157-1",
+    "lat": 58.3534028,
+    "lon": 26.7661997
+  },
+  {
+    "gtfsId": "Viro:125531",
+    "name": "Lõunakeskus III",
+    "code": "7820139-3",
+    "lat": 58.3589116,
+    "lon": 26.6724386
+  },
+  {
+    "gtfsId": "Viro:116720",
+    "name": "Kopli",
+    "code": "7820098-1",
+    "lat": 58.3485892,
+    "lon": 26.7098912
+  },
+  {
+    "gtfsId": "Viro:24892",
+    "name": "Lammi",
+    "code": "7820122-1",
+    "lat": 58.3593554,
+    "lon": 26.7777861
+  },
+  {
+    "gtfsId": "Viro:26519",
+    "name": "Sepa turg",
+    "code": "7820236-1",
+    "lat": 58.3493904,
+    "lon": 26.7408597
+  },
+  {
+    "gtfsId": "Viro:155007",
+    "name": "Savimäe",
+    "code": "7801389-1",
+    "lat": 58.4141361,
+    "lon": 26.7191195
+  },
+  {
+    "gtfsId": "Viro:122419",
+    "name": "Optika",
+    "code": "7820172-1",
+    "lat": 58.3556317,
+    "lon": 26.6739143
+  },
+  {
+    "gtfsId": "Viro:128368",
+    "name": "Võru ring",
+    "code": "7820325-1",
+    "lat": 58.3445811,
+    "lon": 26.7154041
+  },
+  {
+    "gtfsId": "Viro:26533",
+    "name": "Männimetsa",
+    "code": "7820158-1",
+    "lat": 58.3531186,
+    "lon": 26.7665181
+  },
+  {
+    "gtfsId": "Viro:21922",
+    "name": "Aiandi tee",
+    "code": "7800021-1",
+    "lat": 58.3762884,
+    "lon": 26.7832924
+  },
+  {
+    "gtfsId": "Viro:122418",
+    "name": "Optika",
+    "code": "7820171-1",
+    "lat": 58.3560777,
+    "lon": 26.672896
+  },
+  {
+    "gtfsId": "Viro:116721",
+    "name": "Mesika",
+    "code": "7820147-1",
+    "lat": 58.3501609,
+    "lon": 26.7071204
+  },
+  {
+    "gtfsId": "Viro:128374",
+    "name": "Tähe",
+    "code": "7820323-1",
+    "lat": 58.3430672,
+    "lon": 26.7295319
+  },
+  {
+    "gtfsId": "Viro:26526",
+    "name": "Mesika",
+    "code": "7820148-1",
+    "lat": 58.3501309,
+    "lon": 26.7076263
+  },
+  {
+    "gtfsId": "Viro:116457",
+    "name": "Roopa",
+    "code": "7820225-1",
+    "lat": 58.348722,
+    "lon": 26.6976397
+  },
+  {
+    "gtfsId": "Viro:21771",
+    "name": "Paju",
+    "code": "7800639-1",
+    "lat": 58.3800322,
+    "lon": 26.6548018
+  },
+  {
+    "gtfsId": "Viro:155418",
+    "name": "Kvartsi",
+    "code": "7820378-1",
+    "lat": 58.351832,
+    "lon": 26.6881333
+  },
+  {
+    "gtfsId": "Viro:128643",
+    "name": "Kesa",
+    "code": "7820229-2",
+    "lat": 58.3485594,
+    "lon": 26.7048929
+  },
+  {
+    "gtfsId": "Viro:26511",
+    "name": "Kesa",
+    "code": "7820229-1",
+    "lat": 58.3485962,
+    "lon": 26.7041746
+  },
+  {
+    "gtfsId": "Viro:128375",
+    "name": "Tähe",
+    "code": "7820324-1",
+    "lat": 58.342759,
+    "lon": 26.7302008
+  },
+  {
+    "gtfsId": "Viro:26508",
+    "name": "Roopa",
+    "code": "7820226-1",
+    "lat": 58.3486841,
+    "lon": 26.6976318
+  },
+  {
+    "gtfsId": "Viro:155419",
+    "name": "Kvartsi",
+    "code": "7820379-1",
+    "lat": 58.3512209,
+    "lon": 26.6886289
+  },
+  {
+    "gtfsId": "Viro:161502",
+    "name": "Ropka tööstuspark II",
+    "code": null,
+    "lat": 58.3485273,
+    "lon": 26.7448489
+  },
+  {
+    "gtfsId": "Viro:161499",
+    "name": "Varsa",
+    "code": "7820393-1",
+    "lat": 58.3508093,
+    "lon": 26.7675861
+  },
+  {
+    "gtfsId": "Viro:124129",
+    "name": "Lohkva katlamaja",
+    "code": "7820306-1",
+    "lat": 58.3704161,
+    "lon": 26.7913054
+  },
+  {
+    "gtfsId": "Viro:26079",
+    "name": "Pallase puiestee",
+    "code": "7820051-1",
+    "lat": 58.3588864,
+    "lon": 26.7828262
+  },
+  {
+    "gtfsId": "Viro:161498",
+    "name": "Varsa",
+    "code": "7820392-1",
+    "lat": 58.349876,
+    "lon": 26.7680385
+  },
+  {
+    "gtfsId": "Viro:128369",
+    "name": "Ringtee II",
+    "code": "7820318-1",
+    "lat": 58.3423858,
+    "lon": 26.7158962
+  },
+  {
+    "gtfsId": "Viro:161503",
+    "name": "Ropka tööstuspark II",
+    "code": null,
+    "lat": 58.347537,
+    "lon": 26.7446959
+  },
+  {
+    "gtfsId": "Viro:128371",
+    "name": "Ringtee I",
+    "code": "7820319-1",
+    "lat": 58.3417022,
+    "lon": 26.7148495
+  },
+  {
+    "gtfsId": "Viro:128370",
+    "name": "Ringtee",
+    "code": "7820320-1",
+    "lat": 58.3415116,
+    "lon": 26.7161081
+  },
+  {
+    "gtfsId": "Viro:24592",
+    "name": "Paju",
+    "code": "7800638-1",
+    "lat": 58.3798654,
+    "lon": 26.6555022
+  },
+  {
+    "gtfsId": "Viro:128372",
+    "name": "Jalaka",
+    "code": "7820314-1",
+    "lat": 58.343154,
+    "lon": 26.723528
+  },
+  {
+    "gtfsId": "Viro:26078",
+    "name": "Pallase puiestee",
+    "code": "7820050-1",
+    "lat": 58.3587759,
+    "lon": 26.7842799
+  },
+  {
+    "gtfsId": "Viro:128373",
+    "name": "Jalaka",
+    "code": "7820315-1",
+    "lat": 58.3428431,
+    "lon": 26.7238158
+  },
+  {
+    "gtfsId": "Viro:124669",
+    "name": "Lohkva katlamaja",
+    "code": "7820310-1",
+    "lat": 58.3702907,
+    "lon": 26.7927268
+  },
+  {
+    "gtfsId": "Viro:21240",
+    "name": "Märja",
+    "code": "7800587-1",
+    "lat": 58.3620985,
+    "lon": 26.6592734
+  },
+  {
+    "gtfsId": "Viro:128376",
+    "name": "Turu ring",
+    "code": "7820321-1",
+    "lat": 58.343063,
+    "lon": 26.7369676
+  },
+  {
+    "gtfsId": "Viro:25105",
+    "name": "Nõmmiku",
+    "code": "7800613-1",
+    "lat": 58.4194981,
+    "lon": 26.7003832
+  },
+  {
+    "gtfsId": "Viro:24030",
+    "name": "Lohkva",
+    "code": "7800450-1",
+    "lat": 58.3731376,
+    "lon": 26.7954723
+  },
+  {
+    "gtfsId": "Viro:26256",
+    "name": "Vangla",
+    "code": "7820298-1",
+    "lat": 58.345246,
+    "lon": 26.7409655
+  },
+  {
+    "gtfsId": "Viro:21239",
+    "name": "Märja",
+    "code": "7800588-1",
+    "lat": 58.3617858,
+    "lon": 26.6572461
+  },
+  {
+    "gtfsId": "Viro:155004",
+    "name": "Savioja",
+    "code": "7801391-1",
+    "lat": 58.4157219,
+    "lon": 26.7252454
+  },
+  {
+    "gtfsId": "Viro:33519",
+    "name": "Vangla",
+    "code": "7820297-1",
+    "lat": 58.3452708,
+    "lon": 26.7412838
+  },
+  {
+    "gtfsId": "Viro:128377",
+    "name": "Turu ring",
+    "code": "7820322-1",
+    "lat": 58.3428079,
+    "lon": 26.7381836
+  },
+  {
+    "gtfsId": "Viro:155003",
+    "name": "Savioja",
+    "code": "7801390-1",
+    "lat": 58.4159686,
+    "lon": 26.7254775
+  },
+  {
+    "gtfsId": "Viro:25106",
+    "name": "Nõmmiku",
+    "code": "7800614-1",
+    "lat": 58.420594,
+    "lon": 26.699338
+  },
+  {
+    "gtfsId": "Viro:159869",
+    "name": "Päevakivi",
+    "code": "7820387-1",
+    "lat": 58.3485868,
+    "lon": 26.6880177
+  },
+  {
+    "gtfsId": "Viro:159868",
+    "name": "Päevakivi",
+    "code": "7820388-1",
+    "lat": 58.3475563,
+    "lon": 26.6867223
+  },
+  {
+    "gtfsId": "Viro:155083",
+    "name": "Vahi tööstuspark",
+    "code": "7801031-2",
+    "lat": 58.4176654,
+    "lon": 26.7217503
+  },
+  {
+    "gtfsId": "Viro:24885",
+    "name": "Kraavikalda",
+    "code": "7820104-1",
+    "lat": 58.3471246,
+    "lon": 26.7732928
+  },
+  {
+    "gtfsId": "Viro:154465",
+    "name": "Vahi tööstuspark",
+    "code": "7801031-1",
+    "lat": 58.4176642,
+    "lon": 26.7215993
+  },
+  {
+    "gtfsId": "Viro:24884",
+    "name": "Kraavikalda",
+    "code": "7820103-1",
+    "lat": 58.3466672,
+    "lon": 26.7739353
+  },
+  {
+    "gtfsId": "Viro:147887",
+    "name": "Saariku",
+    "code": "7801329-1",
+    "lat": 58.34619,
+    "lon": 26.66631
+  },
+  {
+    "gtfsId": "Viro:147886",
+    "name": "Saariku",
+    "code": "7801330-1",
+    "lat": 58.3459,
+    "lon": 26.66475
+  },
+  {
+    "gtfsId": "Viro:20421",
+    "name": "Heinvaru",
+    "code": "7800112-1",
+    "lat": 58.3804893,
+    "lon": 26.6425181
+  },
+  {
+    "gtfsId": "Viro:20402",
+    "name": "Lao",
+    "code": "7800419-1",
+    "lat": 58.3684517,
+    "lon": 26.798118
+  },
+  {
+    "gtfsId": "Viro:26668",
+    "name": "Triigi",
+    "code": "7820159-1",
+    "lat": 58.3560153,
+    "lon": 26.7889916
+  },
+  {
+    "gtfsId": "Viro:27777",
+    "name": "Lohkva",
+    "code": "7800451-1",
+    "lat": 58.3732078,
+    "lon": 26.7963705
+  },
+  {
+    "gtfsId": "Viro:135342",
+    "name": "Puupilli",
+    "code": "7801272-1",
+    "lat": 58.367194,
+    "lon": 26.798537
+  },
+  {
+    "gtfsId": "Viro:153792",
+    "name": "Uus-Veeriku",
+    "code": "7820376-1",
+    "lat": 58.3549133,
+    "lon": 26.7924968
+  },
+  {
+    "gtfsId": "Viro:27394",
+    "name": "Heinvaru",
+    "code": "7800113-1",
+    "lat": 58.380312,
+    "lon": 26.6430511
+  },
+  {
+    "gtfsId": "Viro:135328",
+    "name": "Viadukti",
+    "code": "7820330-1",
+    "lat": 58.3563166,
+    "lon": 26.7647708
+  },
+  {
+    "gtfsId": "Viro:26669",
+    "name": "Triigi",
+    "code": "7820160-1",
+    "lat": 58.3549836,
+    "lon": 26.7888748
+  },
+  {
+    "gtfsId": "Viro:23392",
+    "name": "Akvarelli",
+    "code": "7800529-1",
+    "lat": 58.3593665,
+    "lon": 26.7965148
+  },
+  {
+    "gtfsId": "Viro:30214",
+    "name": "Akvarelli",
+    "code": "7800528-1",
+    "lat": 58.3597634,
+    "lon": 26.7966955
+  },
+  {
+    "gtfsId": "Viro:26489",
+    "name": "Vana-Linnavere",
+    "code": "7801055-1",
+    "lat": 58.3334171,
+    "lon": 26.7174227
+  },
+  {
+    "gtfsId": "Viro:128412",
+    "name": "Ülevälja",
+    "code": "7801212-1",
+    "lat": 58.3395057,
+    "lon": 26.7015236
+  },
+  {
+    "gtfsId": "Viro:157865",
+    "name": "Kivimetsa tee",
+    "code": "7801426-1",
+    "lat": 58.3568714,
+    "lon": 26.6592422
+  },
+  {
+    "gtfsId": "Viro:128411",
+    "name": "Ülevälja",
+    "code": "7801211-1",
+    "lat": 58.3387115,
+    "lon": 26.701688
+  },
+  {
+    "gtfsId": "Viro:30837",
+    "name": "Muide",
+    "code": "7800551-1",
+    "lat": 58.4054058,
+    "lon": 26.6703891
+  },
+  {
+    "gtfsId": "Viro:157866",
+    "name": "Kivimetsa tee",
+    "code": "7801427-1",
+    "lat": 58.356642,
+    "lon": 26.659276
+  },
+  {
+    "gtfsId": "Viro:26488",
+    "name": "Vana-Linnavere",
+    "code": "7801054-1",
+    "lat": 58.3337171,
+    "lon": 26.7170385
+  },
+  {
+    "gtfsId": "Viro:30366",
+    "name": "Muide",
+    "code": "7800550-1",
+    "lat": 58.4053348,
+    "lon": 26.6699128
+  },
+  {
+    "gtfsId": "Viro:159034",
+    "name": "Puupilli",
+    "code": "7801271-1",
+    "lat": 58.3657227,
+    "lon": 26.7984797
+  },
+  {
+    "gtfsId": "Viro:124672",
+    "name": "Uus-Veeriku",
+    "code": "7820311-1",
+    "lat": 58.356588,
+    "lon": 26.7943089
+  },
+  {
+    "gtfsId": "Viro:24730",
+    "name": "Kasteheina",
+    "code": "7820080-1",
+    "lat": 58.3492401,
+    "lon": 26.7874891
+  },
+  {
+    "gtfsId": "Viro:24731",
+    "name": "Kasteheina",
+    "code": "7820081-1",
+    "lat": 58.3493063,
+    "lon": 26.787719
+  },
+  {
+    "gtfsId": "Viro:26077",
+    "name": "Ihaste",
+    "code": "7820049-1",
+    "lat": 58.3448756,
+    "lon": 26.7795839
+  },
+  {
+    "gtfsId": "Viro:26076",
+    "name": "Ihaste",
+    "code": "7820048-1",
+    "lat": 58.3449341,
+    "lon": 26.7793707
+  },
+  {
+    "gtfsId": "Viro:26986",
+    "name": "Õssu",
+    "code": "7801161-1",
+    "lat": 58.3633986,
+    "lon": 26.6490777
+  },
+  {
+    "gtfsId": "Viro:156823",
+    "name": "Õssu",
+    "code": "7801161-2",
+    "lat": 58.3634414,
+    "lon": 26.648988
+  },
+  {
+    "gtfsId": "Viro:24241",
+    "name": "Kõrveküla",
+    "code": "7800363-1",
+    "lat": 58.4196325,
+    "lon": 26.7626124
+  },
+  {
+    "gtfsId": "Viro:31739",
+    "name": "Jalaka",
+    "code": "7800144-1",
+    "lat": 58.3723182,
+    "lon": 26.8074491
+  },
+  {
+    "gtfsId": "Viro:24242",
+    "name": "Kõrveküla",
+    "code": "7800362-1",
+    "lat": 58.4198511,
+    "lon": 26.7622699
+  },
+  {
+    "gtfsId": "Viro:28308",
+    "name": "Musta tee",
+    "code": "7800554-1",
+    "lat": 58.4140217,
+    "lon": 26.7375223
+  },
+  {
+    "gtfsId": "Viro:20529",
+    "name": "Jalaka",
+    "code": "7800145-1",
+    "lat": 58.3723692,
+    "lon": 26.8059178
+  },
+  {
+    "gtfsId": "Viro:20078",
+    "name": "Sopaku",
+    "code": "7800899-1",
+    "lat": 58.4173241,
+    "lon": 26.762567
+  },
+  {
+    "gtfsId": "Viro:157872",
+    "name": "Tiigrisilma",
+    "code": "7801433-1",
+    "lat": 58.3470005,
+    "lon": 26.6551924
+  },
+  {
+    "gtfsId": "Viro:157871",
+    "name": "Tiigrisilma",
+    "code": "7801432-1",
+    "lat": 58.3477766,
+    "lon": 26.6545052
+  },
+  {
+    "gtfsId": "Viro:28687",
+    "name": "Ranna",
+    "code": "7800746-1",
+    "lat": 58.3593002,
+    "lon": 26.6431716
+  },
+  {
+    "gtfsId": "Viro:25471",
+    "name": "Lõkketule",
+    "code": "7820136-1",
+    "lat": 58.3460434,
+    "lon": 26.7827337
+  },
+  {
+    "gtfsId": "Viro:25472",
+    "name": "Lõkketule",
+    "code": "7820137-1",
+    "lat": 58.3464111,
+    "lon": 26.7835032
+  },
+  {
+    "gtfsId": "Viro:22041",
+    "name": "Lemmatsi",
+    "code": "7800429-1",
+    "lat": 58.3396163,
+    "lon": 26.6536902
+  },
+  {
+    "gtfsId": "Viro:27278",
+    "name": "Musta tee",
+    "code": "7800555-1",
+    "lat": 58.4142097,
+    "lon": 26.7402779
+  },
+  {
+    "gtfsId": "Viro:132478",
+    "name": "Lennu tee",
+    "code": "7801244-1",
+    "lat": 58.3886175,
+    "lon": 26.8034107
+  },
+  {
+    "gtfsId": "Viro:31433",
+    "name": "Sopaku",
+    "code": "7800900-1",
+    "lat": 58.4179303,
+    "lon": 26.7648689
+  },
+  {
+    "gtfsId": "Viro:132477",
+    "name": "Lennu tee",
+    "code": "7801259-1",
+    "lat": 58.3886007,
+    "lon": 26.8037687
+  },
+  {
+    "gtfsId": "Viro:128410",
+    "name": "Rehe",
+    "code": "7801210-1",
+    "lat": 58.3340986,
+    "lon": 26.704805
+  },
+  {
+    "gtfsId": "Viro:30364",
+    "name": "Lemmatsi",
+    "code": "7800430-1",
+    "lat": 58.3406235,
+    "lon": 26.6560503
+  },
+  {
+    "gtfsId": "Viro:20027",
+    "name": "Ranna",
+    "code": "7800747-1",
+    "lat": 58.3588791,
+    "lon": 26.6401484
+  },
+  {
+    "gtfsId": "Viro:162180",
+    "name": "Hiieküla",
+    "code": "7801465-1",
+    "lat": 58.3730263,
+    "lon": 26.6430258
+  },
+  {
+    "gtfsId": "Viro:128409",
+    "name": "Rehe",
+    "code": "7801209-1",
+    "lat": 58.3330731,
+    "lon": 26.705919
+  },
+  {
+    "gtfsId": "Viro:22361",
+    "name": "Kõrveküla kool",
+    "code": "7800364-1",
+    "lat": 58.423933,
+    "lon": 26.7636193
+  },
+  {
+    "gtfsId": "Viro:162003",
+    "name": "Nõlva",
+    "code": "7801464-1",
+    "lat": 58.337845,
+    "lon": 26.6602142
+  },
+  {
+    "gtfsId": "Viro:20336",
+    "name": "Rahinge",
+    "code": "7800740-1",
+    "lat": 58.3817243,
+    "lon": 26.6196579
+  },
+  {
+    "gtfsId": "Viro:22360",
+    "name": "Kõrveküla kool",
+    "code": "7800365-1",
+    "lat": 58.4244678,
+    "lon": 26.7640296
+  },
+  {
+    "gtfsId": "Viro:162002",
+    "name": "Nõlva",
+    "code": "7801463-1",
+    "lat": 58.3375045,
+    "lon": 26.6608143
+  },
+  {
+    "gtfsId": "Viro:156679",
+    "name": "Järveääre",
+    "code": "7801409-1",
+    "lat": 58.4240219,
+    "lon": 26.765533
+  },
+  {
+    "gtfsId": "Viro:20337",
+    "name": "Rahinge",
+    "code": "7800741-1",
+    "lat": 58.3814844,
+    "lon": 26.6201957
+  },
+  {
+    "gtfsId": "Viro:20530",
+    "name": "Põvvatu",
+    "code": "7800732-1",
+    "lat": 58.3730395,
+    "lon": 26.8201439
+  },
+  {
+    "gtfsId": "Viro:25107",
+    "name": "Ranna tee",
+    "code": "7800748-1",
+    "lat": 58.4367729,
+    "lon": 26.6807404
+  },
+  {
+    "gtfsId": "Viro:20531",
+    "name": "Põvvatu",
+    "code": "7800733-1",
+    "lat": 58.3730769,
+    "lon": 26.8182514
+  },
+  {
+    "gtfsId": "Viro:28857",
+    "name": "Tiksoja",
+    "code": "7800952-1",
+    "lat": 58.4083388,
+    "lon": 26.6538173
+  },
+  {
+    "gtfsId": "Viro:25108",
+    "name": "Ranna tee",
+    "code": "7800749-1",
+    "lat": 58.4372938,
+    "lon": 26.6811933
+  },
+  {
+    "gtfsId": "Viro:29921",
+    "name": "Tiksoja",
+    "code": "7800953-1",
+    "lat": 58.4085914,
+    "lon": 26.6533236
+  },
+  {
+    "gtfsId": "Viro:20181",
+    "name": "Rahinge kool",
+    "code": "7800742-1",
+    "lat": 58.3854933,
+    "lon": 26.6102428
+  },
+  {
+    "gtfsId": "Viro:20180",
+    "name": "Rahinge kool",
+    "code": "7800743-1",
+    "lat": 58.3857903,
+    "lon": 26.6099937
+  },
+  {
+    "gtfsId": "Viro:27316",
+    "name": "Haage",
+    "code": "7800093-1",
+    "lat": 58.3564692,
+    "lon": 26.6195337
+  },
+  {
+    "gtfsId": "Viro:164377",
+    "name": "Põvvatu põik",
+    "code": "7801471-1",
+    "lat": 58.3752297,
+    "lon": 26.8249305
+  },
+  {
+    "gtfsId": "Viro:20034",
+    "name": "Näki",
+    "code": "7800624-1",
+    "lat": 58.3278517,
+    "lon": 26.6432212
+  },
+  {
+    "gtfsId": "Viro:30365",
+    "name": "Näki",
+    "code": "7800625-1",
+    "lat": 58.3271033,
+    "lon": 26.6418306
+  },
+  {
+    "gtfsId": "Viro:22111",
+    "name": "Härma",
+    "code": "7800124-1",
+    "lat": 58.425282,
+    "lon": 26.7809678
+  },
+  {
+    "gtfsId": "Viro:26840",
+    "name": "Ept",
+    "code": "7800081-1",
+    "lat": 58.3209409,
+    "lon": 26.7175968
+  },
+  {
+    "gtfsId": "Viro:22138",
+    "name": "Härma",
+    "code": "7800125-1",
+    "lat": 58.4250281,
+    "lon": 26.7802486
+  },
+  {
+    "gtfsId": "Viro:20528",
+    "name": "Veibri",
+    "code": "7801095-1",
+    "lat": 58.3485828,
+    "lon": 26.8059011
+  },
+  {
+    "gtfsId": "Viro:21888",
+    "name": "Veibri",
+    "code": "7801094-1",
+    "lat": 58.3485612,
+    "lon": 26.8064752
+  },
+  {
+    "gtfsId": "Viro:157870",
+    "name": "Kuuse",
+    "code": "7801431-1",
+    "lat": 58.3304885,
+    "lon": 26.6741841
+  },
+  {
+    "gtfsId": "Viro:123651",
+    "name": "Ülenurme gümnaasium",
+    "code": "7801169-1",
+    "lat": 58.3228746,
+    "lon": 26.7215161
+  },
+  {
+    "gtfsId": "Viro:157869",
+    "name": "Kuuse",
+    "code": "7801430-1",
+    "lat": 58.3302411,
+    "lon": 26.6740102
+  },
+  {
+    "gtfsId": "Viro:91878",
+    "name": "Vorbuse",
+    "code": "7801131-1",
+    "lat": 58.4201202,
+    "lon": 26.6565612
+  },
+  {
+    "gtfsId": "Viro:152672",
+    "name": "Tõrvandi tee",
+    "code": "7801361-1",
+    "lat": 58.3223914,
+    "lon": 26.7205779
+  },
+  {
+    "gtfsId": "Viro:25109",
+    "name": "Maramaa",
+    "code": "7800504-1",
+    "lat": 58.4451486,
+    "lon": 26.6793908
+  },
+  {
+    "gtfsId": "Viro:20039",
+    "name": "Vorbuse",
+    "code": "7801132-1",
+    "lat": 58.420507,
+    "lon": 26.6567224
+  },
+  {
+    "gtfsId": "Viro:164376",
+    "name": "Nahksepa",
+    "code": "7801472-1",
+    "lat": 58.3812052,
+    "lon": 26.8271807
+  },
+  {
+    "gtfsId": "Viro:124866",
+    "name": "Ülenurme gümnaasium",
+    "code": "7801175-1",
+    "lat": 58.321856,
+    "lon": 26.7212454
+  },
+  {
+    "gtfsId": "Viro:128215",
+    "name": "Sahkapuu",
+    "code": "7801202-1",
+    "lat": 58.3941021,
+    "lon": 26.8240715
+  },
+  {
+    "gtfsId": "Viro:20307",
+    "name": "Külasüda",
+    "code": "7800388-1",
+    "lat": 58.421188,
+    "lon": 26.662015
+  },
+  {
+    "gtfsId": "Viro:28807",
+    "name": "Külasüda",
+    "code": "7800389-1",
+    "lat": 58.4209873,
+    "lon": 26.6621704
+  },
+  {
+    "gtfsId": "Viro:22363",
+    "name": "Arens",
+    "code": "7800048-1",
+    "lat": 58.4341402,
+    "lon": 26.7578378
+  },
+  {
+    "gtfsId": "Viro:164378",
+    "name": "Sahkapuu põik",
+    "code": "7801470-1",
+    "lat": 58.3937796,
+    "lon": 26.8254501
+  },
+  {
+    "gtfsId": "Viro:25110",
+    "name": "Maramaa",
+    "code": "7800503-1",
+    "lat": 58.4461219,
+    "lon": 26.6788449
+  },
+  {
+    "gtfsId": "Viro:20362",
+    "name": "Papli",
+    "code": "7800651-1",
+    "lat": 58.3693409,
+    "lon": 26.8363943
+  },
+  {
+    "gtfsId": "Viro:128213",
+    "name": "Sahkapuu",
+    "code": "7801201-1",
+    "lat": 58.3944152,
+    "lon": 26.826515
+  },
+  {
+    "gtfsId": "Viro:28667",
+    "name": "Papli",
+    "code": "7800650-1",
+    "lat": 58.3690043,
+    "lon": 26.8369806
+  },
+  {
+    "gtfsId": "Viro:22362",
+    "name": "Arens",
+    "code": "7800047-1",
+    "lat": 58.4351131,
+    "lon": 26.7562077
+  },
+  {
+    "gtfsId": "Viro:20401",
+    "name": "Poldri",
+    "code": "7800690-1",
+    "lat": 58.328755,
+    "lon": 26.7418885
+  },
+  {
+    "gtfsId": "Viro:20266",
+    "name": "Poldri",
+    "code": "7800689-1",
+    "lat": 58.3287664,
+    "lon": 26.7424306
+  },
+  {
+    "gtfsId": "Viro:138067",
+    "name": "Ülenurme keskus",
+    "code": "7801288-1",
+    "lat": 58.3151296,
+    "lon": 26.7214768
+  },
+  {
+    "gtfsId": "Viro:20228",
+    "name": "Ülenurme keskus",
+    "code": "7801168-1",
+    "lat": 58.3151182,
+    "lon": 26.7209307
+  },
+  {
+    "gtfsId": "Viro:159755",
+    "name": "Tõrvandi",
+    "code": "7800991-2",
+    "lat": 58.3222836,
+    "lon": 26.7089769
+  },
+  {
+    "gtfsId": "Viro:24939",
+    "name": "Tõrvandi",
+    "code": "7800991-1",
+    "lat": 58.3222429,
+    "lon": 26.7089895
+  },
+  {
+    "gtfsId": "Viro:20499",
+    "name": "Ülenurme",
+    "code": "7801167-1",
+    "lat": 58.315651,
+    "lon": 26.7193643
+  },
+  {
+    "gtfsId": "Viro:20385",
+    "name": "Ülenurme",
+    "code": "7801166-1",
+    "lat": 58.3158026,
+    "lon": 26.7187858
+  },
+  {
+    "gtfsId": "Viro:29139",
+    "name": "Tüki",
+    "code": "7800999-1",
+    "lat": 58.3884446,
+    "lon": 26.5822027
+  },
+  {
+    "gtfsId": "Viro:29615",
+    "name": "Külitse",
+    "code": "7800392-1",
+    "lat": 58.3204748,
+    "lon": 26.6227864
+  },
+  {
+    "gtfsId": "Viro:20275",
+    "name": "Tüki",
+    "code": "7800998-1",
+    "lat": 58.3884433,
+    "lon": 26.5809322
+  },
+  {
+    "gtfsId": "Viro:157868",
+    "name": "Väike-Näki",
+    "code": "7801429-1",
+    "lat": 58.3226659,
+    "lon": 26.6726231
+  },
+  {
+    "gtfsId": "Viro:20331",
+    "name": "Külitse",
+    "code": "7800393-1",
+    "lat": 58.3204387,
+    "lon": 26.6236713
+  },
+  {
+    "gtfsId": "Viro:25112",
+    "name": "Kärkna tee",
+    "code": "7801083-1",
+    "lat": 58.4541535,
+    "lon": 26.6737582
+  },
+  {
+    "gtfsId": "Viro:25111",
+    "name": "Kärkna tee",
+    "code": "7801080-1",
+    "lat": 58.4539188,
+    "lon": 26.6742396
+  },
+  {
+    "gtfsId": "Viro:29170",
+    "name": "Haaslava tee",
+    "code": "7800102-1",
+    "lat": 58.3448383,
+    "lon": 26.8194236
+  },
+  {
+    "gtfsId": "Viro:125875",
+    "name": "Haagejärve",
+    "code": "7801192-1",
+    "lat": 58.348252,
+    "lon": 26.6099011
+  },
+  {
+    "gtfsId": "Viro:27471",
+    "name": "Haaslava tee",
+    "code": "7800103-1",
+    "lat": 58.3449494,
+    "lon": 26.8196825
+  },
+  {
+    "gtfsId": "Viro:157867",
+    "name": "Väike-Näki",
+    "code": "7801428-1",
+    "lat": 58.3218174,
+    "lon": 26.6725911
+  },
+  {
+    "gtfsId": "Viro:34105",
+    "name": "Ülenurme",
+    "code": "7890043-1",
+    "lat": 58.3100124,
+    "lon": 26.7214652
+  },
+  {
+    "gtfsId": "Viro:34208",
+    "name": "Ülenurme",
+    "code": "7890044-1",
+    "lat": 58.3099966,
+    "lon": 26.7213647
+  },
+  {
+    "gtfsId": "Viro:161767",
+    "name": "Aia",
+    "code": "7801454-1",
+    "lat": 58.3199324,
+    "lon": 26.7039685
+  },
+  {
+    "gtfsId": "Viro:29914",
+    "name": "Pihva",
+    "code": "7800677-1",
+    "lat": 58.3537367,
+    "lon": 26.6015852
+  },
+  {
+    "gtfsId": "Viro:125874",
+    "name": "Haagejärve",
+    "code": "7801191-1",
+    "lat": 58.3474739,
+    "lon": 26.6099439
+  },
+  {
+    "gtfsId": "Viro:23692",
+    "name": "Külitse järve",
+    "code": "7800394-1",
+    "lat": 58.3237933,
+    "lon": 26.6211099
+  },
+  {
+    "gtfsId": "Viro:138086",
+    "name": "Külitse järve",
+    "code": "7801289-1",
+    "lat": 58.3237567,
+    "lon": 26.6208662
+  },
+  {
+    "gtfsId": "Viro:26486",
+    "name": "Ept",
+    "code": "7800082-1",
+    "lat": 58.3210911,
+    "lon": 26.7170832
+  },
+  {
+    "gtfsId": "Viro:119456",
+    "name": "Järveotsa",
+    "code": "7800165-1",
+    "lat": 58.3186766,
+    "lon": 26.6191202
+  },
+  {
+    "gtfsId": "Viro:20364",
+    "name": "Rähni",
+    "code": "7800803-1",
+    "lat": 58.4103702,
+    "lon": 26.6303418
+  },
+  {
+    "gtfsId": "Viro:28856",
+    "name": "Rähni",
+    "code": "7800802-1",
+    "lat": 58.4104198,
+    "lon": 26.6296273
+  },
+  {
+    "gtfsId": "Viro:31405",
+    "name": "Vasula tee",
+    "code": "7801081-1",
+    "lat": 58.4554907,
+    "lon": 26.6753407
+  },
+  {
+    "gtfsId": "Viro:119455",
+    "name": "Järveotsa",
+    "code": "7800164-1",
+    "lat": 58.3183594,
+    "lon": 26.6194713
+  },
+  {
+    "gtfsId": "Viro:129143",
+    "name": "Pikamäe",
+    "code": "7801228-1",
+    "lat": 58.4398212,
+    "lon": 26.7472656
+  },
+  {
+    "gtfsId": "Viro:31406",
+    "name": "Vasula tee",
+    "code": "7801082-1",
+    "lat": 58.4557017,
+    "lon": 26.6755657
+  },
+  {
+    "gtfsId": "Viro:27571",
+    "name": "Metsavahi",
+    "code": "7800538-1",
+    "lat": 58.42771,
+    "lon": 26.7940716
+  },
+  {
+    "gtfsId": "Viro:129142",
+    "name": "Pikamäe",
+    "code": "7801227-1",
+    "lat": 58.4401438,
+    "lon": 26.7473186
+  },
+  {
+    "gtfsId": "Viro:24560",
+    "name": "Metsavahi",
+    "code": "7800539-1",
+    "lat": 58.4277029,
+    "lon": 26.7947399
+  },
+  {
+    "gtfsId": "Viro:125127",
+    "name": "Männi",
+    "code": "7801176-1",
+    "lat": 58.3059907,
+    "lon": 26.7233808
+  },
+  {
+    "gtfsId": "Viro:25861",
+    "name": "Kivisäki",
+    "code": "7800261-1",
+    "lat": 58.4260024,
+    "lon": 26.6504386
+  },
+  {
+    "gtfsId": "Viro:27317",
+    "name": "Pihva",
+    "code": "7800678-1",
+    "lat": 58.3539697,
+    "lon": 26.597204
+  },
+  {
+    "gtfsId": "Viro:20040",
+    "name": "Kivisäki",
+    "code": "7800262-1",
+    "lat": 58.4262598,
+    "lon": 26.6503755
+  },
+  {
+    "gtfsId": "Viro:134684",
+    "name": "Männi",
+    "code": "7801269-1",
+    "lat": 58.3061255,
+    "lon": 26.7235918
+  },
+  {
+    "gtfsId": "Viro:27006",
+    "name": "Vanamõisa",
+    "code": "7801057-1",
+    "lat": 58.3633949,
+    "lon": 26.8493653
+  },
+  {
+    "gtfsId": "Viro:24428",
+    "name": "Vanamõisa",
+    "code": "7801056-1",
+    "lat": 58.3638928,
+    "lon": 26.8487964
+  },
+  {
+    "gtfsId": "Viro:157730",
+    "name": "Kullerkupu",
+    "code": "7801419-1",
+    "lat": 58.3246278,
+    "lon": 26.6120813
+  },
+  {
+    "gtfsId": "Viro:20389",
+    "name": "Ilmatsalu kool",
+    "code": "7800137-1",
+    "lat": 58.387701,
+    "lon": 26.5622474
+  },
+  {
+    "gtfsId": "Viro:26487",
+    "name": "Küla",
+    "code": "7800387-1",
+    "lat": 58.3113782,
+    "lon": 26.7056478
+  },
+  {
+    "gtfsId": "Viro:157731",
+    "name": "Kullerkupu",
+    "code": "7801420-1",
+    "lat": 58.3255105,
+    "lon": 26.6112125
+  },
+  {
+    "gtfsId": "Viro:22365",
+    "name": "Lombi",
+    "code": "7800454-1",
+    "lat": 58.4439283,
+    "lon": 26.7449899
+  },
+  {
+    "gtfsId": "Viro:22364",
+    "name": "Lombi",
+    "code": "7800455-1",
+    "lat": 58.4441,
+    "lon": 26.7451533
+  },
+  {
+    "gtfsId": "Viro:135023",
+    "name": "Ilmatsalu kool",
+    "code": "7801270-1",
+    "lat": 58.3876555,
+    "lon": 26.5620527
+  },
+  {
+    "gtfsId": "Viro:23694",
+    "name": "Külavahe",
+    "code": "7800390-1",
+    "lat": 58.3187024,
+    "lon": 26.6060307
+  },
+  {
+    "gtfsId": "Viro:153295",
+    "name": "Külavahe",
+    "code": "7800391-1",
+    "lat": 58.3188339,
+    "lon": 26.6061909
+  },
+  {
+    "gtfsId": "Viro:26905",
+    "name": "Kungla",
+    "code": "7800329-1",
+    "lat": 58.4658513,
+    "lon": 26.6761887
+  },
+  {
+    "gtfsId": "Viro:162001",
+    "name": "Söödi",
+    "code": "7801462-1",
+    "lat": 58.3169938,
+    "lon": 26.6354627
+  },
+  {
+    "gtfsId": "Viro:34099",
+    "name": "Kärkna",
+    "code": "7890011-1",
+    "lat": 58.4578966,
+    "lon": 26.6590734
+  },
+  {
+    "gtfsId": "Viro:34214",
+    "name": "Kärkna",
+    "code": "7890012-1",
+    "lat": 58.4579169,
+    "lon": 26.6591756
+  },
+  {
+    "gtfsId": "Viro:27049",
+    "name": "Aardlapalu",
+    "code": "7800006-1",
+    "lat": 58.327834,
+    "lon": 26.7668322
+  },
+  {
+    "gtfsId": "Viro:162000",
+    "name": "Söödi",
+    "code": "7801461-1",
+    "lat": 58.3168112,
+    "lon": 26.6378699
+  },
+  {
+    "gtfsId": "Viro:34155",
+    "name": "Ropka",
+    "code": "7890022-1",
+    "lat": 58.3148764,
+    "lon": 26.6286925
+  },
+  {
+    "gtfsId": "Viro:20032",
+    "name": "Ilmatsalu",
+    "code": "7800136-1",
+    "lat": 58.3895729,
+    "lon": 26.5571787
+  },
+  {
+    "gtfsId": "Viro:23693",
+    "name": "Hobunurme",
+    "code": "7800119-1",
+    "lat": 58.3299216,
+    "lon": 26.6073119
+  },
+  {
+    "gtfsId": "Viro:119464",
+    "name": "Hobunurme",
+    "code": "7800118-1",
+    "lat": 58.3298304,
+    "lon": 26.607137
+  },
+  {
+    "gtfsId": "Viro:34101",
+    "name": "Ropka",
+    "code": "7890021-1",
+    "lat": 58.3150318,
+    "lon": 26.6292131
+  },
+  {
+    "gtfsId": "Viro:157552",
+    "name": "Vahtrapuu tee",
+    "code": "7801415-1",
+    "lat": 58.4597131,
+    "lon": 26.6854568
+  },
+  {
+    "gtfsId": "Viro:26906",
+    "name": "Kungla",
+    "code": "7800330-1",
+    "lat": 58.4663977,
+    "lon": 26.6771264
+  },
+  {
+    "gtfsId": "Viro:28773",
+    "name": "Aardlapalu",
+    "code": "7800005-1",
+    "lat": 58.3276698,
+    "lon": 26.768803
+  },
+  {
+    "gtfsId": "Viro:29574",
+    "name": "Kabina",
+    "code": "7800179-1",
+    "lat": 58.3442363,
+    "lon": 26.8384526
+  },
+  {
+    "gtfsId": "Viro:128217",
+    "name": "Kähri",
+    "code": "7801204-1",
+    "lat": 58.3959031,
+    "lon": 26.8564272
+  },
+  {
+    "gtfsId": "Viro:30745",
+    "name": "Kabina",
+    "code": "7800180-1",
+    "lat": 58.3443202,
+    "lon": 26.839127
+  },
+  {
+    "gtfsId": "Viro:128216",
+    "name": "Kähri",
+    "code": "7801203-1",
+    "lat": 58.3957812,
+    "lon": 26.8568537
+  },
+  {
+    "gtfsId": "Viro:22029",
+    "name": "Kärkna",
+    "code": "7800380-1",
+    "lat": 58.4602812,
+    "lon": 26.6524148
+  },
+  {
+    "gtfsId": "Viro:157551",
+    "name": "Vahtrapuu tee",
+    "code": "7801414-1",
+    "lat": 58.4605641,
+    "lon": 26.6875066
+  },
+  {
+    "gtfsId": "Viro:125876",
+    "name": "Avaste",
+    "code": "7801193-1",
+    "lat": 58.3387603,
+    "lon": 26.6036923
+  },
+  {
+    "gtfsId": "Viro:23320",
+    "name": "Kärkna",
+    "code": "7800381-1",
+    "lat": 58.4606663,
+    "lon": 26.6516101
+  },
+  {
+    "gtfsId": "Viro:28358",
+    "name": "Kabina tee",
+    "code": "7800182-1",
+    "lat": 58.35789,
+    "lon": 26.8568259
+  },
+  {
+    "gtfsId": "Viro:23122",
+    "name": "Kose",
+    "code": "7800309-1",
+    "lat": 58.3122674,
+    "lon": 26.6037186
+  },
+  {
+    "gtfsId": "Viro:27010",
+    "name": "Kabina tee",
+    "code": "7800181-1",
+    "lat": 58.3577023,
+    "lon": 26.8569785
+  },
+  {
+    "gtfsId": "Viro:125877",
+    "name": "Avaste",
+    "code": "7801194-1",
+    "lat": 58.3384271,
+    "lon": 26.6030676
+  },
+  {
+    "gtfsId": "Viro:25998",
+    "name": "Peruoja",
+    "code": "7800671-1",
+    "lat": 58.3731178,
+    "lon": 26.8620372
+  },
+  {
+    "gtfsId": "Viro:26842",
+    "name": "Kose",
+    "code": "7800308-1",
+    "lat": 58.3116674,
+    "lon": 26.6024934
+  },
+  {
+    "gtfsId": "Viro:20532",
+    "name": "Peruoja",
+    "code": "7800672-1",
+    "lat": 58.3729152,
+    "lon": 26.8638421
+  },
+  {
+    "gtfsId": "Viro:26841",
+    "name": "Küla",
+    "code": "7800386-1",
+    "lat": 58.3113631,
+    "lon": 26.6968257
+  },
+  {
+    "gtfsId": "Viro:147802",
+    "name": "Arroli",
+    "code": "7801328-1",
+    "lat": 58.33135,
+    "lon": 26.60225
+  },
+  {
+    "gtfsId": "Viro:147801",
+    "name": "Arroli",
+    "code": "7801327-1",
+    "lat": 58.33227,
+    "lon": 26.60171
+  },
+  {
+    "gtfsId": "Viro:119460",
+    "name": "Juuristiku",
+    "code": "7800153-1",
+    "lat": 58.313336,
+    "lon": 26.6518555
+  },
+  {
+    "gtfsId": "Viro:119462",
+    "name": "Juuristiku",
+    "code": "7800152-1",
+    "lat": 58.3130116,
+    "lon": 26.6529815
+  },
+  {
+    "gtfsId": "Viro:29138",
+    "name": "Vanaaseme tee",
+    "code": "7801043-1",
+    "lat": 58.4106232,
+    "lon": 26.6075517
+  },
+  {
+    "gtfsId": "Viro:22626",
+    "name": "Reola",
+    "code": "7800764-1",
+    "lat": 58.2965698,
+    "lon": 26.7201675
+  },
+  {
+    "gtfsId": "Viro:23446",
+    "name": "Vanaaseme tee",
+    "code": "7801044-1",
+    "lat": 58.4108032,
+    "lon": 26.6070035
+  },
+  {
+    "gtfsId": "Viro:24558",
+    "name": "Vasula küla",
+    "code": "7801079-1",
+    "lat": 58.4521153,
+    "lon": 26.736982
+  },
+  {
+    "gtfsId": "Viro:24557",
+    "name": "Vasula küla",
+    "code": "7801078-1",
+    "lat": 58.4522015,
+    "lon": 26.7371569
+  },
+  {
+    "gtfsId": "Viro:24562",
+    "name": "Möllatsi",
+    "code": "7800592-1",
+    "lat": 58.4330913,
+    "lon": 26.8176744
+  },
+  {
+    "gtfsId": "Viro:23925",
+    "name": "Reola",
+    "code": "7800763-1",
+    "lat": 58.2957727,
+    "lon": 26.7196794
+  },
+  {
+    "gtfsId": "Viro:24561",
+    "name": "Möllatsi",
+    "code": "7800591-1",
+    "lat": 58.4333574,
+    "lon": 26.8178417
+  },
+  {
+    "gtfsId": "Viro:29473",
+    "name": "Luunja kool",
+    "code": "7800482-1",
+    "lat": 58.3563469,
+    "lon": 26.8727138
+  },
+  {
+    "gtfsId": "Viro:27494",
+    "name": "Savijõe",
+    "code": "7801263-1",
+    "lat": 58.3261676,
+    "lon": 26.7824906
+  },
+  {
+    "gtfsId": "Viro:30049",
+    "name": "Peedimäe",
+    "code": "7800663-1",
+    "lat": 58.3549171,
+    "lon": 26.5728692
+  },
+  {
+    "gtfsId": "Viro:26907",
+    "name": "Erala",
+    "code": "7800083-1",
+    "lat": 58.4774883,
+    "lon": 26.6825865
+  },
+  {
+    "gtfsId": "Viro:28666",
+    "name": "Luunja kool",
+    "code": "7800481-1",
+    "lat": 58.3563544,
+    "lon": 26.8741752
+  },
+  {
+    "gtfsId": "Viro:20308",
+    "name": "Tõnise",
+    "code": "7800985-1",
+    "lat": 58.4342246,
+    "lon": 26.6321467
+  },
+  {
+    "gtfsId": "Viro:28775",
+    "name": "Tõnise",
+    "code": "7800984-1",
+    "lat": 58.4346996,
+    "lon": 26.6318033
+  },
+  {
+    "gtfsId": "Viro:20447",
+    "name": "Lennujaam",
+    "code": "7800431-1",
+    "lat": 58.3107563,
+    "lon": 26.6912048
+  },
+  {
+    "gtfsId": "Viro:161142",
+    "name": "Lennujaam",
+    "code": "7800431-2",
+    "lat": 58.3107445,
+    "lon": 26.6912348
+  },
+  {
+    "gtfsId": "Viro:20031",
+    "name": "Peedimäe",
+    "code": "7800664-1",
+    "lat": 58.354985,
+    "lon": 26.570594
+  },
+  {
+    "gtfsId": "Viro:24705",
+    "name": "Soo",
+    "code": "7800886-1",
+    "lat": 58.3066463,
+    "lon": 26.5973507
+  },
+  {
+    "gtfsId": "Viro:27050",
+    "name": "Suurekivi",
+    "code": "7800906-1",
+    "lat": 58.3257852,
+    "lon": 26.7856797
+  },
+  {
+    "gtfsId": "Viro:27580",
+    "name": "Erala",
+    "code": "7800084-1",
+    "lat": 58.4781754,
+    "lon": 26.682818
+  },
+  {
+    "gtfsId": "Viro:91254",
+    "name": "Soonurga",
+    "code": "7800887-1",
+    "lat": 58.3066672,
+    "lon": 26.5963237
+  },
+  {
+    "gtfsId": "Viro:26584",
+    "name": "Soo",
+    "code": "7800888-1",
+    "lat": 58.3059453,
+    "lon": 26.596037
+  },
+  {
+    "gtfsId": "Viro:133404",
+    "name": "Raamatu",
+    "code": "7801264-1",
+    "lat": 58.3249978,
+    "lon": 26.7877021
+  },
+  {
+    "gtfsId": "Viro:133403",
+    "name": "Suurekivi",
+    "code": "7800907-1",
+    "lat": 58.3252674,
+    "lon": 26.7883159
+  },
+  {
+    "gtfsId": "Viro:21872",
+    "name": "Aovere",
+    "code": "7800039-1",
+    "lat": 58.4461367,
+    "lon": 26.8071928
+  },
+  {
+    "gtfsId": "Viro:21743",
+    "name": "Õunaaia",
+    "code": "7801162-1",
+    "lat": 58.466069,
+    "lon": 26.7019557
+  },
+  {
+    "gtfsId": "Viro:21873",
+    "name": "Aovere",
+    "code": "7800040-1",
+    "lat": 58.445302,
+    "lon": 26.8073343
+  },
+  {
+    "gtfsId": "Viro:28176",
+    "name": "Õunaaia",
+    "code": "7801163-1",
+    "lat": 58.4663597,
+    "lon": 26.703722
+  },
+  {
+    "gtfsId": "Viro:31946",
+    "name": "Tülba",
+    "code": "7801000-1",
+    "lat": 58.4624207,
+    "lon": 26.6371537
+  },
+  {
+    "gtfsId": "Viro:157884",
+    "name": "Ridaka",
+    "code": "7801434-1",
+    "lat": 58.325921,
+    "lon": 26.7942651
+  },
+  {
+    "gtfsId": "Viro:31945",
+    "name": "Tülba",
+    "code": "7801001-1",
+    "lat": 58.4627059,
+    "lon": 26.6361785
+  },
+  {
+    "gtfsId": "Viro:26885",
+    "name": "Oja",
+    "code": "7800626-1",
+    "lat": 58.3730205,
+    "lon": 26.8839215
+  },
+  {
+    "gtfsId": "Viro:22979",
+    "name": "Aardla küla",
+    "code": "7800003-1",
+    "lat": 58.3147495,
+    "lon": 26.7780124
+  },
+  {
+    "gtfsId": "Viro:20173",
+    "name": "Oja",
+    "code": "7800627-1",
+    "lat": 58.3734759,
+    "lon": 26.8836498
+  },
+  {
+    "gtfsId": "Viro:22980",
+    "name": "Aardla küla",
+    "code": "7800004-1",
+    "lat": 58.3146059,
+    "lon": 26.7774739
+  },
+  {
+    "gtfsId": "Viro:125164",
+    "name": "Vasula aed",
+    "code": "7801182-1",
+    "lat": 58.4608334,
+    "lon": 26.7300005
+  },
+  {
+    "gtfsId": "Viro:26881",
+    "name": "Keldri",
+    "code": "7800480-1",
+    "lat": 58.3592897,
+    "lon": 26.8900326
+  },
+  {
+    "gtfsId": "Viro:126170",
+    "name": "Kilgi tee",
+    "code": "7801196-1",
+    "lat": 58.4416103,
+    "lon": 26.8189014
+  },
+  {
+    "gtfsId": "Viro:125163",
+    "name": "Vasula aed",
+    "code": "7801181-1",
+    "lat": 58.461192,
+    "lon": 26.7299997
+  },
+  {
+    "gtfsId": "Viro:27568",
+    "name": "Luunja",
+    "code": "7800477-1",
+    "lat": 58.3617001,
+    "lon": 26.8913679
+  },
+  {
+    "gtfsId": "Viro:20514",
+    "name": "Luunja",
+    "code": "7800476-1",
+    "lat": 58.360001,
+    "lon": 26.8939352
+  },
+  {
+    "gtfsId": "Viro:22912",
+    "name": "Luige",
+    "code": "7800467-1",
+    "lat": 58.308135,
+    "lon": 26.5849032
+  },
+  {
+    "gtfsId": "Viro:22913",
+    "name": "Luige",
+    "code": "7800466-1",
+    "lat": 58.3080112,
+    "lon": 26.5848024
+  },
+  {
+    "gtfsId": "Viro:28694",
+    "name": "Liivaku",
+    "code": "7800439-1",
+    "lat": 58.3237151,
+    "lon": 26.8019381
+  },
+  {
+    "gtfsId": "Viro:26884",
+    "name": "Keldri",
+    "code": "7800478-1",
+    "lat": 58.359623,
+    "lon": 26.8907899
+  },
+  {
+    "gtfsId": "Viro:126169",
+    "name": "Kilgi tee",
+    "code": "7801195-1",
+    "lat": 58.4427944,
+    "lon": 26.8169536
+  },
+  {
+    "gtfsId": "Viro:34097",
+    "name": "Uhti",
+    "code": "7890031-1",
+    "lat": 58.289104,
+    "lon": 26.7289441
+  },
+  {
+    "gtfsId": "Viro:34207",
+    "name": "Uhti",
+    "code": "7890032-1",
+    "lat": 58.2891282,
+    "lon": 26.7290707
+  },
+  {
+    "gtfsId": "Viro:163770",
+    "name": "Haaslava kauplus",
+    "code": "7801447-1",
+    "lat": 58.3239953,
+    "lon": 26.8024771
+  },
+  {
+    "gtfsId": "Viro:157885",
+    "name": "Arteesia",
+    "code": "7801435-1",
+    "lat": 58.328674,
+    "lon": 26.7940078
+  },
+  {
+    "gtfsId": "Viro:29137",
+    "name": "Kardla tee",
+    "code": "7800208-1",
+    "lat": 58.4135572,
+    "lon": 26.578872
+  },
+  {
+    "gtfsId": "Viro:30313",
+    "name": "Kardla tee",
+    "code": "7800209-1",
+    "lat": 58.4136048,
+    "lon": 26.5770682
+  },
+  {
+    "gtfsId": "Viro:20737",
+    "name": "Liivaku",
+    "code": "7800438-1",
+    "lat": 58.3234217,
+    "lon": 26.8044502
+  },
+  {
+    "gtfsId": "Viro:31731",
+    "name": "Uhti keskus",
+    "code": "7801008-1",
+    "lat": 58.285655,
+    "lon": 26.7135276
+  },
+  {
+    "gtfsId": "Viro:30773",
+    "name": "Uhti",
+    "code": "7801007-1",
+    "lat": 58.2859822,
+    "lon": 26.7131394
+  },
+  {
+    "gtfsId": "Viro:26888",
+    "name": "Asusilla",
+    "code": "7800067-1",
+    "lat": 58.3540665,
+    "lon": 26.5552701
+  },
+  {
+    "gtfsId": "Viro:157887",
+    "name": "Hõbepaju",
+    "code": "7801437-1",
+    "lat": 58.3266759,
+    "lon": 26.8006632
+  },
+  {
+    "gtfsId": "Viro:29508",
+    "name": "Uhti",
+    "code": "7801006-1",
+    "lat": 58.2858056,
+    "lon": 26.7125638
+  },
+  {
+    "gtfsId": "Viro:157886",
+    "name": "Mängu",
+    "code": "7801436-1",
+    "lat": 58.3297434,
+    "lon": 26.7972227
+  },
+  {
+    "gtfsId": "Viro:26908",
+    "name": "Lähte",
+    "code": "7800483-1",
+    "lat": 58.4933815,
+    "lon": 26.6835501
+  },
+  {
+    "gtfsId": "Viro:132480",
+    "name": "Supsi",
+    "code": "7801253-1",
+    "lat": 58.401479,
+    "lon": 26.8792465
+  },
+  {
+    "gtfsId": "Viro:30050",
+    "name": "Asusilla",
+    "code": "7800066-1",
+    "lat": 58.3540934,
+    "lon": 26.5530275
+  },
+  {
+    "gtfsId": "Viro:132479",
+    "name": "Supsi",
+    "code": "7801200-1",
+    "lat": 58.4015217,
+    "lon": 26.8797464
+  },
+  {
+    "gtfsId": "Viro:146223",
+    "name": "Makari",
+    "code": "7801314-1",
+    "lat": 58.4878109,
+    "lon": 26.6841743
+  },
+  {
+    "gtfsId": "Viro:146222",
+    "name": "Makari",
+    "code": "7801313-1",
+    "lat": 58.4877364,
+    "lon": 26.6842994
+  },
+  {
+    "gtfsId": "Viro:26909",
+    "name": "Lähte",
+    "code": "7800484-1",
+    "lat": 58.4943497,
+    "lon": 26.6840854
+  },
+  {
+    "gtfsId": "Viro:26886",
+    "name": "Reinu",
+    "code": "7800762-1",
+    "lat": 58.3784581,
+    "lon": 26.8848843
+  },
+  {
+    "gtfsId": "Viro:142638",
+    "name": "Kase",
+    "code": "7801301-1",
+    "lat": 58.4932847,
+    "lon": 26.6776593
+  },
+  {
+    "gtfsId": "Viro:142637",
+    "name": "Kase",
+    "code": "7801300-1",
+    "lat": 58.4934287,
+    "lon": 26.6776456
+  },
+  {
+    "gtfsId": "Viro:27788",
+    "name": "Lätiküla",
+    "code": "7800485-1",
+    "lat": 58.2918925,
+    "lon": 26.688472
+  },
+  {
+    "gtfsId": "Viro:21731",
+    "name": "Lätiküla",
+    "code": "7800486-1",
+    "lat": 58.2919996,
+    "lon": 26.6883132
+  },
+  {
+    "gtfsId": "Viro:26914",
+    "name": "Vesneri",
+    "code": "7801103-1",
+    "lat": 58.4319812,
+    "lon": 26.8418407
+  },
+  {
+    "gtfsId": "Viro:30524",
+    "name": "Reinu",
+    "code": "7800761-1",
+    "lat": 58.3792339,
+    "lon": 26.8855499
+  },
+  {
+    "gtfsId": "Viro:133989",
+    "name": "Vesneri keskus",
+    "code": "7801268-1",
+    "lat": 58.4329945,
+    "lon": 26.8449661
+  },
+  {
+    "gtfsId": "Viro:26915",
+    "name": "Vesneri",
+    "code": "7801104-1",
+    "lat": 58.4311491,
+    "lon": 26.8434954
+  },
+  {
+    "gtfsId": "Viro:28657",
+    "name": "Mudaniku",
+    "code": "7800548-1",
+    "lat": 58.4199722,
+    "lon": 26.5749001
+  },
+  {
+    "gtfsId": "Viro:28656",
+    "name": "Mudaniku",
+    "code": "7800549-1",
+    "lat": 58.419954,
+    "lon": 26.5746901
+  },
+  {
+    "gtfsId": "Viro:28075",
+    "name": "Soomeküla",
+    "code": "7800892-1",
+    "lat": 58.444425,
+    "lon": 26.620674
+  },
+  {
+    "gtfsId": "Viro:20276",
+    "name": "Soomeküla",
+    "code": "7800891-1",
+    "lat": 58.4445904,
+    "lon": 26.6204936
+  },
+  {
+    "gtfsId": "Viro:28499",
+    "name": "Lubjaveski",
+    "code": "7800464-1",
+    "lat": 58.4551889,
+    "lon": 26.8166443
+  },
+  {
+    "gtfsId": "Viro:26634",
+    "name": "Lubjaveski",
+    "code": "7800465-1",
+    "lat": 58.4553708,
+    "lon": 26.8173618
+  },
+  {
+    "gtfsId": "Viro:24565",
+    "name": "Kõlluste",
+    "code": "7800355-1",
+    "lat": 58.4831206,
+    "lon": 26.6524813
+  },
+  {
+    "gtfsId": "Viro:24564",
+    "name": "Kõlluste",
+    "code": "7800354-1",
+    "lat": 58.4830105,
+    "lon": 26.6525898
+  },
+  {
+    "gtfsId": "Viro:20739",
+    "name": "Haaslava",
+    "code": "7800099-1",
+    "lat": 58.3229216,
+    "lon": 26.8149975
+  },
+  {
+    "gtfsId": "Viro:20738",
+    "name": "Haaslava",
+    "code": "7800101-1",
+    "lat": 58.3230677,
+    "lon": 26.8141724
+  },
+  {
+    "gtfsId": "Viro:152433",
+    "name": "Põdra",
+    "code": "7801357-1",
+    "lat": 58.2805343,
+    "lon": 26.7289271
+  },
+  {
+    "gtfsId": "Viro:133402",
+    "name": "Kalamajandi",
+    "code": "7801262-1",
+    "lat": 58.3222667,
+    "lon": 26.8158674
+  },
+  {
+    "gtfsId": "Viro:129140",
+    "name": "Kastli",
+    "code": "7801225-1",
+    "lat": 58.4933731,
+    "lon": 26.6715446
+  },
+  {
+    "gtfsId": "Viro:129141",
+    "name": "Kastli",
+    "code": "7801226-1",
+    "lat": 58.4933024,
+    "lon": 26.6712173
+  },
+  {
+    "gtfsId": "Viro:149324",
+    "name": "Ääremetsa tee",
+    "code": "7801338-1",
+    "lat": 58.4882354,
+    "lon": 26.6621221
+  },
+  {
+    "gtfsId": "Viro:80959",
+    "name": "Lammiku",
+    "code": "7800558-1",
+    "lat": 58.4686403,
+    "lon": 26.6202276
+  },
+  {
+    "gtfsId": "Viro:29113",
+    "name": "Kalda",
+    "code": "7800190-1",
+    "lat": 58.3651218,
+    "lon": 26.9050801
+  },
+  {
+    "gtfsId": "Viro:26910",
+    "name": "Palalinna",
+    "code": "7800643-1",
+    "lat": 58.5022381,
+    "lon": 26.6800421
+  },
+  {
+    "gtfsId": "Viro:149323",
+    "name": "Ääremetsa tee",
+    "code": "7801337-1",
+    "lat": 58.4884251,
+    "lon": 26.6627189
+  },
+  {
+    "gtfsId": "Viro:33542",
+    "name": "Lammiku",
+    "code": "7800560-1",
+    "lat": 58.4689815,
+    "lon": 26.6198008
+  },
+  {
+    "gtfsId": "Viro:20501",
+    "name": "Kalda",
+    "code": "7800191-1",
+    "lat": 58.3652423,
+    "lon": 26.90571
+  },
+  {
+    "gtfsId": "Viro:22981",
+    "name": "Vangi",
+    "code": "7801065-1",
+    "lat": 58.3050041,
+    "lon": 26.7666878
+  },
+  {
+    "gtfsId": "Viro:152432",
+    "name": "Põdra",
+    "code": "7801358-1",
+    "lat": 58.2794256,
+    "lon": 26.7292592
+  },
+  {
+    "gtfsId": "Viro:22982",
+    "name": "Vangi",
+    "code": "7801064-1",
+    "lat": 58.3048406,
+    "lon": 26.7663257
+  },
+  {
+    "gtfsId": "Viro:24559",
+    "name": "Vasula",
+    "code": "7801077-1",
+    "lat": 58.4708659,
+    "lon": 26.7289131
+  },
+  {
+    "gtfsId": "Viro:132254",
+    "name": "Vasula",
+    "code": "7801242-1",
+    "lat": 58.4712097,
+    "lon": 26.7292239
+  },
+  {
+    "gtfsId": "Viro:148311",
+    "name": "Kusta",
+    "code": "7801335-1",
+    "lat": 58.289116,
+    "lon": 26.6769551
+  },
+  {
+    "gtfsId": "Viro:29347",
+    "name": "Muuge tee",
+    "code": "7800561-1",
+    "lat": 58.470446,
+    "lon": 26.6206807
+  },
+  {
+    "gtfsId": "Viro:31078",
+    "name": "Muuge tee",
+    "code": "7800559-1",
+    "lat": 58.4705938,
+    "lon": 26.6211441
+  },
+  {
+    "gtfsId": "Viro:148312",
+    "name": "Kusta",
+    "code": "7801336-1",
+    "lat": 58.2887748,
+    "lon": 26.6763043
+  },
+  {
+    "gtfsId": "Viro:124714",
+    "name": "Tuigo tee",
+    "code": "7801174-1",
+    "lat": 58.3180524,
+    "lon": 26.8174822
+  },
+  {
+    "gtfsId": "Viro:24633",
+    "name": "Vana-Kastre",
+    "code": "7801048-1",
+    "lat": 58.3551351,
+    "lon": 26.9087319
+  },
+  {
+    "gtfsId": "Viro:124713",
+    "name": "Tuigo tee",
+    "code": "7801173-1",
+    "lat": 58.3179007,
+    "lon": 26.8178373
+  },
+  {
+    "gtfsId": "Viro:146227",
+    "name": "Sootaga",
+    "code": "7801318-1",
+    "lat": 58.4907055,
+    "lon": 26.7009926
+  },
+  {
+    "gtfsId": "Viro:24634",
+    "name": "Vana-Kastre",
+    "code": "7801046-1",
+    "lat": 58.3549522,
+    "lon": 26.908673
+  },
+  {
+    "gtfsId": "Viro:146226",
+    "name": "Sootaga",
+    "code": "7801317-1",
+    "lat": 58.4906766,
+    "lon": 26.7012971
+  },
+  {
+    "gtfsId": "Viro:130294",
+    "name": "Sootaga mõis",
+    "code": "7801231-1",
+    "lat": 58.4906278,
+    "lon": 26.7021182
+  },
+  {
+    "gtfsId": "Viro:28070",
+    "name": "Joora",
+    "code": "7800149-1",
+    "lat": 58.3976199,
+    "lon": 26.8953147
+  },
+  {
+    "gtfsId": "Viro:130295",
+    "name": "Sootaga mõis",
+    "code": "7801232-1",
+    "lat": 58.4903914,
+    "lon": 26.7022501
+  },
+  {
+    "gtfsId": "Viro:22223",
+    "name": "Valgeristi",
+    "code": "7801032-1",
+    "lat": 58.2956859,
+    "lon": 26.582477
+  },
+  {
+    "gtfsId": "Viro:28071",
+    "name": "Joora",
+    "code": "7800148-1",
+    "lat": 58.3983911,
+    "lon": 26.8959805
+  },
+  {
+    "gtfsId": "Viro:28909",
+    "name": "Haava",
+    "code": "7800105-1",
+    "lat": 58.4631356,
+    "lon": 26.7859165
+  },
+  {
+    "gtfsId": "Viro:26650",
+    "name": "Valgeristi",
+    "code": "7801033-1",
+    "lat": 58.2951814,
+    "lon": 26.5809885
+  },
+  {
+    "gtfsId": "Viro:22225",
+    "name": "Teelahkme",
+    "code": "7801047-1",
+    "lat": 58.3531564,
+    "lon": 26.9087994
+  },
+  {
+    "gtfsId": "Viro:20358",
+    "name": "Haava",
+    "code": "7800104-1",
+    "lat": 58.4602704,
+    "lon": 26.7879342
+  },
+  {
+    "gtfsId": "Viro:24563",
+    "name": "Sojamaa",
+    "code": "7800885-1",
+    "lat": 58.4757492,
+    "lon": 26.6278187
+  },
+  {
+    "gtfsId": "Viro:27572",
+    "name": "Sojamaa",
+    "code": "7800884-1",
+    "lat": 58.4759973,
+    "lon": 26.6277708
+  },
+  {
+    "gtfsId": "Viro:100518",
+    "name": "Teelahkme",
+    "code": "7801045-1",
+    "lat": 58.352843,
+    "lon": 26.9077638
+  },
+  {
+    "gtfsId": "Viro:147430",
+    "name": "Seljamaa",
+    "code": "7801323-1",
+    "lat": 58.4802509,
+    "lon": 26.6350253
+  },
+  {
+    "gtfsId": "Viro:147431",
+    "name": "Seljamaa",
+    "code": "7801324-1",
+    "lat": 58.480458,
+    "lon": 26.6352242
+  },
+  {
+    "gtfsId": "Viro:29618",
+    "name": "Tuigo",
+    "code": "7800970-1",
+    "lat": 58.3114319,
+    "lon": 26.8165576
+  },
+  {
+    "gtfsId": "Viro:20425",
+    "name": "Teemeistri",
+    "code": "7800943-1",
+    "lat": 58.2747457,
+    "lon": 26.7388077
+  },
+  {
+    "gtfsId": "Viro:20175",
+    "name": "Rõõmu tee",
+    "code": "7800800-1",
+    "lat": 58.4080225,
+    "lon": 26.9040056
+  },
+  {
+    "gtfsId": "Viro:21467",
+    "name": "Lepiku",
+    "code": "7800435-1",
+    "lat": 58.2729872,
+    "lon": 26.700136
+  },
+  {
+    "gtfsId": "Viro:20174",
+    "name": "Rõõmu tee",
+    "code": "7800801-1",
+    "lat": 58.408036,
+    "lon": 26.9043995
+  },
+  {
+    "gtfsId": "Viro:26916",
+    "name": "Rätsepa",
+    "code": "7800807-1",
+    "lat": 58.4238471,
+    "lon": 26.8598253
+  },
+  {
+    "gtfsId": "Viro:26578",
+    "name": "Kruusa",
+    "code": "7800312-1",
+    "lat": 58.4709573,
+    "lon": 26.6053118
+  },
+  {
+    "gtfsId": "Viro:26838",
+    "name": "Lepiku",
+    "code": "7800434-1",
+    "lat": 58.2727214,
+    "lon": 26.6994834
+  },
+  {
+    "gtfsId": "Viro:29135",
+    "name": "Kruusa",
+    "code": "7800313-1",
+    "lat": 58.4711044,
+    "lon": 26.6044966
+  },
+  {
+    "gtfsId": "Viro:23121",
+    "name": "Teemeistri",
+    "code": "7800942-1",
+    "lat": 58.2738401,
+    "lon": 26.7408291
+  },
+  {
+    "gtfsId": "Viro:20740",
+    "name": "Kurepalu",
+    "code": "7800339-1",
+    "lat": 58.3170019,
+    "lon": 26.8356673
+  },
+  {
+    "gtfsId": "Viro:26917",
+    "name": "Rätsepa",
+    "code": "7800806-1",
+    "lat": 58.4231562,
+    "lon": 26.8609822
+  },
+  {
+    "gtfsId": "Viro:162474",
+    "name": "Pilka",
+    "code": "7801446-1",
+    "lat": 58.4115583,
+    "lon": 26.8958151
+  },
+  {
+    "gtfsId": "Viro:128218",
+    "name": "Pilka",
+    "code": "7801205-1",
+    "lat": 58.4117289,
+    "lon": 26.8957202
+  },
+  {
+    "gtfsId": "Viro:20741",
+    "name": "Kurepalu",
+    "code": "7800340-1",
+    "lat": 58.3169888,
+    "lon": 26.8360519
+  },
+  {
+    "gtfsId": "Viro:28068",
+    "name": "Kopli",
+    "code": "7800305-1",
+    "lat": 58.4645476,
+    "lon": 26.7576794
+  },
+  {
+    "gtfsId": "Viro:23576",
+    "name": "Lange",
+    "code": "7800418-1",
+    "lat": 58.2924511,
+    "lon": 26.7641464
+  },
+  {
+    "gtfsId": "Viro:26633",
+    "name": "Kopli",
+    "code": "7800304-1",
+    "lat": 58.464686,
+    "lon": 26.7575145
+  },
+  {
+    "gtfsId": "Viro:21953",
+    "name": "Rõhu",
+    "code": "7800791-1",
+    "lat": 58.3504764,
+    "lon": 26.5237144
+  },
+  {
+    "gtfsId": "Viro:23577",
+    "name": "Lange",
+    "code": "7800417-1",
+    "lat": 58.2921063,
+    "lon": 26.7638868
+  },
+  {
+    "gtfsId": "Viro:23965",
+    "name": "Järiste",
+    "code": "7800157-1",
+    "lat": 58.2897229,
+    "lon": 26.573226
+  },
+  {
+    "gtfsId": "Viro:29267",
+    "name": "Sirgu",
+    "code": "7800877-1",
+    "lat": 58.3710021,
+    "lon": 26.9248379
+  },
+  {
+    "gtfsId": "Viro:29525",
+    "name": "Rõhu",
+    "code": "7800790-1",
+    "lat": 58.3506461,
+    "lon": 26.5260307
+  },
+  {
+    "gtfsId": "Viro:23964",
+    "name": "Järiste",
+    "code": "7800156-1",
+    "lat": 58.2899109,
+    "lon": 26.5737047
+  },
+  {
+    "gtfsId": "Viro:29268",
+    "name": "Sirgu",
+    "code": "7800878-1",
+    "lat": 58.3709892,
+    "lon": 26.9254003
+  },
+  {
+    "gtfsId": "Viro:25637",
+    "name": "Tuigo kalmistu",
+    "code": "7800969-1",
+    "lat": 58.3037955,
+    "lon": 26.793004
+  },
+  {
+    "gtfsId": "Viro:20277",
+    "name": "Iie",
+    "code": "7800133-1",
+    "lat": 58.4511649,
+    "lon": 26.5939588
+  },
+  {
+    "gtfsId": "Viro:20278",
+    "name": "Iie",
+    "code": "7800132-1",
+    "lat": 58.4511581,
+    "lon": 26.5936316
+  },
+  {
+    "gtfsId": "Viro:20742",
+    "name": "Kure",
+    "code": "7800333-1",
+    "lat": 58.3118876,
+    "lon": 26.8453821
+  },
+  {
+    "gtfsId": "Viro:153231",
+    "name": "Vooru",
+    "code": "7801365-1",
+    "lat": 58.3452552,
+    "lon": 26.9110435
+  },
+  {
+    "gtfsId": "Viro:153232",
+    "name": "Vooru",
+    "code": "7801366-1",
+    "lat": 58.3451174,
+    "lon": 26.9105813
+  },
+  {
+    "gtfsId": "Viro:24635",
+    "name": "Prilli",
+    "code": "7800703-1",
+    "lat": 58.3502941,
+    "lon": 26.9301918
+  },
+  {
+    "gtfsId": "Viro:22971",
+    "name": "Kure",
+    "code": "7800334-1",
+    "lat": 58.3115014,
+    "lon": 26.8455734
+  },
+  {
+    "gtfsId": "Viro:27581",
+    "name": "Prilli",
+    "code": "7800702-1",
+    "lat": 58.3497929,
+    "lon": 26.9312742
+  },
+  {
+    "gtfsId": "Viro:22278",
+    "name": "Kobratu",
+    "code": "7800269-1",
+    "lat": 58.4742039,
+    "lon": 26.7860394
+  },
+  {
+    "gtfsId": "Viro:20239",
+    "name": "Kobratu",
+    "code": "7800270-1",
+    "lat": 58.4737487,
+    "lon": 26.7861213
+  },
+  {
+    "gtfsId": "Viro:153392",
+    "name": "Tooma",
+    "code": "7801370-1",
+    "lat": 58.2841055,
+    "lon": 26.5958803
+  },
+  {
+    "gtfsId": "Viro:29470",
+    "name": "Väägvere",
+    "code": "7801160-1",
+    "lat": 58.4682727,
+    "lon": 26.8406349
+  },
+  {
+    "gtfsId": "Viro:30523",
+    "name": "Latiku",
+    "code": "7800425-1",
+    "lat": 58.2798471,
+    "lon": 26.65423
+  },
+  {
+    "gtfsId": "Viro:26918",
+    "name": "Aravuste",
+    "code": "7800044-1",
+    "lat": 58.4192416,
+    "lon": 26.8728408
+  },
+  {
+    "gtfsId": "Viro:20125",
+    "name": "Latiku",
+    "code": "7800426-1",
+    "lat": 58.2797789,
+    "lon": 26.6544829
+  },
+  {
+    "gtfsId": "Viro:26919",
+    "name": "Aravuste",
+    "code": "7800043-1",
+    "lat": 58.4187526,
+    "lon": 26.8738071
+  },
+  {
+    "gtfsId": "Viro:23966",
+    "name": "Aiamaa",
+    "code": "7800018-1",
+    "lat": 58.2834322,
+    "lon": 26.5606419
+  },
+  {
+    "gtfsId": "Viro:22358",
+    "name": "Nõgiaru",
+    "code": "7800609-1",
+    "lat": 58.3131053,
+    "lon": 26.5462253
+  },
+  {
+    "gtfsId": "Viro:155618",
+    "name": "Nõgiaru keskus",
+    "code": "7801396-1",
+    "lat": 58.3129861,
+    "lon": 26.545901
+  },
+  {
+    "gtfsId": "Viro:22359",
+    "name": "Nõgiaru",
+    "code": "7800610-1",
+    "lat": 58.313169,
+    "lon": 26.5464147
+  },
+  {
+    "gtfsId": "Viro:153394",
+    "name": "Nõgiaru keskus",
+    "code": "7801372-1",
+    "lat": 58.3128416,
+    "lon": 26.5454904
+  },
+  {
+    "gtfsId": "Viro:26635",
+    "name": "Väägvere",
+    "code": "7801159-1",
+    "lat": 58.4703046,
+    "lon": 26.8424105
+  },
+  {
+    "gtfsId": "Viro:28562",
+    "name": "Kunimäe",
+    "code": "7800331-1",
+    "lat": 58.3440897,
+    "lon": 26.9264242
+  },
+  {
+    "gtfsId": "Viro:22283",
+    "name": "Tordi",
+    "code": "7800959-1",
+    "lat": 58.4112647,
+    "lon": 26.9265398
+  },
+  {
+    "gtfsId": "Viro:28563",
+    "name": "Kunimäe",
+    "code": "7800332-1",
+    "lat": 58.3438021,
+    "lon": 26.9281897
+  },
+  {
+    "gtfsId": "Viro:26492",
+    "name": "Tordi",
+    "code": "7800960-1",
+    "lat": 58.4116669,
+    "lon": 26.9275008
+  },
+  {
+    "gtfsId": "Viro:28179",
+    "name": "Alajaam",
+    "code": "7800023-1",
+    "lat": 58.2806382,
+    "lon": 26.7668428
+  },
+  {
+    "gtfsId": "Viro:28919",
+    "name": "Kärevere sild",
+    "code": "7800377-1",
+    "lat": 58.420117,
+    "lon": 26.515492
+  },
+  {
+    "gtfsId": "Viro:23578",
+    "name": "Alajaam",
+    "code": "7800022-1",
+    "lat": 58.2799245,
+    "lon": 26.7669732
+  },
+  {
+    "gtfsId": "Viro:22934",
+    "name": "Kaagvere",
+    "code": "7800172-1",
+    "lat": 58.3466521,
+    "lon": 26.8905272
+  },
+  {
+    "gtfsId": "Viro:22935",
+    "name": "Kaagvere",
+    "code": "7800173-1",
+    "lat": 58.3464028,
+    "lon": 26.8904235
+  },
+  {
+    "gtfsId": "Viro:22936",
+    "name": "Kesa",
+    "code": "7800239-1",
+    "lat": 58.2951748,
+    "lon": 26.8143568
+  },
+  {
+    "gtfsId": "Viro:138667",
+    "name": "Solba",
+    "code": "7801292-1",
+    "lat": 58.3235437,
+    "lon": 26.5420604
+  },
+  {
+    "gtfsId": "Viro:20834",
+    "name": "Sarakuste",
+    "code": "7800842-1",
+    "lat": 58.3672585,
+    "lon": 26.9432013
+  },
+  {
+    "gtfsId": "Viro:138666",
+    "name": "Solba",
+    "code": "7801291-1",
+    "lat": 58.3238439,
+    "lon": 26.542098
+  },
+  {
+    "gtfsId": "Viro:28971",
+    "name": "Tatra",
+    "code": "7800938-1",
+    "lat": 58.2606522,
+    "lon": 26.6872735
+  },
+  {
+    "gtfsId": "Viro:20424",
+    "name": "Tamme",
+    "code": "7800922-1",
+    "lat": 58.4322542,
+    "lon": 26.5556744
+  },
+  {
+    "gtfsId": "Viro:28975",
+    "name": "Sarakuste",
+    "code": "7800841-1",
+    "lat": 58.3672802,
+    "lon": 26.943806
+  },
+  {
+    "gtfsId": "Viro:26954",
+    "name": "Tamme",
+    "code": "7800923-1",
+    "lat": 58.4323821,
+    "lon": 26.5557918
+  },
+  {
+    "gtfsId": "Viro:22294",
+    "name": "Tatra",
+    "code": "7800939-1",
+    "lat": 58.2604675,
+    "lon": 26.6866817
+  },
+  {
+    "gtfsId": "Viro:150079",
+    "name": "Kivioru",
+    "code": "7801344-1",
+    "lat": 58.4752961,
+    "lon": 26.7965433
+  },
+  {
+    "gtfsId": "Viro:128226",
+    "name": "Oomäe",
+    "code": "7801207-1",
+    "lat": 58.4215525,
+    "lon": 26.8855426
+  },
+  {
+    "gtfsId": "Viro:30312",
+    "name": "Kärevere sild",
+    "code": "7800376-1",
+    "lat": 58.420266,
+    "lon": 26.5166301
+  },
+  {
+    "gtfsId": "Viro:26501",
+    "name": "Pakla",
+    "code": "7800640-1",
+    "lat": 58.3459169,
+    "lon": 26.4942418
+  },
+  {
+    "gtfsId": "Viro:29244",
+    "name": "Reola raudteejaam",
+    "code": "7800767-1",
+    "lat": 58.2732394,
+    "lon": 26.7711411
+  },
+  {
+    "gtfsId": "Viro:23579",
+    "name": "Reola raudteejaam",
+    "code": "7800768-1",
+    "lat": 58.2728256,
+    "lon": 26.7711673
+  },
+  {
+    "gtfsId": "Viro:30782",
+    "name": "Kärnise",
+    "code": "7800382-1",
+    "lat": 58.4521314,
+    "lon": 26.5708174
+  },
+  {
+    "gtfsId": "Viro:20422",
+    "name": "Kärnise",
+    "code": "7800383-1",
+    "lat": 58.4521542,
+    "lon": 26.5705462
+  },
+  {
+    "gtfsId": "Viro:26500",
+    "name": "Pakla",
+    "code": "7800641-1",
+    "lat": 58.3456598,
+    "lon": 26.4915375
+  },
+  {
+    "gtfsId": "Viro:90747",
+    "name": "Tõõraste",
+    "code": "7800769-1",
+    "lat": 58.2721779,
+    "lon": 26.7728487
+  },
+  {
+    "gtfsId": "Viro:34206",
+    "name": "Reola",
+    "code": "7890020-1",
+    "lat": 58.2716094,
+    "lon": 26.7713053
+  },
+  {
+    "gtfsId": "Viro:34103",
+    "name": "Reola",
+    "code": "7890019-1",
+    "lat": 58.2716291,
+    "lon": 26.7714316
+  },
+  {
+    "gtfsId": "Viro:20216",
+    "name": "Nõgiaru tee",
+    "code": "7800612-1",
+    "lat": 58.3321853,
+    "lon": 26.5249752
+  },
+  {
+    "gtfsId": "Viro:157117",
+    "name": "Aare",
+    "code": "7801412-1",
+    "lat": 58.421971,
+    "lon": 26.9189492
+  },
+  {
+    "gtfsId": "Viro:136360",
+    "name": "Aare",
+    "code": "7801273-1",
+    "lat": 58.4219842,
+    "lon": 26.9191601
+  },
+  {
+    "gtfsId": "Viro:20215",
+    "name": "Nõgiaru tee",
+    "code": "7800611-1",
+    "lat": 58.3316282,
+    "lon": 26.5247517
+  },
+  {
+    "gtfsId": "Viro:27518",
+    "name": "Preedi",
+    "code": "7800701-1",
+    "lat": 58.4808199,
+    "lon": 26.8504425
+  },
+  {
+    "gtfsId": "Viro:21889",
+    "name": "Preedi",
+    "code": "7800700-1",
+    "lat": 58.4811713,
+    "lon": 26.8508288
+  },
+  {
+    "gtfsId": "Viro:157802",
+    "name": "Kisla",
+    "code": "7801424-1",
+    "lat": 58.343205,
+    "lon": 26.9399953
+  },
+  {
+    "gtfsId": "Viro:20229",
+    "name": "Sääsekõrva",
+    "code": "7800917-1",
+    "lat": 58.3775803,
+    "lon": 26.9507902
+  },
+  {
+    "gtfsId": "Viro:20332",
+    "name": "Sääsekõrva",
+    "code": "7800916-1",
+    "lat": 58.377635,
+    "lon": 26.9513599
+  },
+  {
+    "gtfsId": "Viro:31434",
+    "name": "Kardla kool",
+    "code": "7800297-1",
+    "lat": 58.4459831,
+    "lon": 26.5581476
+  },
+  {
+    "gtfsId": "Viro:20423",
+    "name": "Kardla kool",
+    "code": "7800296-1",
+    "lat": 58.4458692,
+    "lon": 26.5582251
+  },
+  {
+    "gtfsId": "Viro:22137",
+    "name": "Reola gaas",
+    "code": "7800766-1",
+    "lat": 58.2661203,
+    "lon": 26.7730414
+  },
+  {
+    "gtfsId": "Viro:26771",
+    "name": "Reola gaas",
+    "code": "7800765-1",
+    "lat": 58.2652105,
+    "lon": 26.7738453
+  }
+]
