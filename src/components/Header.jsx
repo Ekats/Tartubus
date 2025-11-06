@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
 import { forwardGeocode } from '../utils/geocoding';
+import { searchRouteByNumber } from '../services/digitransit';
 import { useTranslation } from 'react-i18next';
 
-function Header({ isDarkMode, toggleDarkMode, onDestinationSelect }) {
+function Header({ isDarkMode, toggleDarkMode, onDestinationSelect, onRouteSelect }) {
   const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
@@ -37,9 +38,30 @@ function Header({ isDarkMode, toggleDarkMode, onDestinationSelect }) {
 
     searchTimeoutRef.current = setTimeout(async () => {
       setIsSearching(true);
-      const results = await forwardGeocode(searchQuery);
-      setSearchResults(results);
-      setShowResults(results.length > 0);
+
+      // Check if query is just a number (route search)
+      const isRouteNumber = /^\d+[a-zA-Z]?$/.test(searchQuery.trim());
+
+      if (isRouteNumber) {
+        // Search for bus route
+        const routes = await searchRouteByNumber(searchQuery.trim());
+        const routeResults = routes.map(route => ({
+          type: 'route',
+          routeNumber: route.shortName,
+          routeName: route.longName,
+          patterns: route.patterns,
+          gtfsId: route.gtfsId
+        }));
+        setSearchResults(routeResults);
+        setShowResults(routeResults.length > 0);
+      } else {
+        // Search for address
+        const results = await forwardGeocode(searchQuery);
+        const addressResults = results.map(r => ({ ...r, type: 'address' }));
+        setSearchResults(addressResults);
+        setShowResults(addressResults.length > 0);
+      }
+
       setIsSearching(false);
     }, 500); // 500ms debounce
 
@@ -51,11 +73,17 @@ function Header({ isDarkMode, toggleDarkMode, onDestinationSelect }) {
   }, [searchQuery]);
 
   const handleResultClick = (result) => {
-    onDestinationSelect({
-      lat: result.lat,
-      lon: result.lon,
-      display_name: result.display_name
-    });
+    if (result.type === 'route') {
+      // Handle route selection
+      onRouteSelect(result);
+    } else {
+      // Handle address selection
+      onDestinationSelect({
+        lat: result.lat,
+        lon: result.lon,
+        display_name: result.display_name
+      });
+    }
     setSearchQuery('');
     setSearchResults([]);
     setShowResults(false);
@@ -111,17 +139,39 @@ function Header({ isDarkMode, toggleDarkMode, onDestinationSelect }) {
                   onClick={() => handleResultClick(result)}
                   className="w-full px-4 py-3 text-left hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors border-b border-gray-200 dark:border-gray-700 last:border-b-0"
                 >
-                  <div className="flex items-start gap-2">
-                    <svg className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm text-gray-900 dark:text-gray-100 truncate">
-                        {result.display_name}
-                      </p>
+                  {result.type === 'route' ? (
+                    // Route result
+                    <div className="flex items-start gap-2">
+                      <svg className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M8 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM15 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z"/>
+                        <path d="M3 4a1 1 0 00-1 1v10a1 1 0 001 1h1.05a2.5 2.5 0 014.9 0H10a1 1 0 001-1V5a1 1 0 00-1-1H3zM14 7a1 1 0 00-1 1v6.05A2.5 2.5 0 0115.95 16H17a1 1 0 001-1v-5a1 1 0 00-.293-.707l-2-2A1 1 0 0015 7h-1z"/>
+                      </svg>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-bold text-gray-900 dark:text-gray-100">
+                          {t('common.route')} {result.routeNumber}
+                        </p>
+                        <p className="text-xs text-gray-600 dark:text-gray-400 truncate">
+                          {result.routeName}
+                        </p>
+                        <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
+                          {result.patterns?.length || 0} {result.patterns?.length === 1 ? t('header.direction') : t('header.directions')}
+                        </p>
+                      </div>
                     </div>
-                  </div>
+                  ) : (
+                    // Address result
+                    <div className="flex items-start gap-2">
+                      <svg className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm text-gray-900 dark:text-gray-100 truncate">
+                          {result.display_name}
+                        </p>
+                      </div>
+                    </div>
+                  )}
                 </button>
               ))}
             </div>

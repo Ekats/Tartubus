@@ -4,7 +4,9 @@
     "subtitle": "Reaalajas bussijälgija"
   },
   "header": {
-    "searchAddress": "Kuhu soovid minna?"
+    "searchAddress": "Kuhu soovid minna?",
+    "direction": "suund",
+    "directions": "suunda"
   },
   "tabs": {
     "nearMe": "Lähedal",

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { getSettings, updateSetting } from '../utils/settings';
+import { updateRoutesFromGitHub, getRoutesVersionInfo, clearDownloadedRoutes } from '../services/digitransit';
 import Feedback from './Feedback';
 
 function Settings() {
@@ -8,6 +9,9 @@ function Settings() {
   const [settings, setSettings] = useState(getSettings());
   const [saved, setSaved] = useState(false);
   const [cacheCleared, setCacheCleared] = useState(false);
+  const [routesInfo, setRoutesInfo] = useState(getRoutesVersionInfo());
+  const [updatingRoutes, setUpdatingRoutes] = useState(false);
+  const [routesUpdateError, setRoutesUpdateError] = useState(null);
 
   const radiusOptions = [
     { value: 300, label: `300m - ${t('settings.veryClose')}` },
@@ -85,6 +89,38 @@ function Settings() {
           window.location.reload();
         }, 1500);
       }
+    }
+  };
+
+  const handleUpdateRoutes = async () => {
+    setUpdatingRoutes(true);
+    setRoutesUpdateError(null);
+
+    try {
+      const result = await updateRoutesFromGitHub();
+      setRoutesInfo(getRoutesVersionInfo());
+      setSaved(true);
+      setTimeout(() => {
+        setSaved(false);
+        // Reload to use new routes
+        window.location.reload();
+      }, 2000);
+    } catch (error) {
+      console.error('Failed to update routes:', error);
+      setRoutesUpdateError(error.message);
+      setUpdatingRoutes(false);
+    }
+  };
+
+  const handleClearDownloadedRoutes = () => {
+    if (window.confirm(t('settings.clearRoutesConfirm') || 'Revert to bundled routes? Downloaded routes will be deleted.')) {
+      clearDownloadedRoutes();
+      setRoutesInfo(getRoutesVersionInfo());
+      setSaved(true);
+      setTimeout(() => {
+        setSaved(false);
+        window.location.reload();
+      }, 1500);
     }
   };
 
@@ -197,6 +233,91 @@ function Settings() {
               <span>Settings saved automatically</span>
             </div>
           )}
+        </div>
+
+        {/* Route Data Update Section */}
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 border border-gray-200 dark:border-gray-700">
+          <div className="mb-4">
+            <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-1 flex items-center gap-2">
+              <span>🚌</span>
+              <span>{t('settings.routeData') || 'Route Data'}</span>
+            </h2>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              {t('settings.routeDataDescription') || 'Update route information to get the latest bus routes and stops.'}
+            </p>
+          </div>
+
+          {/* Current version info */}
+          <div className="mb-4 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-600">
+            <div className="text-sm space-y-2">
+              <div className="flex justify-between">
+                <span className="text-gray-600 dark:text-gray-400">{t('settings.dataSource') || 'Data Source'}:</span>
+                <span className="font-medium text-gray-800 dark:text-gray-200">
+                  {routesInfo.source === 'downloaded' ? (t('settings.downloaded') || 'Downloaded') : (t('settings.bundled') || 'Bundled')}
+                </span>
+              </div>
+              {routesInfo.lastUpdated && (
+                <div className="flex justify-between">
+                  <span className="text-gray-600 dark:text-gray-400">{t('settings.lastUpdated') || 'Last Updated'}:</span>
+                  <span className="font-medium text-gray-800 dark:text-gray-200">
+                    {new Date(routesInfo.lastUpdated).toLocaleDateString()}
+                  </span>
+                </div>
+              )}
+              {routesInfo.routeCount && (
+                <div className="flex justify-between">
+                  <span className="text-gray-600 dark:text-gray-400">{t('settings.routes') || 'Routes'}:</span>
+                  <span className="font-medium text-gray-800 dark:text-gray-200">
+                    {routesInfo.routeCount}
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Update button */}
+          <button
+            onClick={handleUpdateRoutes}
+            disabled={updatingRoutes}
+            className="w-full bg-primary hover:bg-primary-dark disabled:bg-gray-400 text-white font-bold py-3 px-6 rounded-lg transition-all transform hover:scale-105 disabled:transform-none disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg"
+          >
+            {updatingRoutes ? (
+              <>
+                <span className="animate-spin">⟳</span>
+                <span>{t('settings.updating') || 'Updating...'}</span>
+              </>
+            ) : (
+              <>
+                <span>🔄</span>
+                <span>{t('settings.updateRoutes') || 'Update Routes'}</span>
+              </>
+            )}
+          </button>
+
+          {/* Clear downloaded routes button (only show if using downloaded data) */}
+          {routesInfo.source === 'downloaded' && (
+            <button
+              onClick={handleClearDownloadedRoutes}
+              className="mt-3 w-full bg-gray-500 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded-lg transition-colors"
+            >
+              {t('settings.revertToBundled') || 'Revert to Bundled Data'}
+            </button>
+          )}
+
+          {/* Error message */}
+          {routesUpdateError && (
+            <div className="mt-4 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg p-3 text-sm text-red-700 dark:text-red-400">
+              <p className="font-medium">{t('settings.updateFailed') || 'Update failed'}:</p>
+              <p>{routesUpdateError}</p>
+            </div>
+          )}
+
+          {/* Info note */}
+          <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-lg">
+            <p className="text-sm text-blue-700 dark:text-blue-300">
+              <span className="font-medium">ℹ️ {t('settings.note') || 'Note'}:</span> {t('settings.routeUpdateNote') || 'Routes are automatically updated nightly on GitHub. Download size is approximately 60 MB.'}
+            </p>
+          </div>
         </div>
 
         {/* Feedback Section */}

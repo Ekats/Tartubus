@@ -307,7 +307,9 @@ function StopFinder({
   locationSelectionMode,
   manualLocation,
   selectedJourney,
+  selectedRoute,
   onJourneyChange,
+  onRouteChange,
   onLocationSelected,
   onCancelLocationSelection
 }) {
@@ -505,7 +507,7 @@ function StopFinder({
     try {
       // Load stops from lightweight JSON file (104KB vs 147MB routes.json)
       console.log('📦 Loading stops from stops.json...');
-      const response = await fetch('/Tartubus/data/stops.json');
+      const response = await fetch('./data/stops.json');
       if (!response.ok) {
         throw new Error(`Failed to load stops.json: ${response.status}`);
       }

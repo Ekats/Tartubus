@@ -7,7 +7,7 @@ const BUILD_HASH = Date.now().toString(36);
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
-  base: '/Tartubus/', // GitHub Pages will serve from https://ekats.github.io/Tartubus/
+  base: './', // Use relative paths for Capacitor compatibility
   define: {
     __BUILD_HASH__: JSON.stringify(BUILD_HASH),
   },

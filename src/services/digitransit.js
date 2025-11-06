@@ -493,6 +493,50 @@ export async function getRoutes() {
 }
 
 /**
+ * Search for a specific route by number (e.g., "3", "12")
+ * Returns route info with patterns and stops
+ */
+export async function searchRouteByNumber(routeNumber) {
+  const graphqlQuery = `
+    query SearchRoute($routeNumber: String!) {
+      routes(name: $routeNumber) {
+        gtfsId
+        shortName
+        longName
+        mode
+        patterns {
+          code
+          directionId
+          headsign
+          stops {
+            gtfsId
+            name
+            lat
+            lon
+            code
+          }
+        }
+      }
+    }
+  `;
+
+  try {
+    const data = await query(graphqlQuery, { routeNumber });
+
+    // Filter for Tartu routes
+    const tartuRoutes = (data.routes || []).filter(route => {
+      const gtfsId = route.gtfsId || '';
+      return gtfsId.toUpperCase().includes('TARTU') && route.shortName === routeNumber;
+    });
+
+    return tartuRoutes;
+  } catch (error) {
+    console.error('Error searching route:', error);
+    return [];
+  }
+}
+
+/**
  * Decode polyline encoded string to lat/lng coordinates
  */
 export function decodePolyline(encoded) {
@@ -538,7 +582,7 @@ const MAX_STOPS_CACHE_ENTRIES = 10; // Reduced to prevent quota issues
 let allRoutesCache = null;
 let allRoutesFetchPromise = null;
 
-// Load routes from bundled JSON file
+// Load routes from localStorage or bundled JSON file
 async function loadRoutesFromBundle() {
   if (allRoutesCache) {
     return allRoutesCache;
@@ -548,19 +592,34 @@ async function loadRoutesFromBundle() {
     return allRoutesFetchPromise;
   }
 
+  // Try to load from localStorage first (user-updated routes)
+  try {
+    const cachedRoutes = localStorage.getItem('routes_data');
+    if (cachedRoutes) {
+      const routesData = JSON.parse(cachedRoutes);
+      allRoutesCache = routesData.routes || routesData;
+      console.log(`✅ Loaded ${allRoutesCache.length} routes from cache (${routesData.lastUpdated || 'unknown date'})`);
+      return allRoutesCache;
+    }
+  } catch (error) {
+    console.warn('Failed to load cached routes, falling back to bundle:', error);
+  }
+
   console.log('📦 Loading routes from bundled data...');
 
-  allRoutesFetchPromise = fetch('/Tartubus/data/routes.min.json')
+  allRoutesFetchPromise = fetch('./data/routes.min.json')
     .then(response => {
       if (!response.ok) {
         throw new Error(`Failed to load routes: ${response.status}`);
       }
       return response.json();
     })
-    .then(routes => {
+    .then(routesData => {
+      // Handle both old format (array) and new format (object with metadata)
+      const routes = routesData.routes || routesData;
       allRoutesCache = routes;
       allRoutesFetchPromise = null;
-      console.log(`✅ Loaded ${routes.length} routes from bundle (instant)`);
+      console.log(`✅ Loaded ${routes.length} routes from bundle (${routesData.lastUpdated || 'instant'})`);
       return routes;
     })
     .catch(error => {
@@ -572,6 +631,72 @@ async function loadRoutesFromBundle() {
   return allRoutesFetchPromise;
 }
 
+// Update routes from GitHub
+async function updateRoutesFromGitHub() {
+  const GITHUB_ROUTES_URL = 'https://raw.githubusercontent.com/ekats/Tartubus/master/public/data/routes.min.json';
+
+  console.log('🔄 Fetching latest routes from GitHub...');
+
+  const response = await fetch(GITHUB_ROUTES_URL);
+  if (!response.ok) {
+    throw new Error(`Failed to fetch routes: ${response.status}`);
+  }
+
+  const routesData = await response.json();
+  const routes = routesData.routes || routesData;
+
+  // Store in localStorage
+  localStorage.setItem('routes_data', JSON.stringify(routesData));
+  localStorage.setItem('routes_last_update', new Date().toISOString());
+
+  // Update in-memory cache
+  allRoutesCache = routes;
+
+  console.log(`✅ Updated ${routes.length} routes (${routesData.lastUpdated || 'latest'})`);
+
+  return {
+    routeCount: routes.length,
+    lastUpdated: routesData.lastUpdated,
+    version: routesData.version
+  };
+}
+
+// Get current routes version info
+function getRoutesVersionInfo() {
+  try {
+    const cachedRoutes = localStorage.getItem('routes_data');
+    const lastUpdate = localStorage.getItem('routes_last_update');
+
+    if (cachedRoutes) {
+      const routesData = JSON.parse(cachedRoutes);
+      return {
+        source: 'downloaded',
+        lastUpdated: routesData.lastUpdated,
+        localUpdate: lastUpdate,
+        version: routesData.version,
+        routeCount: routesData.routeCount || (routesData.routes ? routesData.routes.length : 0)
+      };
+    }
+  } catch (error) {
+    console.warn('Failed to get version info:', error);
+  }
+
+  return {
+    source: 'bundled',
+    lastUpdated: null,
+    localUpdate: null,
+    version: null,
+    routeCount: null
+  };
+}
+
+// Clear downloaded routes and revert to bundled
+function clearDownloadedRoutes() {
+  localStorage.removeItem('routes_data');
+  localStorage.removeItem('routes_last_update');
+  allRoutesCache = null;
+  console.log('🗑️ Cleared downloaded routes, will use bundled data');
+}
 
 // In-flight request tracking to prevent duplicate requests
 const inFlightRequests = new Map();
@@ -1289,3 +1414,6 @@ export async function planJourney(from, to, options = {}) {
     return [];
   }
 }
+
+// Export route update functions
+export { updateRoutesFromGitHub, getRoutesVersionInfo, clearDownloadedRoutes };

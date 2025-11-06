@@ -1,4 +1,4 @@
-// Script to fetch all stops in Tartu area and save to stops.json
+// Script to fetch all stops in Estonia and save to stops.json
 // This creates a lightweight file with just coordinates and basic info
 
 import fs from 'fs';
@@ -11,35 +11,17 @@ const __dirname = path.dirname(__filename);
 const DIGITRANSIT_API = 'https://api.digitransit.fi/routing/v2/finland/gtfs/v1';
 const API_KEY = 'b382044ff66f4e598cf2515ae8507b3e';
 
-// Tartu city center coordinates and search radius
-const TARTU_CENTER = {
-  lat: 58.3802,
-  lon: 26.7209
-};
-const SEARCH_RADIUS = 15000; // 15km to cover all of Tartu
-
 async function fetchAllStops() {
-  console.log('🔍 Fetching all stops in Tartu area...');
+  console.log('🔍 Fetching all stops in Estonia...');
 
   const query = `
     query {
-      stopsByRadius(
-        lat: ${TARTU_CENTER.lat}
-        lon: ${TARTU_CENTER.lon}
-        radius: ${SEARCH_RADIUS}
-        first: 5000
-      ) {
-        edges {
-          node {
-            stop {
-              gtfsId
-              name
-              code
-              lat
-              lon
-            }
-          }
-        }
+      stops {
+        gtfsId
+        name
+        code
+        lat
+        lon
       }
     }
   `;
@@ -66,14 +48,21 @@ async function fetchAllStops() {
     }
 
     // Extract stops from response
-    const stops = data.data.stopsByRadius.edges.map(edge => edge.node.stop);
+    const allStops = data.data.stops || [];
 
-    // Remove duplicates (same gtfsId)
-    const uniqueStops = Array.from(
-      new Map(stops.map(stop => [stop.gtfsId, stop])).values()
+    console.log(`📊 Total stops fetched: ${allStops.length}`);
+
+    // Filter for Estonia (Viro) stops only
+    const estoniaStops = allStops.filter(stop =>
+      stop.gtfsId && stop.gtfsId.startsWith('Viro:')
     );
 
-    console.log(`✅ Found ${uniqueStops.length} unique stops`);
+    // Remove duplicates (same gtfsId) - shouldn't be any, but just in case
+    const uniqueStops = Array.from(
+      new Map(estoniaStops.map(stop => [stop.gtfsId, stop])).values()
+    );
+
+    console.log(`✅ Found ${uniqueStops.length} stops in Estonia`);
 
     // Calculate file size estimate
     const jsonStr = JSON.stringify(uniqueStops, null, 2);

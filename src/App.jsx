@@ -15,6 +15,7 @@ function App() {
   const [locationSelectionMode, setLocationSelectionMode] = useState(false)
   const [manualLocation, setManualLocation] = useState(null)
   const [selectedJourney, setSelectedJourney] = useState(null) // Lifted state for journey route view
+  const [selectedRoute, setSelectedRoute] = useState(null) // Selected route from search
 
   // Initialize caches on app startup
   useEffect(() => {
@@ -38,6 +39,15 @@ function App() {
     setSelectedStop(destinationStop);
     setActiveView('map');
     setLocationSelectionMode(false);
+  };
+
+  // Handle route search - user searches for bus route number
+  const handleRouteSelect = (route) => {
+    console.log('🚌 Route selected:', route);
+
+    // Store selected route and switch to map view
+    setSelectedRoute(route);
+    setActiveView('map');
   };
 
   const renderView = () => {
@@ -64,7 +74,9 @@ function App() {
           locationSelectionMode={locationSelectionMode}
           manualLocation={manualLocation}
           selectedJourney={selectedJourney}
+          selectedRoute={selectedRoute}
           onJourneyChange={setSelectedJourney}
+          onRouteChange={setSelectedRoute}
           onLocationSelected={(location) => {
             setManualLocation(location)
             setLocationSelectionMode(false)
@@ -96,6 +108,7 @@ function App() {
         isDarkMode={isDarkMode}
         toggleDarkMode={toggleDarkMode}
         onDestinationSelect={handleDestinationSelect}
+        onRouteSelect={handleRouteSelect}
       />
       <div className="flex-1 overflow-hidden">
         {renderView()}

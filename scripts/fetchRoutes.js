@@ -70,6 +70,14 @@ async function fetchRoutes() {
     const routes = result.data.routes || [];
     console.log(`✅ Fetched ${routes.length} routes`);
 
+    // Add metadata for version tracking
+    const routesWithMetadata = {
+      lastUpdated: new Date().toISOString(),
+      version: Date.now(),
+      routeCount: routes.length,
+      routes: routes
+    };
+
     // Calculate size
     const jsonString = JSON.stringify(routes, null, 2);
     const sizeKB = Buffer.byteLength(jsonString, 'utf8') / 1024;
@@ -86,9 +94,9 @@ async function fetchRoutes() {
     fs.writeFileSync(outputPath, jsonString, 'utf8');
     console.log(`💾 Saved to: ${outputPath}`);
 
-    // Also save a compressed version (minified)
+    // Also save a compressed version (minified) with metadata
     const compressedPath = path.join(outputDir, 'routes.min.json');
-    fs.writeFileSync(compressedPath, JSON.stringify(routes), 'utf8');
+    fs.writeFileSync(compressedPath, JSON.stringify(routesWithMetadata), 'utf8');
     const compressedSizeKB = fs.statSync(compressedPath).size / 1024;
     const compressedSizeMB = compressedSizeKB / 1024;
     console.log(`💾 Saved minified to: ${compressedPath}`);

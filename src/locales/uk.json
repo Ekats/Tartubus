@@ -4,7 +4,9 @@
     "subtitle": "Відстеження автобусів у реальному часі"
   },
   "header": {
-    "searchAddress": "Куди ви хочете піти?"
+    "searchAddress": "Куди ви хочете піти?",
+    "direction": "напрямок",
+    "directions": "напрямки"
   },
   "tabs": {
     "nearMe": "Поруч",

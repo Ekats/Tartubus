@@ -4,7 +4,9 @@
     "subtitle": "Live Bus Tracker"
   },
   "header": {
-    "searchAddress": "Where do you want to go?"
+    "searchAddress": "Where do you want to go?",
+    "direction": "direction",
+    "directions": "directions"
   },
   "tabs": {
     "nearMe": "Near Me",
