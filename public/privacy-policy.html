@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Privacy Policy - Tartubus</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            color: #333;
+        }
+        h1 {
+            color: #2563eb;
+            border-bottom: 2px solid #2563eb;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #1e40af;
+            margin-top: 30px;
+        }
+        .last-updated {
+            color: #666;
+            font-style: italic;
+            margin-bottom: 30px;
+        }
+        .highlight {
+            background-color: #dbeafe;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        ul {
+            margin-left: 20px;
+        }
+        li {
+            margin: 10px 0;
+        }
+        a {
+            color: #2563eb;
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <h1>Privacy Policy for Tartubus</h1>
+    <p class="last-updated">Last Updated: November 6, 2025</p>
+
+    <div class="highlight">
+        <strong>TL;DR:</strong> Tartubus is privacy-focused. We don't collect, store, or sell your data. All data stays on your device. We only send your coordinates to public APIs when you use the app to fetch bus schedules.
+    </div>
+
+    <h2>1. Information We Collect</h2>
+    <p>Tartubus does NOT collect or store any personal information on our servers. The app is designed with privacy as a priority.</p>
+
+    <h3>Location Data</h3>
+    <ul>
+        <li><strong>When used:</strong> Only when you grant location permission to find nearby bus stops</li>
+        <li><strong>Where it goes:</strong> Your location coordinates are sent to:
+            <ul>
+                <li>Digitransit API (public transit data provider) to find nearby bus stops and schedules</li>
+                <li>OpenStreetMap Nominatim API (for reverse geocoding - converting coordinates to addresses)</li>
+            </ul>
+        </li>
+        <li><strong>Storage:</strong> Your location is never stored on our servers. It's only stored locally on your device if you choose to save favorite stops</li>
+        <li><strong>Control:</strong> You can revoke location permission at any time in your device settings</li>
+    </ul>
+
+    <h2>2. Data Stored Locally on Your Device</h2>
+    <p>The following data is stored locally on your device using browser storage (localStorage and IndexedDB):</p>
+    <ul>
+        <li><strong>Favorites:</strong> Bus stops you've marked as favorites</li>
+        <li><strong>Settings:</strong> Your language preference, nearby radius, theme (dark/light mode)</li>
+        <li><strong>Cache:</strong> Bus schedule data and route information (to make the app faster)</li>
+        <li><strong>Downloaded Routes:</strong> If you manually update route data, it's stored in IndexedDB</li>
+    </ul>
+    <p><strong>Important:</strong> This data never leaves your device unless you explicitly sync it (which we don't offer).</p>
+
+    <h2>3. Third-Party Services</h2>
+    <p>Tartubus uses the following third-party services to function:</p>
+
+    <h3>Digitransit API</h3>
+    <ul>
+        <li><strong>Purpose:</strong> Fetch real-time bus schedules and route information</li>
+        <li><strong>Data sent:</strong> Your location coordinates (when requesting nearby stops), stop IDs, route numbers</li>
+        <li><strong>Privacy Policy:</strong> <a href="https://digitransit.fi/" target="_blank">Digitransit</a> (operated by Finnish Transport Infrastructure Agency)</li>
+    </ul>
+
+    <h3>OpenStreetMap Nominatim</h3>
+    <ul>
+        <li><strong>Purpose:</strong> Convert coordinates to human-readable addresses</li>
+        <li><strong>Data sent:</strong> Location coordinates</li>
+        <li><strong>Privacy Policy:</strong> <a href="https://operations.osmfoundation.org/policies/nominatim/" target="_blank">OSM Nominatim Usage Policy</a></li>
+    </ul>
+
+    <h3>OpenStreetMap Tiles</h3>
+    <ul>
+        <li><strong>Purpose:</strong> Display map tiles in the app</li>
+        <li><strong>Data sent:</strong> Map tile requests (standard web requests)</li>
+        <li><strong>Privacy Policy:</strong> <a href="https://operations.osmfoundation.org/policies/tiles/" target="_blank">OSM Tile Usage Policy</a></li>
+    </ul>
+
+    <h2>4. Analytics and Tracking</h2>
+    <p><strong>We DO NOT use:</strong></p>
+    <ul>
+        <li>❌ Google Analytics</li>
+        <li>❌ Facebook Pixel</li>
+        <li>❌ Any tracking or analytics services</li>
+        <li>❌ Advertising networks</li>
+        <li>❌ Crash reporting services that collect personal data</li>
+    </ul>
+    <p>We have no idea who uses the app or how they use it. We can't track you even if we wanted to.</p>
+
+    <h2>5. Data Sharing and Sales</h2>
+    <p><strong>We do NOT:</strong></p>
+    <ul>
+        <li>❌ Sell your data</li>
+        <li>❌ Share your data with third parties (except the public APIs mentioned above)</li>
+        <li>❌ Use your data for advertising</li>
+        <li>❌ Create user profiles</li>
+    </ul>
+
+    <h2>6. Children's Privacy</h2>
+    <p>Tartubus does not collect any personal information. The app is safe for users of all ages, including children under 13.</p>
+
+    <h2>7. Your Rights</h2>
+    <p>Since we don't collect any data, there's nothing to:</p>
+    <ul>
+        <li>Request access to</li>
+        <li>Request deletion of</li>
+        <li>Request correction of</li>
+    </ul>
+    <p>All your data is stored locally on your device. You can delete it anytime by:</p>
+    <ul>
+        <li>Using the "Clear Cache" feature in Settings</li>
+        <li>Uninstalling the app</li>
+        <li>Clearing your browser data (for web version)</li>
+    </ul>
+
+    <h2>8. Open Source</h2>
+    <p>Tartubus is fully open source. You can verify our privacy claims by reviewing the source code:</p>
+    <p><a href="https://github.com/Ekats/Tartubus" target="_blank">https://github.com/Ekats/Tartubus</a></p>
+
+    <h2>9. Changes to This Policy</h2>
+    <p>We may update this privacy policy from time to time. Any changes will be posted on this page with an updated "Last Updated" date.</p>
+
+    <h2>10. Contact</h2>
+    <p>If you have questions about this privacy policy, you can:</p>
+    <ul>
+        <li>Open an issue on GitHub: <a href="https://github.com/Ekats/Tartubus/issues" target="_blank">Tartubus Issues</a></li>
+        <li>Use the feedback form in the app (Settings → Feedback)</li>
+    </ul>
+
+    <h2>11. Consent</h2>
+    <p>By using Tartubus, you consent to:</p>
+    <ul>
+        <li>Your location being sent to Digitransit API and OpenStreetMap Nominatim when you use location features</li>
+        <li>Data being stored locally on your device</li>
+    </ul>
+    <p>You can withdraw this consent at any time by revoking location permissions or uninstalling the app.</p>
+
+    <hr style="margin: 40px 0; border: none; border-top: 1px solid #ccc;">
+
+    <p style="text-align: center; color: #666;">
+        <strong>Tartubus</strong> - Real-time bus schedules for Tartu, Estonia<br>
+        <a href="https://github.com/Ekats/Tartubus" target="_blank">GitHub</a> |
+        <a href="https://ekats.github.io/Tartubus/" target="_blank">Web App</a>
+    </p>
+</body>
+</html>
