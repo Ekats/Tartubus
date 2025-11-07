@@ -12,6 +12,8 @@ function Settings() {
   const [routesInfo, setRoutesInfo] = useState(getRoutesVersionInfo());
   const [updatingRoutes, setUpdatingRoutes] = useState(false);
   const [routesUpdateError, setRoutesUpdateError] = useState(null);
+  const [routesExpanded, setRoutesExpanded] = useState(false);
+  const [cacheExpanded, setCacheExpanded] = useState(false);
 
   const radiusOptions = [
     { value: 300, label: `300m - ${t('settings.veryClose')}` },
@@ -235,91 +237,6 @@ function Settings() {
           )}
         </div>
 
-        {/* Route Data Update Section */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 border border-gray-200 dark:border-gray-700">
-          <div className="mb-4">
-            <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-1 flex items-center gap-2">
-              <span>🚌</span>
-              <span>{t('settings.routeData') || 'Route Data'}</span>
-            </h2>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              {t('settings.routeDataDescription') || 'Update route information to get the latest bus routes and stops.'}
-            </p>
-          </div>
-
-          {/* Current version info */}
-          <div className="mb-4 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-600">
-            <div className="text-sm space-y-2">
-              <div className="flex justify-between">
-                <span className="text-gray-600 dark:text-gray-400">{t('settings.dataSource') || 'Data Source'}:</span>
-                <span className="font-medium text-gray-800 dark:text-gray-200">
-                  {routesInfo.source === 'downloaded' ? (t('settings.downloaded') || 'Downloaded') : (t('settings.bundled') || 'Bundled')}
-                </span>
-              </div>
-              {routesInfo.lastUpdated && (
-                <div className="flex justify-between">
-                  <span className="text-gray-600 dark:text-gray-400">{t('settings.lastUpdated') || 'Last Updated'}:</span>
-                  <span className="font-medium text-gray-800 dark:text-gray-200">
-                    {new Date(routesInfo.lastUpdated).toLocaleDateString()}
-                  </span>
-                </div>
-              )}
-              {routesInfo.routeCount && (
-                <div className="flex justify-between">
-                  <span className="text-gray-600 dark:text-gray-400">{t('settings.routes') || 'Routes'}:</span>
-                  <span className="font-medium text-gray-800 dark:text-gray-200">
-                    {routesInfo.routeCount}
-                  </span>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Update button */}
-          <button
-            onClick={handleUpdateRoutes}
-            disabled={updatingRoutes}
-            className="w-full bg-primary hover:bg-primary-dark disabled:bg-gray-400 text-white font-bold py-3 px-6 rounded-lg transition-all transform hover:scale-105 disabled:transform-none disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg"
-          >
-            {updatingRoutes ? (
-              <>
-                <span className="animate-spin">⟳</span>
-                <span>{t('settings.updating') || 'Updating...'}</span>
-              </>
-            ) : (
-              <>
-                <span>🔄</span>
-                <span>{t('settings.updateRoutes') || 'Update Routes'}</span>
-              </>
-            )}
-          </button>
-
-          {/* Clear downloaded routes button (only show if using downloaded data) */}
-          {routesInfo.source === 'downloaded' && (
-            <button
-              onClick={handleClearDownloadedRoutes}
-              className="mt-3 w-full bg-gray-500 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded-lg transition-colors"
-            >
-              {t('settings.revertToBundled') || 'Revert to Bundled Data'}
-            </button>
-          )}
-
-          {/* Error message */}
-          {routesUpdateError && (
-            <div className="mt-4 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg p-3 text-sm text-red-700 dark:text-red-400">
-              <p className="font-medium">{t('settings.updateFailed') || 'Update failed'}:</p>
-              <p>{routesUpdateError}</p>
-            </div>
-          )}
-
-          {/* Info note */}
-          <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-lg">
-            <p className="text-sm text-blue-700 dark:text-blue-300">
-              <span className="font-medium">ℹ️ {t('settings.note') || 'Note'}:</span> {t('settings.routeUpdateNote') || 'Routes are automatically updated nightly on GitHub. Download size is approximately 60 MB.'}
-            </p>
-          </div>
-        </div>
-
         {/* Feedback Section */}
         <Feedback />
 
@@ -374,47 +291,158 @@ function Settings() {
           </div>
         </div>
 
-        {/* Cache Management */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 border border-gray-200 dark:border-gray-700">
-          <div className="mb-4">
-            <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-1">
-              {t('settings.cacheManagement') || 'Cache Management'}
-            </h2>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              {t('settings.cacheDescription') || 'Clear cached data if you experience issues.'}
-            </p>
-          </div>
+        {/* Advanced: Route Data Update (Collapsible) */}
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md border border-gray-200 dark:border-gray-700 overflow-hidden">
+          <button
+            onClick={() => setRoutesExpanded(!routesExpanded)}
+            className="w-full p-4 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
+          >
+            <div className="flex items-center gap-2">
+              <span className="text-lg">🚌</span>
+              <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100">
+                {t('settings.routeData') || 'Route Data Update'}
+              </h2>
+            </div>
+            <span className="text-gray-500 dark:text-gray-400 text-xl">
+              {routesExpanded ? '▼' : '▶'}
+            </span>
+          </button>
 
+          {routesExpanded && (
+            <div className="p-6 pt-0 border-t border-gray-200 dark:border-gray-700">
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                {t('settings.routeDataDescription') || 'Update route information to get the latest bus routes and stops.'}
+              </p>
 
-          <div className="space-y-3">
-            {/* Soft Clear Button */}
-            <button
-              onClick={handleSoftClearCache}
-              className="w-full bg-orange-500 hover:bg-orange-600 dark:bg-orange-600 dark:hover:bg-orange-700 text-white font-semibold py-3 px-4 rounded-lg transition-colors flex items-center justify-center gap-2"
-            >
-              <span>🧹</span>
-              <span>{t('settings.softClear') || 'Soft Clear (Keep Favorites)'}</span>
-            </button>
-            <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
-              {t('settings.softClearDesc') || 'Clears cache but preserves favorites and settings'}
-            </p>
+              {/* Current version info */}
+              <div className="mb-4 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-600">
+                <div className="text-sm space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600 dark:text-gray-400">{t('settings.dataSource') || 'Data Source'}:</span>
+                    <span className="font-medium text-gray-800 dark:text-gray-200">
+                      {routesInfo.source === 'downloaded' ? (t('settings.downloaded') || 'Downloaded') : (t('settings.bundled') || 'Bundled')}
+                    </span>
+                  </div>
+                  {routesInfo.lastUpdated && (
+                    <div className="flex justify-between">
+                      <span className="text-gray-600 dark:text-gray-400">{t('settings.lastUpdated') || 'Last Updated'}:</span>
+                      <span className="font-medium text-gray-800 dark:text-gray-200">
+                        {new Date(routesInfo.lastUpdated).toLocaleDateString()}
+                      </span>
+                    </div>
+                  )}
+                  {routesInfo.routeCount && (
+                    <div className="flex justify-between">
+                      <span className="text-gray-600 dark:text-gray-400">{t('settings.routes') || 'Routes'}:</span>
+                      <span className="font-medium text-gray-800 dark:text-gray-200">
+                        {routesInfo.routeCount}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
 
-            {/* Full Clear Button */}
-            <button
-              onClick={handleFullClearCache}
-              className="w-full bg-red-600 hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-800 text-white font-semibold py-3 px-4 rounded-lg transition-colors flex items-center justify-center gap-2"
-            >
-              <span>💥</span>
-              <span>{t('settings.fullClear') || 'Full Clear (Delete Everything)'}</span>
-            </button>
-            <p className="text-xs text-red-600 dark:text-red-400 text-center font-medium">
-              ⚠️ {t('settings.fullClearDesc') || 'WARNING: Deletes favorites, settings, everything!'}
-            </p>
-          </div>
+              {/* Update button */}
+              <button
+                onClick={handleUpdateRoutes}
+                disabled={updatingRoutes}
+                className="w-full bg-primary hover:bg-primary-dark disabled:bg-gray-400 text-white font-bold py-3 px-6 rounded-lg transition-all transform hover:scale-105 disabled:transform-none disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg"
+              >
+                {updatingRoutes ? (
+                  <>
+                    <span className="animate-spin">⟳</span>
+                    <span>{t('settings.updating') || 'Updating...'}</span>
+                  </>
+                ) : (
+                  <>
+                    <span>🔄</span>
+                    <span>{t('settings.updateRoutes') || 'Update Routes'}</span>
+                  </>
+                )}
+              </button>
 
-          {cacheCleared && (
-            <div className="mt-3 bg-green-100 dark:bg-green-900/30 border border-green-500 dark:border-green-700 text-green-800 dark:text-green-300 px-4 py-2 rounded-lg text-sm text-center">
-              ✅ {t('settings.cacheCleared') || 'Cache cleared! Reloading...'}
+              {/* Clear downloaded routes button */}
+              {routesInfo.source === 'downloaded' && (
+                <button
+                  onClick={handleClearDownloadedRoutes}
+                  className="mt-3 w-full bg-gray-500 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded-lg transition-colors"
+                >
+                  {t('settings.revertToBundled') || 'Revert to Bundled Data'}
+                </button>
+              )}
+
+              {/* Error message */}
+              {routesUpdateError && (
+                <div className="mt-4 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg p-3 text-sm text-red-700 dark:text-red-400">
+                  <p className="font-medium">{t('settings.updateFailed') || 'Update failed'}:</p>
+                  <p>{routesUpdateError}</p>
+                </div>
+              )}
+
+              {/* Info note */}
+              <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-lg">
+                <p className="text-sm text-blue-700 dark:text-blue-300">
+                  <span className="font-medium">ℹ️ {t('settings.note') || 'Note'}:</span> {t('settings.routeUpdateNote') || 'Routes are automatically updated nightly on GitHub. Download size is approximately 60 MB.'}
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Advanced: Cache Management (Collapsible) */}
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md border border-gray-200 dark:border-gray-700 overflow-hidden">
+          <button
+            onClick={() => setCacheExpanded(!cacheExpanded)}
+            className="w-full p-4 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
+          >
+            <div className="flex items-center gap-2">
+              <span className="text-lg">🗑️</span>
+              <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100">
+                {t('settings.cacheManagement') || 'Cache Management'}
+              </h2>
+            </div>
+            <span className="text-gray-500 dark:text-gray-400 text-xl">
+              {cacheExpanded ? '▼' : '▶'}
+            </span>
+          </button>
+
+          {cacheExpanded && (
+            <div className="p-6 pt-0 border-t border-gray-200 dark:border-gray-700">
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                {t('settings.cacheDescription') || 'Clear cached data if you experience issues.'}
+              </p>
+
+              <div className="space-y-3">
+                {/* Soft Clear Button */}
+                <button
+                  onClick={handleSoftClearCache}
+                  className="w-full bg-orange-500 hover:bg-orange-600 dark:bg-orange-600 dark:hover:bg-orange-700 text-white font-semibold py-3 px-4 rounded-lg transition-colors flex items-center justify-center gap-2"
+                >
+                  <span>🧹</span>
+                  <span>{t('settings.softClear') || 'Soft Clear (Keep Favorites)'}</span>
+                </button>
+                <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
+                  {t('settings.softClearDesc') || 'Clears cache but preserves favorites and settings'}
+                </p>
+
+                {/* Full Clear Button */}
+                <button
+                  onClick={handleFullClearCache}
+                  className="w-full bg-red-600 hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-800 text-white font-semibold py-3 px-4 rounded-lg transition-colors flex items-center justify-center gap-2"
+                >
+                  <span>💥</span>
+                  <span>{t('settings.fullClear') || 'Full Clear (Delete Everything)'}</span>
+                </button>
+                <p className="text-xs text-red-600 dark:text-red-400 text-center font-medium">
+                  ⚠️ {t('settings.fullClearDesc') || 'WARNING: Deletes favorites, settings, everything!'}
+                </p>
+              </div>
+
+              {cacheCleared && (
+                <div className="mt-3 bg-green-100 dark:bg-green-900/30 border border-green-500 dark:border-green-700 text-green-800 dark:text-green-300 px-4 py-2 rounded-lg text-sm text-center">
+                  ✅ {t('settings.cacheCleared') || 'Cache cleared! Reloading...'}
+                </div>
+              )}
             </div>
           )}
         </div>

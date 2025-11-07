@@ -582,7 +582,7 @@ const MAX_STOPS_CACHE_ENTRIES = 10; // Reduced to prevent quota issues
 let allRoutesCache = null;
 let allRoutesFetchPromise = null;
 
-// Load routes from localStorage or bundled JSON file
+// Load routes from IndexedDB or bundled JSON file
 async function loadRoutesFromBundle() {
   if (allRoutesCache) {
     return allRoutesCache;
@@ -592,17 +592,20 @@ async function loadRoutesFromBundle() {
     return allRoutesFetchPromise;
   }
 
-  // Try to load from localStorage first (user-updated routes)
+  // Try to load from IndexedDB first (user-updated routes)
   try {
-    const cachedRoutes = localStorage.getItem('routes_data');
-    if (cachedRoutes) {
-      const routesData = JSON.parse(cachedRoutes);
-      allRoutesCache = routesData.routes || routesData;
-      console.log(`✅ Loaded ${allRoutesCache.length} routes from cache (${routesData.lastUpdated || 'unknown date'})`);
-      return allRoutesCache;
+    const metadata = localStorage.getItem('routes_metadata');
+    if (metadata) {
+      const routesData = await loadRoutesFromIndexedDB();
+      if (routesData) {
+        const routes = routesData.routes || routesData;
+        allRoutesCache = routes;
+        console.log(`✅ Loaded ${routes.length} routes from IndexedDB (${routesData.lastUpdated || 'unknown date'})`);
+        return routes;
+      }
     }
   } catch (error) {
-    console.warn('Failed to load cached routes, falling back to bundle:', error);
+    console.warn('Failed to load cached routes from IndexedDB, falling back to bundle:', error);
   }
 
   console.log('📦 Loading routes from bundled data...');
@@ -645,9 +648,29 @@ async function updateRoutesFromGitHub() {
   const routesData = await response.json();
   const routes = routesData.routes || routesData;
 
-  // Store in localStorage
-  localStorage.setItem('routes_data', JSON.stringify(routesData));
-  localStorage.setItem('routes_last_update', new Date().toISOString());
+  // For mobile: Store in IndexedDB instead of localStorage (much larger capacity)
+  try {
+    // Try IndexedDB first (available in browsers and Capacitor)
+    const idbSupported = 'indexedDB' in window;
+    if (idbSupported) {
+      await storeRoutesInIndexedDB(routesData);
+      console.log('✅ Stored routes in IndexedDB');
+    } else {
+      // Fallback: just keep in memory (lose on reload, but better than nothing)
+      console.warn('⚠️ IndexedDB not available, routes will be lost on reload');
+    }
+
+    // Store metadata in localStorage (small)
+    localStorage.setItem('routes_metadata', JSON.stringify({
+      lastUpdated: routesData.lastUpdated,
+      version: routesData.version,
+      routeCount: routesData.routeCount || routes.length,
+      localUpdate: new Date().toISOString()
+    }));
+  } catch (error) {
+    console.error('Failed to store routes:', error);
+    throw new Error('Storage quota exceeded. Route data is too large for this device.');
+  }
 
   // Update in-memory cache
   allRoutesCache = routes;
@@ -661,20 +684,90 @@ async function updateRoutesFromGitHub() {
   };
 }
 
+// Store routes in IndexedDB (supports large data)
+function storeRoutesInIndexedDB(routesData) {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open('TartubusDB', 1);
+
+    request.onerror = () => reject(request.error);
+
+    request.onsuccess = () => {
+      const db = request.result;
+      const transaction = db.transaction(['routes'], 'readwrite');
+      const store = transaction.objectStore('routes');
+
+      store.put({ id: 'current', data: routesData });
+
+      transaction.oncomplete = () => {
+        db.close();
+        resolve();
+      };
+
+      transaction.onerror = () => reject(transaction.error);
+    };
+
+    request.onupgradeneeded = (event) => {
+      const db = event.target.result;
+      if (!db.objectStoreNames.contains('routes')) {
+        db.createObjectStore('routes', { keyPath: 'id' });
+      }
+    };
+  });
+}
+
+// Load routes from IndexedDB
+function loadRoutesFromIndexedDB() {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open('TartubusDB', 1);
+
+    request.onerror = () => reject(request.error);
+
+    request.onsuccess = () => {
+      const db = request.result;
+
+      if (!db.objectStoreNames.contains('routes')) {
+        db.close();
+        resolve(null);
+        return;
+      }
+
+      const transaction = db.transaction(['routes'], 'readonly');
+      const store = transaction.objectStore('routes');
+      const getRequest = store.get('current');
+
+      getRequest.onsuccess = () => {
+        db.close();
+        resolve(getRequest.result ? getRequest.result.data : null);
+      };
+
+      getRequest.onerror = () => {
+        db.close();
+        reject(getRequest.error);
+      };
+    };
+
+    request.onupgradeneeded = (event) => {
+      const db = event.target.result;
+      if (!db.objectStoreNames.contains('routes')) {
+        db.createObjectStore('routes', { keyPath: 'id' });
+      }
+    };
+  });
+}
+
 // Get current routes version info
 function getRoutesVersionInfo() {
   try {
-    const cachedRoutes = localStorage.getItem('routes_data');
-    const lastUpdate = localStorage.getItem('routes_last_update');
+    const metadata = localStorage.getItem('routes_metadata');
 
-    if (cachedRoutes) {
-      const routesData = JSON.parse(cachedRoutes);
+    if (metadata) {
+      const metaData = JSON.parse(metadata);
       return {
         source: 'downloaded',
-        lastUpdated: routesData.lastUpdated,
-        localUpdate: lastUpdate,
-        version: routesData.version,
-        routeCount: routesData.routeCount || (routesData.routes ? routesData.routes.length : 0)
+        lastUpdated: metaData.lastUpdated,
+        localUpdate: metaData.localUpdate,
+        version: metaData.version,
+        routeCount: metaData.routeCount
       };
     }
   } catch (error) {
@@ -691,10 +784,19 @@ function getRoutesVersionInfo() {
 }
 
 // Clear downloaded routes and revert to bundled
-function clearDownloadedRoutes() {
-  localStorage.removeItem('routes_data');
-  localStorage.removeItem('routes_last_update');
+async function clearDownloadedRoutes() {
+  localStorage.removeItem('routes_metadata');
   allRoutesCache = null;
+
+  // Clear IndexedDB
+  try {
+    const request = indexedDB.deleteDatabase('TartubusDB');
+    request.onsuccess = () => console.log('🗑️ Cleared IndexedDB');
+    request.onerror = () => console.warn('Failed to clear IndexedDB');
+  } catch (error) {
+    console.warn('Failed to clear IndexedDB:', error);
+  }
+
   console.log('🗑️ Cleared downloaded routes, will use bundled data');
 }
 
