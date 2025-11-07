@@ -24,13 +24,8 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Fetch routes data
-        env:
-          VITE_DIGITRANSIT_API_KEY: ${{ secrets.VITE_DIGITRANSIT_API_KEY }}
-        run: npm run fetch-routes
-
-      - name: Build web app
-        run: npm run build
+      - name: Build web app (use committed routes.min.json)
+        run: npm run build:skip-routes
 
       - name: Create web artifact
         run: |
@@ -64,13 +59,8 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Fetch routes data
-        env:
-          VITE_DIGITRANSIT_API_KEY: ${{ secrets.VITE_DIGITRANSIT_API_KEY }}
-        run: npm run fetch-routes
-
-      - name: Build web app
-        run: npm run build
+      - name: Build web app (use committed routes.min.json)
+        run: npm run build:skip-routes
 
       - name: Sync to Capacitor
         run: npx cap sync android
@@ -99,13 +89,8 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Fetch routes data
-        env:
-          VITE_DIGITRANSIT_API_KEY: ${{ secrets.VITE_DIGITRANSIT_API_KEY }}
-        run: npm run fetch-routes
-
-      - name: Build web app
-        run: npm run build
+      - name: Build web app (use committed routes.min.json)
+        run: npm run build:skip-routes
 
       - name: Install Electron Forge
         run: npm install --save-dev @electron-forge/cli electron
@@ -142,13 +127,8 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Fetch routes data
-        env:
-          VITE_DIGITRANSIT_API_KEY: ${{ secrets.VITE_DIGITRANSIT_API_KEY }}
-        run: npm run fetch-routes
-
-      - name: Build web app
-        run: npm run build
+      - name: Build web app (use committed routes.min.json)
+        run: npm run build:skip-routes
 
       - name: Install Electron
         run: npm install --save-dev electron electron-packager
@@ -217,13 +197,8 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Fetch routes data
-        env:
-          VITE_DIGITRANSIT_API_KEY: ${{ secrets.VITE_DIGITRANSIT_API_KEY }}
-        run: npm run fetch-routes
-
-      - name: Build web app
-        run: npm run build
+      - name: Build web app (use committed routes.min.json)
+        run: npm run build:skip-routes
 
       - name: Install Electron
         run: npm install --save-dev electron electron-packager
