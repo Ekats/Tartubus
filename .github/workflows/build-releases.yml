@@ -1,0 +1,314 @@
+name: Build Multi-Platform Releases
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-web:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Fetch routes data
+        env:
+          VITE_DIGITRANSIT_API_KEY: ${{ secrets.VITE_DIGITRANSIT_API_KEY }}
+        run: npm run fetch-routes
+
+      - name: Build web app
+        run: npm run build
+
+      - name: Create web artifact
+        run: |
+          cd dist
+          zip -r ../tartubus-web.zip .
+          cd ..
+
+      - name: Upload web artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: tartubus-web
+          path: tartubus-web.zip
+
+  build-android-apk:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Fetch routes data
+        env:
+          VITE_DIGITRANSIT_API_KEY: ${{ secrets.VITE_DIGITRANSIT_API_KEY }}
+        run: npm run fetch-routes
+
+      - name: Build web app
+        run: npm run build
+
+      - name: Sync to Capacitor
+        run: npx cap sync android
+
+      - name: Build APK
+        working-directory: android
+        run: ./gradlew assembleRelease
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: tartubus-android-apk
+          path: android/app/build/outputs/apk/release/app-release-unsigned.apk
+
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Fetch routes data
+        env:
+          VITE_DIGITRANSIT_API_KEY: ${{ secrets.VITE_DIGITRANSIT_API_KEY }}
+        run: npm run fetch-routes
+
+      - name: Build web app
+        run: npm run build
+
+      - name: Install Electron Forge
+        run: npm install --save-dev @electron-forge/cli electron
+
+      - name: Create Electron wrapper
+        run: |
+          echo '{"name":"tartubus-electron","version":"1.5.0","main":"main.js"}' > package-electron.json
+          echo 'const { app, BrowserWindow } = require("electron");const path = require("path");function createWindow() {const win = new BrowserWindow({width: 1200,height: 800,webPreferences: {nodeIntegration: false,contextIsolation: true}});win.loadFile(path.join(__dirname, "dist", "index.html"));}app.whenReady().then(createWindow);app.on("window-all-closed", () => {if (process.platform !== "darwin") app.quit();});' > main.js
+
+      - name: Package Windows app
+        run: |
+          npx electron-packager . Tartubus --platform=win32 --arch=x64 --out=release --overwrite
+
+      - name: Create Windows ZIP
+        run: Compress-Archive -Path release/Tartubus-win32-x64 -DestinationPath tartubus-windows.zip
+
+      - name: Upload Windows artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: tartubus-windows
+          path: tartubus-windows.zip
+
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Fetch routes data
+        env:
+          VITE_DIGITRANSIT_API_KEY: ${{ secrets.VITE_DIGITRANSIT_API_KEY }}
+        run: npm run fetch-routes
+
+      - name: Build web app
+        run: npm run build
+
+      - name: Install Electron
+        run: npm install --save-dev electron electron-packager
+
+      - name: Create Electron wrapper
+        run: |
+          cat > main.js << 'EOF'
+          const { app, BrowserWindow } = require('electron');
+          const path = require('path');
+
+          function createWindow() {
+            const win = new BrowserWindow({
+              width: 1200,
+              height: 800,
+              webPreferences: {
+                nodeIntegration: false,
+                contextIsolation: true
+              }
+            });
+
+            win.loadFile(path.join(__dirname, 'dist', 'index.html'));
+          }
+
+          app.whenReady().then(createWindow);
+
+          app.on('window-all-closed', () => {
+            if (process.platform !== 'darwin') app.quit();
+          });
+          EOF
+
+          cat > package-electron.json << 'EOF'
+          {
+            "name": "tartubus-electron",
+            "version": "1.5.0",
+            "main": "main.js"
+          }
+          EOF
+
+      - name: Package Linux app
+        run: |
+          npx electron-packager . Tartubus --platform=linux --arch=x64 --out=release --overwrite
+
+      - name: Create Linux tarball
+        run: |
+          cd release
+          tar -czf ../tartubus-linux.tar.gz Tartubus-linux-x64
+          cd ..
+
+      - name: Upload Linux artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: tartubus-linux
+          path: tartubus-linux.tar.gz
+
+  build-macos:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Fetch routes data
+        env:
+          VITE_DIGITRANSIT_API_KEY: ${{ secrets.VITE_DIGITRANSIT_API_KEY }}
+        run: npm run fetch-routes
+
+      - name: Build web app
+        run: npm run build
+
+      - name: Install Electron
+        run: npm install --save-dev electron electron-packager
+
+      - name: Create Electron wrapper
+        run: |
+          cat > main.js << 'EOF'
+          const { app, BrowserWindow } = require('electron');
+          const path = require('path');
+
+          function createWindow() {
+            const win = new BrowserWindow({
+              width: 1200,
+              height: 800,
+              webPreferences: {
+                nodeIntegration: false,
+                contextIsolation: true
+              }
+            });
+
+            win.loadFile(path.join(__dirname, 'dist', 'index.html'));
+          }
+
+          app.whenReady().then(createWindow);
+
+          app.on('window-all-closed', () => {
+            if (process.platform !== 'darwin') app.quit();
+          });
+          EOF
+
+          cat > package-electron.json << 'EOF'
+          {
+            "name": "tartubus-electron",
+            "version": "1.5.0",
+            "main": "main.js"
+          }
+          EOF
+
+      - name: Package macOS app
+        run: |
+          npx electron-packager . Tartubus --platform=darwin --arch=x64 --out=release --overwrite
+
+      - name: Create macOS ZIP
+        run: |
+          cd release
+          zip -r ../tartubus-macos.zip Tartubus-darwin-x64
+          cd ..
+
+      - name: Upload macOS artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: tartubus-macos
+          path: tartubus-macos.zip
+
+  create-release:
+    needs: [build-web, build-android-apk, build-windows, build-linux, build-macos]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            tartubus-web/tartubus-web.zip
+            tartubus-android-apk/app-release-unsigned.apk
+            tartubus-windows/tartubus-windows.zip
+            tartubus-linux/tartubus-linux.tar.gz
+            tartubus-macos/tartubus-macos.zip
+          body: |
+            ## Tartubus Release
+
+            ### Downloads
+            - **Web App**: Extract `tartubus-web.zip` and serve with any web server
+            - **Android APK**: Install `app-release-unsigned.apk` (unsigned, for testing)
+            - **Windows**: Extract `tartubus-windows.zip` and run `Tartubus.exe`
+            - **Linux**: Extract `tartubus-linux.tar.gz` and run `Tartubus`
+            - **macOS**: Extract `tartubus-macos.zip` and run `Tartubus.app`
+
+            ### What's New
+            See [CHANGELOG.md](https://github.com/Ekats/Tartubus/blob/master/CHANGELOG.md) for details.
+
+            ### Online Version
+            Try it online: https://ekats.github.io/Tartubus/
+          draft: false
+          prerelease: false
