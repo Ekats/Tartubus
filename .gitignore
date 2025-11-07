@@ -50,8 +50,17 @@ out/
 public/data/routes.json
 bfg-1.15.0.jar
 
-# Capacitor/Android
-android/
+# Capacitor/iOS (not needed for CI)
 ios/
+
+# Android build outputs (keep platform files for CI)
+android/app/build/
+android/build/
+android/.gradle/
+android/local.properties
 *.apk
 *.aab
+
+# Android signing keys (NEVER commit these!)
+*.keystore
+*.jks
