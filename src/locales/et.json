@@ -182,6 +182,12 @@
     "allow": "Luba asukohale juurdepääs",
     "decline": "Kasuta käsitsi asukohta"
   },
+  "install": {
+    "title": "Paigalda Tartubus",
+    "description": "Lisa oma avakuvale kiire juurdepääsu jaoks",
+    "step1": "Vajuta Jaga nuppu",
+    "step2": "Vali \"Lisa avakuvale\""
+  },
   "common": {
     "loading": "Laadimine...",
     "error": "Viga",

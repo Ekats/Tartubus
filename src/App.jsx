@@ -6,6 +6,7 @@ import StopFinder from './components/StopFinder'
 import Favorites from './components/Favorites'
 import BottomNav from './components/BottomNav'
 import Settings from './components/Settings'
+import InstallPrompt from './components/InstallPrompt'
 import { useDarkMode } from './hooks/useDarkMode'
 import { initializeCaches } from './services/digitransit'
 
@@ -183,6 +184,9 @@ function App() {
       </div>
       {/* Floating bottom navigation */}
       <BottomNav activeView={activeView} onViewChange={setActiveView} />
+
+      {/* iOS install prompt */}
+      <InstallPrompt />
 
       {/* Exit prompt toast */}
       {showExitPrompt && (

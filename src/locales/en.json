@@ -182,6 +182,12 @@
     "allow": "Allow Location Access",
     "decline": "Use Manual Location"
   },
+  "install": {
+    "title": "Install Tartubus",
+    "description": "Add to your home screen for quick access",
+    "step1": "Tap the Share button",
+    "step2": "Select \"Add to Home Screen\""
+  },
   "common": {
     "loading": "Loading...",
     "error": "Error",
