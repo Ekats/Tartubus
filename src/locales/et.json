@@ -20,7 +20,7 @@
     "requestingLocation": "Küsin asukohta...",
     "locationDenied": "Asukoha luba keelatud",
     "noStops": "Läheduses ei leitud peatuseid",
-    "distance": "{{distance}}m kaugusel",
+    "distance": "{{distance}} meetri kaugusel",
     "nextBuses": "Järgmised bussid:",
     "noDepartures": "Väljumisi pole",
     "refreshing": "Värskendamine...",
@@ -187,6 +187,16 @@
     "description": "Lisa oma avakuvale kiire juurdepääsu jaoks",
     "step1": "Vajuta Jaga nuppu",
     "step2": "Vali \"Lisa avakuvale\""
+  },
+  "timePicker": {
+    "title": "Planeeri ette",
+    "date": "Kuupäev",
+    "time": "Kellaaeg",
+    "useNow": "Kasuta praegust aega",
+    "apply": "Kinnita",
+    "viewing": "Vaadata sõiduplaani",
+    "planAhead": "Planeeri ette",
+    "customTimeActive": "Kohandatud aeg aktiivne"
   },
   "common": {
     "loading": "Laadimine...",

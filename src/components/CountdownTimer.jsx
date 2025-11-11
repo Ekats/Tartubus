@@ -5,8 +5,9 @@ import { format, differenceInMinutes } from 'date-fns';
 /**
  * Component that shows a live countdown timer for bus arrivals
  * Shows clock time subtitle when displaying "X min" countdown
+ * Uses real-time arrival data when available
  */
-function CountdownTimer({ scheduledArrival }) {
+function CountdownTimer({ scheduledArrival, realtimeData = null }) {
   const [timeString, setTimeString] = useState('');
   const [clockTime, setClockTime] = useState('');
   const [showClockTime, setShowClockTime] = useState(false);
@@ -14,14 +15,18 @@ function CountdownTimer({ scheduledArrival }) {
   useEffect(() => {
     // Update immediately
     const updateTime = () => {
-      const formattedTime = formatArrivalTime(scheduledArrival);
+      const formattedTime = formatArrivalTime(scheduledArrival, realtimeData);
       setTimeString(formattedTime);
+
+      // Use real-time arrival if available, otherwise scheduled
+      const useRealtime = realtimeData?.realtime && realtimeData?.realtimeArrival != null;
+      const actualArrival = useRealtime ? realtimeData.realtimeArrival : scheduledArrival;
 
       // Calculate if we should show clock time (when displaying "X min")
       const now = new Date();
       const arrivalTime = new Date();
       arrivalTime.setHours(0, 0, 0, 0);
-      arrivalTime.setSeconds(scheduledArrival);
+      arrivalTime.setSeconds(actualArrival);
 
       const minutesUntil = differenceInMinutes(arrivalTime, now);
 
@@ -46,7 +51,7 @@ function CountdownTimer({ scheduledArrival }) {
     const interval = setInterval(updateTime, 10000);
 
     return () => clearInterval(interval);
-  }, [scheduledArrival]);
+  }, [scheduledArrival, realtimeData]);
 
   if (showClockTime) {
     return (

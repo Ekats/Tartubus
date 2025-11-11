@@ -10,7 +10,7 @@ import { getNextStopName, getDailyTimetable, getWalkingRoute } from '../services
 import CountdownTimer from './CountdownTimer';
 import LocationPermissionInfo from './LocationPermissionInfo';
 
-function NearMe({ onNavigateToMap, manualLocation: manualLocationProp, onClearManualLocation }) {
+function NearMe({ onNavigateToMap, manualLocation: manualLocationProp, onClearManualLocation, customTime }) {
   const { t } = useTranslation();
   const { location, error: locationError, loading: locationLoading, getLocation, startWatching, stopWatching } = useGeolocation();
   const { stops, loading: stopsLoading, error: stopsError, fetchNearbyStops } = useNearbyStops();
@@ -139,7 +139,7 @@ function NearMe({ onNavigateToMap, manualLocation: manualLocationProp, onClearMa
     if (loc.lat && loc.lon) {
       const radius = getSetting('nearbyRadius') || 500;
       // Force refresh to bypass cache and get fresh departure times
-      fetchNearbyStops(loc.lat, loc.lon, radius, true);
+      fetchNearbyStops(loc.lat, loc.lon, radius, true, customTime);
     } else {
       // Otherwise, get location first
       getLocation();
@@ -305,9 +305,9 @@ function NearMe({ onNavigateToMap, manualLocation: manualLocationProp, onClearMa
     const loc = activeLocation;
     if (loc.lat && loc.lon && hasSearched) {
       const radius = getSetting('nearbyRadius') || 500;
-      fetchNearbyStops(loc.lat, loc.lon, radius);
+      fetchNearbyStops(loc.lat, loc.lon, radius, false, customTime);
     }
-  }, [activeLocation.lat, activeLocation.lon, hasSearched, manualLocationProp]);
+  }, [activeLocation.lat, activeLocation.lon, hasSearched, manualLocationProp, customTime]);
 
   // Auto-refresh departure times every 30 seconds
   // Use ref to track interval location so we don't restart on small GPS updates
@@ -332,12 +332,12 @@ function NearMe({ onNavigateToMap, manualLocation: manualLocationProp, onClearMa
       const currentLoc = intervalLocationRef.current;
       if (currentLoc) {
         // Refresh without force (use cache if available < 2 min old)
-        fetchNearbyStops(currentLoc.lat, currentLoc.lon, radius, false);
+        fetchNearbyStops(currentLoc.lat, currentLoc.lon, radius, false, customTime);
       }
     }, 30000); // 30 seconds
 
     return () => clearInterval(interval);
-  }, [activeLocation.lat, activeLocation.lon, fetchNearbyStops]);
+  }, [activeLocation.lat, activeLocation.lon, fetchNearbyStops, customTime]);
 
   const loading = locationLoading || stopsLoading;
   const error = locationError || stopsError;

@@ -20,7 +20,7 @@
     "requestingLocation": "Requesting location...",
     "locationDenied": "Location permission denied",
     "noStops": "No stops nearby",
-    "distance": "{{distance}}m away",
+    "distance": "{{distance}} meters away",
     "nextBuses": "Next buses:",
     "noDepartures": "No upcoming departures",
     "refreshing": "Refreshing...",
@@ -187,6 +187,16 @@
     "description": "Add to your home screen for quick access",
     "step1": "Tap the Share button",
     "step2": "Select \"Add to Home Screen\""
+  },
+  "timePicker": {
+    "title": "Plan Ahead",
+    "date": "Date",
+    "time": "Time",
+    "useNow": "Use Now",
+    "apply": "Apply",
+    "viewing": "Viewing schedule for",
+    "planAhead": "Plan ahead",
+    "customTimeActive": "Custom time active"
   },
   "common": {
     "loading": "Loading...",

@@ -6,7 +6,7 @@ import { getStopById, getNextStopName, getWalkingRoute } from '../services/digit
 import { shouldShowDeparture, isDepartureLate, formatArrivalTime, formatClockTime, getDelayInfo } from '../utils/timeFormatter';
 import CountdownTimer from './CountdownTimer';
 
-function Favorites({ onNavigateToMap, manualLocation }) {
+function Favorites({ onNavigateToMap, manualLocation, customTime }) {
   const { t } = useTranslation();
   const { favorites, removeFavorite, clearAllFavorites } = useFavorites();
   const { location: gpsLocation, startWatching } = useGeolocation();
@@ -130,7 +130,7 @@ function Favorites({ onNavigateToMap, manualLocation }) {
         favorites.map(async (favorite) => {
           try {
             // Query the specific stop by its gtfsId
-            const stopWithDepartures = await getStopById(favorite.gtfsId);
+            const stopWithDepartures = await getStopById(favorite.gtfsId, customTime);
 
             if (stopWithDepartures) {
               return stopWithDepartures;
@@ -187,13 +187,13 @@ function Favorites({ onNavigateToMap, manualLocation }) {
   // Fetch departures on mount and when favorites or location changes
   useEffect(() => {
     fetchDepartures();
-  }, [favorites.length, location.lat, location.lon]); // Re-fetch when favorites list or location changes
+  }, [favorites.length, location.lat, location.lon, customTime]); // Re-fetch when favorites list, location, or custom time changes
 
   // Auto-refresh departure times every 30 seconds
   // Wrap fetchDepartures to make it stable
   const stableFetchDepartures = useCallback(() => {
     fetchDepartures();
-  }, [favorites.length, location.lat, location.lon]);
+  }, [favorites.length, location.lat, location.lon, customTime]);
 
   useEffect(() => {
     if (favorites.length === 0) return;

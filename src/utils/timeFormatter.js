@@ -14,16 +14,22 @@ export function formatClockTime(secondsSinceMidnight) {
 
 /**
  * Format arrival time nicely (e.g., "2 min", "15:45")
- * @param {number} secondsSinceMidnight - Seconds since midnight (e.g., 43200 = 12:00 PM)
+ * Uses real-time arrival data when available, falls back to scheduled time
+ * @param {number} secondsSinceMidnight - Scheduled seconds since midnight (e.g., 43200 = 12:00 PM)
+ * @param {Object} realtimeData - Optional realtime data {realtimeArrival, realtime}
  */
-export function formatArrivalTime(secondsSinceMidnight) {
+export function formatArrivalTime(secondsSinceMidnight, realtimeData = null) {
+  // Use real-time arrival if available, otherwise use scheduled
+  const useRealtime = realtimeData?.realtime && realtimeData?.realtimeArrival != null;
+  const actualArrival = useRealtime ? realtimeData.realtimeArrival : secondsSinceMidnight;
+
   // Create a date object for today at the specified time
   const now = new Date();
   const arrivalTime = new Date();
 
   // Set the time based on seconds since midnight
   arrivalTime.setHours(0, 0, 0, 0); // Reset to midnight
-  arrivalTime.setSeconds(secondsSinceMidnight); // Add seconds since midnight
+  arrivalTime.setSeconds(actualArrival); // Add seconds since midnight
 
   const minutesUntil = differenceInMinutes(arrivalTime, now);
 
@@ -84,15 +90,20 @@ export function formatDistance(meters) {
  * Check if a departure should still be visible (not too far in the past)
  * Keep departures visible for up to 10 minutes after scheduled time (for departed buses)
  * @param {number} scheduledArrival - Seconds since midnight
+ * @param {Object} realtimeData - Optional realtime data {realtimeArrival, realtime}
  * @returns {boolean} - true if departure should be shown
  */
-export function shouldShowDeparture(scheduledArrival) {
+export function shouldShowDeparture(scheduledArrival, realtimeData = null) {
+  // Use real-time arrival if available, otherwise use scheduled
+  const useRealtime = realtimeData?.realtime && realtimeData?.realtimeArrival != null;
+  const actualArrival = useRealtime ? realtimeData.realtimeArrival : scheduledArrival;
+
   const now = new Date();
   const arrivalTime = new Date();
 
   // Set the time based on seconds since midnight
   arrivalTime.setHours(0, 0, 0, 0);
-  arrivalTime.setSeconds(scheduledArrival);
+  arrivalTime.setSeconds(actualArrival);
 
   const minutesUntil = differenceInMinutes(arrivalTime, now);
 
@@ -110,15 +121,20 @@ export function shouldShowDeparture(scheduledArrival) {
 /**
  * Check if a departure is late (past its scheduled time)
  * @param {number} scheduledArrival - Seconds since midnight
+ * @param {Object} realtimeData - Optional realtime data {realtimeArrival, realtime}
  * @returns {boolean} - true if departure is late
  */
-export function isDepartureLate(scheduledArrival) {
+export function isDepartureLate(scheduledArrival, realtimeData = null) {
+  // Use real-time arrival if available, otherwise use scheduled
+  const useRealtime = realtimeData?.realtime && realtimeData?.realtimeArrival != null;
+  const actualArrival = useRealtime ? realtimeData.realtimeArrival : scheduledArrival;
+
   const now = new Date();
   const arrivalTime = new Date();
 
   // Set the time based on seconds since midnight
   arrivalTime.setHours(0, 0, 0, 0);
-  arrivalTime.setSeconds(scheduledArrival);
+  arrivalTime.setSeconds(actualArrival);
 
   const minutesUntil = differenceInMinutes(arrivalTime, now);
 
@@ -129,4 +145,29 @@ export function isDepartureLate(scheduledArrival) {
 
   // Late if past scheduled time (negative minutes)
   return minutesUntil < 0;
+}
+
+/**
+ * Get delay information for display
+ * @param {number} scheduledArrival - Scheduled seconds since midnight
+ * @param {Object} realtimeData - Realtime data {realtimeArrival, arrivalDelay, realtime}
+ * @returns {Object|null} - {minutes: number, isLate: boolean} or null if no delay
+ */
+export function getDelayInfo(scheduledArrival, realtimeData) {
+  if (!realtimeData?.realtime || realtimeData?.arrivalDelay == null) {
+    return null;
+  }
+
+  const delaySeconds = realtimeData.arrivalDelay;
+  const delayMinutes = Math.round(delaySeconds / 60);
+
+  // Only show if delay is significant (more than 1 minute)
+  if (Math.abs(delayMinutes) < 1) {
+    return null;
+  }
+
+  return {
+    minutes: Math.abs(delayMinutes),
+    isLate: delayMinutes > 0
+  };
 }

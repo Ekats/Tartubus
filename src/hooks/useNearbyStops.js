@@ -9,12 +9,12 @@ export function useNearbyStops() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  const fetchNearbyStops = async (lat, lon, radius = 500, forceRefresh = false) => {
+  const fetchNearbyStops = async (lat, lon, radius = 500, forceRefresh = false, customTime = null) => {
     setLoading(true);
     setError(null);
 
     try {
-      const nearbyStops = await getNearbyStops(lat, lon, radius, forceRefresh);
+      const nearbyStops = await getNearbyStops(lat, lon, radius, forceRefresh, customTime);
       setStops(nearbyStops);
       setError(null); // Clear any previous errors on success
       setLoading(false);

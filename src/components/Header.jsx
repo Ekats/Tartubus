@@ -3,7 +3,7 @@ import { forwardGeocode } from '../utils/geocoding';
 import { searchRouteByNumber } from '../services/digitransit';
 import { useTranslation } from 'react-i18next';
 
-function Header({ isDarkMode, toggleDarkMode, onDestinationSelect, onRouteSelect }) {
+function Header({ isDarkMode, toggleDarkMode, onDestinationSelect, onRouteSelect, customTime, onTimePickerOpen }) {
   const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
@@ -177,6 +177,17 @@ function Header({ isDarkMode, toggleDarkMode, onDestinationSelect, onRouteSelect
             </div>
           )}
         </div>
+
+        {/* Time Picker Button */}
+        <button
+          onClick={onTimePickerOpen}
+          className={`p-2 rounded-lg hover:bg-white/10 transition-colors flex-shrink-0 ${customTime ? 'text-blue-300' : ''}`}
+          title={customTime ? t('timePicker.customTimeActive') : t('timePicker.planAhead')}
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </button>
 
         {/* Dark Mode Toggle */}
         <button

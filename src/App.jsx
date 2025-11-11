@@ -7,6 +7,7 @@ import Favorites from './components/Favorites'
 import BottomNav from './components/BottomNav'
 import Settings from './components/Settings'
 import InstallPrompt from './components/InstallPrompt'
+import DateTimePicker from './components/DateTimePicker'
 import { useDarkMode } from './hooks/useDarkMode'
 import { initializeCaches } from './services/digitransit'
 
@@ -20,6 +21,8 @@ function App() {
   const [selectedRoute, setSelectedRoute] = useState(null) // Selected route from search
   const [showExitPrompt, setShowExitPrompt] = useState(false)
   const [lastBackPress, setLastBackPress] = useState(0)
+  const [customTime, setCustomTime] = useState(null) // null = use current time, otherwise use Date object
+  const [showTimePicker, setShowTimePicker] = useState(false)
 
   // Initialize caches on app startup
   useEffect(() => {
@@ -124,6 +127,7 @@ function App() {
       case 'nearme':
         return <NearMe
           manualLocation={manualLocation}
+          customTime={customTime}
           onNavigateToMap={(stop) => {
             if (stop?.selectLocation) {
               setLocationSelectionMode(true)
@@ -144,6 +148,7 @@ function App() {
           manualLocation={manualLocation}
           selectedJourney={selectedJourney}
           selectedRoute={selectedRoute}
+          customTime={customTime}
           onJourneyChange={setSelectedJourney}
           onRouteChange={setSelectedRoute}
           onLocationSelected={(location) => {
@@ -159,6 +164,7 @@ function App() {
       case 'favorites':
         return <Favorites
           manualLocation={manualLocation}
+          customTime={customTime}
           onNavigateToMap={(stop) => {
             setSelectedStop(stop)
             setActiveView('map')
@@ -178,6 +184,8 @@ function App() {
         toggleDarkMode={toggleDarkMode}
         onDestinationSelect={handleDestinationSelect}
         onRouteSelect={handleRouteSelect}
+        customTime={customTime}
+        onTimePickerOpen={() => setShowTimePicker(true)}
       />
       <div className="flex-1 overflow-hidden">
         {renderView()}
@@ -196,6 +204,14 @@ function App() {
           </div>
         </div>
       )}
+
+      {/* Date Time Picker Modal */}
+      <DateTimePicker
+        isOpen={showTimePicker}
+        onClose={() => setShowTimePicker(false)}
+        customTime={customTime}
+        onTimeChange={setCustomTime}
+      />
     </div>
   )
 }

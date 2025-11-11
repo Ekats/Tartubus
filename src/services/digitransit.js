@@ -64,8 +64,9 @@ async function query(graphqlQuery, variables = {}, timeout = 20000) {
  * @param {number} lon - Longitude
  * @param {number} radius - Search radius in meters
  * @param {boolean} forceRefresh - If true, bypass cache and fetch fresh data
+ * @param {Date|null} customTime - Custom time for schedule queries (null = use current time)
  */
-export async function getNearbyStops(lat, lon, radius = 500, forceRefresh = false) {
+export async function getNearbyStops(lat, lon, radius = 500, forceRefresh = false, customTime = null) {
   // Calculate cache key once
   const roundedLat = Math.round(lat * 100) / 100;
   const roundedLon = Math.round(lon * 100) / 100;
@@ -169,9 +170,11 @@ export async function getNearbyStops(lat, lon, radius = 500, forceRefresh = fals
   // Create the request promise
   const requestPromise = (async () => {
     try {
-      // Get current time minus 10 minutes in Unix timestamp (seconds, UTC)
+      // Use custom time or current time
+      const referenceTime = customTime || new Date();
+      // Get time minus 10 minutes in Unix timestamp (seconds, UTC)
       // This allows us to fetch departed buses from the last 10 minutes
-      const startTime = Math.floor(Date.now() / 1000) - (10 * 60); // 10 minutes ago
+      const startTime = Math.floor(referenceTime.getTime() / 1000) - (10 * 60); // 10 minutes ago
       const data = await query(graphqlQuery, { lat, lon, radius, startTime });
 
       const stops = data.stopsByRadius?.edges || [];
@@ -182,9 +185,8 @@ export async function getNearbyStops(lat, lon, radius = 500, forceRefresh = fals
         return gtfsId.startsWith('Viro:');
       });
 
-      // Get current time for client-side filtering (safety check)
-      const now = new Date();
-      const currentSecondsFromMidnight = (now.getHours() * 3600) + (now.getMinutes() * 60) + now.getSeconds();
+      // Get reference time for client-side filtering (safety check)
+      const currentSecondsFromMidnight = (referenceTime.getHours() * 3600) + (referenceTime.getMinutes() * 60) + referenceTime.getSeconds();
 
       const result = tartuStops.map(edge => {
         const stop = edge.node.stop;
@@ -375,7 +377,7 @@ export async function getDailyTimetable(gtfsId) {
  * @param {string} gtfsId - The GTFS ID of the stop (e.g., "Viro:7820134-1")
  * @returns {Promise<Object|null>} Stop object with departures, or null if not found
  */
-export async function getStopById(gtfsId) {
+export async function getStopById(gtfsId, customTime = null) {
   const graphqlQuery = `
     query GetStop($id: String!, $startTime: Long!) {
       stop(id: $id) {
@@ -416,16 +418,17 @@ export async function getStopById(gtfsId) {
   `;
 
   try {
-    // Get current time minus 10 minutes in Unix timestamp (seconds, UTC)
+    // Use custom time or current time
+    const referenceTime = customTime || new Date();
+    // Get time minus 10 minutes in Unix timestamp (seconds, UTC)
     // This allows us to fetch departed buses from the last 10 minutes
-    const startTime = Math.floor(Date.now() / 1000) - (10 * 60); // 10 minutes ago
+    const startTime = Math.floor(referenceTime.getTime() / 1000) - (10 * 60); // 10 minutes ago
     const data = await query(graphqlQuery, { id: gtfsId, startTime });
 
     if (!data.stop) return null;
 
     // Client-side safety filter: remove any departures clearly in the past
-    const now = new Date();
-    const currentSecondsFromMidnight = (now.getHours() * 3600) + (now.getMinutes() * 60) + now.getSeconds();
+    const currentSecondsFromMidnight = (referenceTime.getHours() * 3600) + (referenceTime.getMinutes() * 60) + referenceTime.getSeconds();
 
     const filteredDepartures = data.stop.stoptimesWithoutPatterns?.filter(departure => {
       const scheduledArrival = departure.scheduledArrival;

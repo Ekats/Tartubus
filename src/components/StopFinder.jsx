@@ -787,7 +787,7 @@ function StopFinder({
           planJourney(
             { lat: location.lat, lon: location.lon },
             { lat: dest.lat, lon: dest.lon },
-            { numItineraries: 5 }
+            { numItineraries: 5, dateTime: customTime?.toISOString() }
           ).then(plans => plans.map(plan => ({ ...plan, destinationName: dest.name, isMainStop: dest.isMain })))
             .catch(err => {
               console.warn('Failed to plan to', dest.name, err);
