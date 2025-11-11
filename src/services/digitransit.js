@@ -79,7 +79,15 @@ export async function getNearbyStops(lat, lon, radius = 500, forceRefresh = fals
       return cachedStops.map(stop => ({
         ...stop,
         stoptimesWithoutPatterns: stop.stoptimesWithoutPatterns?.map(st => ({
-          ...st,
+          scheduledArrival: st.scheduledArrival,
+          scheduledDeparture: st.scheduledDeparture,
+          realtimeArrival: st.realtimeArrival,
+          realtimeDeparture: st.realtimeDeparture,
+          arrivalDelay: st.arrivalDelay,
+          departureDelay: st.departureDelay,
+          realtime: st.realtime,
+          headsign: st.headsign,
+          stopPosition: st.stopPosition,
           trip: {
             route: {
               shortName: st.routeShortName,
@@ -126,6 +134,11 @@ export async function getNearbyStops(lat, lon, radius = 500, forceRefresh = fals
               stoptimesWithoutPatterns(numberOfDepartures: 20, startTime: $startTime, omitCanceled: false) {
                 scheduledArrival
                 scheduledDeparture
+                realtimeArrival
+                realtimeDeparture
+                arrivalDelay
+                departureDelay
+                realtime
                 headsign
                 stopPosition
                 trip {
@@ -209,6 +222,11 @@ export async function getNearbyStops(lat, lon, radius = 500, forceRefresh = fals
         stoptimesWithoutPatterns: stop.stoptimesWithoutPatterns?.map(st => ({
           scheduledArrival: st.scheduledArrival,
           scheduledDeparture: st.scheduledDeparture,
+          realtimeArrival: st.realtimeArrival,
+          realtimeDeparture: st.realtimeDeparture,
+          arrivalDelay: st.arrivalDelay,
+          departureDelay: st.departureDelay,
+          realtime: st.realtime,
           headsign: st.headsign,
           stopPosition: st.stopPosition,
           routeShortName: st.trip?.route?.shortName,
@@ -369,6 +387,11 @@ export async function getStopById(gtfsId) {
         stoptimesWithoutPatterns(numberOfDepartures: 20, startTime: $startTime, omitCanceled: false) {
           scheduledArrival
           scheduledDeparture
+          realtimeArrival
+          realtimeDeparture
+          arrivalDelay
+          departureDelay
+          realtime
           headsign
           stopPosition
           trip {
@@ -1397,6 +1420,8 @@ export async function planJourney(from, to, options = {}) {
                 distance
                 startTime
                 endTime
+                realTime
+                realtimeState
                 from {
                   name
                   lat
@@ -1484,6 +1509,8 @@ export async function planJourney(from, to, options = {}) {
           distance: leg.distance,
           startTime: leg.startTime,
           endTime: leg.endTime,
+          realTime: leg.realTime,
+          realtimeState: leg.realtimeState,
           from: {
             name: leg.from.name,
             lat: leg.from.lat,
@@ -1515,6 +1542,126 @@ export async function planJourney(from, to, options = {}) {
     console.error('Query variables were:', { from, to, options });
     return [];
   }
+}
+
+// Cache for walking routes (in-memory only, 15 minute TTL)
+const walkingRouteCache = new Map();
+const WALKING_ROUTE_CACHE_DURATION = 15 * 60 * 1000; // 15 minutes
+const MAX_WALKING_ROUTE_CACHE_ENTRIES = 50; // Limit cache size to prevent memory bloat
+
+/**
+ * Calculate walking time to a destination using street routing
+ * @param {Object} from - Origin coordinates {lat, lon}
+ * @param {Object} to - Destination coordinates {lat, lon}
+ * @param {number} timeout - Request timeout in ms (default 5000)
+ * @returns {Promise<Object|null>} - {duration: seconds, distance: meters} or null
+ */
+export async function getWalkingRoute(from, to, timeout = 5000) {
+  // Create cache key from rounded coordinates (10m precision)
+  const cacheKey = `${Math.round(from.lat * 1000)}_${Math.round(from.lon * 1000)}_${Math.round(to.lat * 1000)}_${Math.round(to.lon * 1000)}`;
+
+  // Check cache first
+  const cached = walkingRouteCache.get(cacheKey);
+  if (cached && (Date.now() - cached.timestamp < WALKING_ROUTE_CACHE_DURATION)) {
+    return cached.data;
+  }
+
+  try {
+    const walkQuery = `
+      query WalkingRoute(
+        $origin: PlanLabeledLocationInput!
+        $destination: PlanLabeledLocationInput!
+      ) {
+        planConnection(
+          origin: $origin
+          destination: $destination
+          first: 1
+          modes: {
+            direct: [WALK]
+          }
+          preferences: {
+            street: {
+              walk: {
+                speed: 1.4
+              }
+            }
+          }
+        ) {
+          edges {
+            node {
+              legs {
+                mode
+                duration
+                distance
+              }
+            }
+          }
+        }
+      }
+    `;
+
+    const variables = {
+      origin: {
+        location: {
+          coordinate: {
+            latitude: from.lat,
+            longitude: from.lon
+          }
+        }
+      },
+      destination: {
+        location: {
+          coordinate: {
+            latitude: to.lat,
+            longitude: to.lon
+          }
+        }
+      }
+    };
+
+    const data = await query(walkQuery, variables, timeout);
+
+    if (data?.planConnection?.edges?.[0]?.node?.legs?.[0]) {
+      const leg = data.planConnection.edges[0].node.legs[0];
+      const result = {
+        duration: leg.duration,
+        distance: leg.distance
+      };
+
+      // Cache the result with LRU eviction
+      cacheWalkingRoute(cacheKey, result);
+
+      return result;
+    }
+
+    // Cache null result too (to avoid retrying immediately)
+    cacheWalkingRoute(cacheKey, null);
+
+    return null;
+  } catch (error) {
+    console.error('Error fetching walking route:', error);
+
+    // Cache null result on error (to avoid retrying immediately)
+    cacheWalkingRoute(cacheKey, null);
+
+    return null;
+  }
+}
+
+/**
+ * Helper function to cache walking route with LRU eviction
+ */
+function cacheWalkingRoute(cacheKey, data) {
+  // If cache is full, remove oldest entry (first in Map)
+  if (walkingRouteCache.size >= MAX_WALKING_ROUTE_CACHE_ENTRIES) {
+    const firstKey = walkingRouteCache.keys().next().value;
+    walkingRouteCache.delete(firstKey);
+  }
+
+  walkingRouteCache.set(cacheKey, {
+    data,
+    timestamp: Date.now()
+  });
 }
 
 // Export route update functions

@@ -1,9 +1,9 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useFavorites } from '../hooks/useFavorites';
 import { useGeolocation } from '../hooks/useGeolocation';
-import { getStopById, getNextStopName } from '../services/digitransit';
-import { shouldShowDeparture, isDepartureLate, formatArrivalTime, formatClockTime } from '../utils/timeFormatter';
+import { getStopById, getNextStopName, getWalkingRoute } from '../services/digitransit';
+import { shouldShowDeparture, isDepartureLate, formatArrivalTime, formatClockTime, getDelayInfo } from '../utils/timeFormatter';
 import CountdownTimer from './CountdownTimer';
 
 function Favorites({ onNavigateToMap, manualLocation }) {
@@ -18,11 +18,92 @@ function Favorites({ onNavigateToMap, manualLocation }) {
   const [error, setError] = useState(null);
   const [expandedStops, setExpandedStops] = useState(new Map()); // Map of stopId -> expansion level
   const [expandedDepartures, setExpandedDepartures] = useState(new Set()); // Set of "stopId-departureIdx" keys
+  const [walkingTimes, setWalkingTimes] = useState(new Map()); // Map of stopId -> {duration, distance}
+  const lastWalkingFetchLocationRef = useRef(null); // Track location for walking time fetches
 
   // Start watching location on mount
   useEffect(() => {
     startWatching();
   }, []);
+
+  // Fetch walking times for favorite stops (only nearby ones within 500m)
+  // Triggers when: (1) stops first load, or (2) location changes >100m
+  useEffect(() => {
+    if (!location.lat || !location.lon || stopsWithDepartures.length === 0) return;
+
+    // Check if this is triggered by stops loading for the first time
+    const isFirstStopsLoad = lastWalkingFetchLocationRef.current === null;
+
+    if (!isFirstStopsLoad) {
+      // Not first load - only refetch if location changed significantly (>100m)
+      const lastLoc = lastWalkingFetchLocationRef.current;
+      const locationChanged =
+        Math.abs(lastLoc.lat - location.lat) >= 0.001 ||
+        Math.abs(lastLoc.lon - location.lon) >= 0.001;
+
+      if (!locationChanged) {
+        console.log('📍 Location change too small (<100m), keeping existing walking times');
+        // Keep existing walkingTimes - they're still valid
+        return;
+      }
+    }
+
+    console.log('📍 Fetching walking times' + (isFirstStopsLoad ? ' (first load)' : ' (location changed >100m)'));
+    lastWalkingFetchLocationRef.current = { lat: location.lat, lon: location.lon };
+
+    const fetchWalkingTimes = async () => {
+      const newWalkingTimes = new Map();
+
+      // Only fetch for nearby favorites (within 500m) to avoid API overload
+      const nearbyFavorites = stopsWithDepartures.filter(
+        stop => stop.distance !== undefined && stop.distance !== Infinity && stop.distance <= 500
+      );
+
+      // Fetch in batches of 2 to avoid overwhelming the API
+      // This gives us a good balance between speed and API limits
+      for (let i = 0; i < nearbyFavorites.length; i += 2) {
+        const batch = nearbyFavorites.slice(i, i + 2);
+
+        const batchPromises = batch.map(async (stop) => {
+          try {
+            const route = await getWalkingRoute(
+              { lat: location.lat, lon: location.lon },
+              { lat: stop.lat, lon: stop.lon },
+              8000 // 8 second timeout (more lenient)
+            );
+            if (route) {
+              return { stopId: stop.gtfsId, route };
+            }
+          } catch (error) {
+            // Silently fail for individual stops
+            console.log(`Failed to get walking route for ${stop.name}`);
+          }
+          return null;
+        });
+
+        // Wait for current batch to complete
+        const batchResults = await Promise.all(batchPromises);
+
+        // Add successful results to map immediately (progressive loading)
+        batchResults.forEach(result => {
+          if (result && result.route) {
+            newWalkingTimes.set(result.stopId, result.route);
+          }
+        });
+
+        // Update state after each batch for progressive display
+        setWalkingTimes(new Map(newWalkingTimes));
+
+        // Small delay between batches to avoid rate limiting
+        if (i + 2 < nearbyFavorites.length) {
+          await new Promise(resolve => setTimeout(resolve, 200));
+        }
+      }
+      console.log(`✅ Fetched walking times for ${newWalkingTimes.size} favorite stops`);
+    };
+    fetchWalkingTimes();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [stopsWithDepartures, location.lat, location.lon]);
 
   // Calculate distance between two coordinates (in meters)
   const calculateDistance = (lat1, lon1, lat2, lon2) => {
@@ -282,6 +363,9 @@ function Favorites({ onNavigateToMap, manualLocation }) {
                       {' • '}{Math.round(stop.distance)}m {t('favorites.away')}
                     </span>
                   )}
+                  {walkingTimes.has(stop.gtfsId) && (
+                    <span className="text-blue-600 dark:text-blue-400 font-medium"> • 🚶 {Math.ceil(walkingTimes.get(stop.gtfsId).duration / 60)} min</span>
+                  )}
                 </p>
               </div>
 
@@ -323,7 +407,10 @@ function Favorites({ onNavigateToMap, manualLocation }) {
                   const expansionLevel = expandedStops.get(stop.gtfsId) || 0;
                   // Filter out departures that are too far in the past
                   const validDepartures = stop.stoptimesWithoutPatterns.filter(dep =>
-                    shouldShowDeparture(dep.scheduledArrival)
+                    shouldShowDeparture(dep.scheduledArrival, {
+                      realtimeArrival: dep.realtimeArrival,
+                      realtime: dep.realtime
+                    })
                   );
                   const totalDepartures = validDepartures.length;
                   let visibleCount = 3;
@@ -339,7 +426,13 @@ function Favorites({ onNavigateToMap, manualLocation }) {
                       const allStops = departure.trip?.stoptimes || [];
                       const currentStopIndex = allStops.findIndex(st => st.stopPosition === departure.stopPosition);
                       const remainingStops = currentStopIndex >= 0 ? allStops.slice(currentStopIndex + 1) : [];
-                      const isLate = isDepartureLate(departure.scheduledArrival);
+                      const realtimeData = {
+                        realtimeArrival: departure.realtimeArrival,
+                        realtime: departure.realtime,
+                        arrivalDelay: departure.arrivalDelay
+                      };
+                      const isLate = isDepartureLate(departure.scheduledArrival, realtimeData);
+                      const delayInfo = getDelayInfo(departure.scheduledArrival, realtimeData);
 
                       return (
                         <div key={idx} className={isLate ? 'opacity-60' : ''}>
@@ -364,9 +457,19 @@ function Favorites({ onNavigateToMap, manualLocation }) {
                               </div>
                             </div>
                             <div className="flex items-center gap-2 shrink-0">
-                              <span className={`font-bold text-sm ${isLate ? 'text-gray-500 dark:text-gray-500' : 'text-gray-900 dark:text-gray-100'}`}>
-                                <CountdownTimer scheduledArrival={departure.scheduledArrival} />
-                              </span>
+                              <div className="flex flex-col items-end">
+                                <span className={`font-bold text-sm ${isLate ? 'text-gray-500 dark:text-gray-500' : 'text-gray-900 dark:text-gray-100'}`}>
+                                  <CountdownTimer
+                                    scheduledArrival={departure.scheduledArrival}
+                                    realtimeData={realtimeData}
+                                  />
+                                </span>
+                                {delayInfo && (
+                                  <span className={`text-xs ${delayInfo.isLate ? 'text-red-500 dark:text-red-400' : 'text-green-600 dark:text-green-400'}`}>
+                                    {delayInfo.isLate ? `+${delayInfo.minutes} min` : `-${delayInfo.minutes} min`}
+                                  </span>
+                                )}
+                              </div>
                               {remainingStops.length > 0 && (
                                 <svg className={`w-5 h-5 transition-transform ${isLate ? 'text-gray-400 dark:text-gray-500' : 'text-blue-600 dark:text-blue-400'} ${isDepartureExpanded ? 'rotate-90' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -378,7 +481,7 @@ function Favorites({ onNavigateToMap, manualLocation }) {
                             <div className="pl-12 pr-2 pb-2 mt-1 text-xs">
                               <div className="bg-gray-100 dark:bg-gray-800 rounded p-2 space-y-1">
                                 <div className="font-semibold text-gray-700 dark:text-gray-300 mb-1">{t('nearMe.upcomingStops')}</div>
-                                {remainingStops.slice(0, 10).map((stopTime, sIdx) => (
+                                {remainingStops.map((stopTime, sIdx) => (
                                   <div key={sIdx} className="text-gray-600 dark:text-gray-400 flex items-center justify-between gap-2">
                                     <div className="flex items-center gap-1 flex-1 min-w-0">
                                       <span className="text-gray-400">•</span>
@@ -391,11 +494,6 @@ function Favorites({ onNavigateToMap, manualLocation }) {
                                     )}
                                   </div>
                                 ))}
-                                {remainingStops.length > 10 && (
-                                  <div className="text-gray-500 dark:text-gray-500 italic">
-                                    + {t('nearMe.moreStops', { count: remainingStops.length - 10 })}
-                                  </div>
-                                )}
                               </div>
                             </div>
                           )}

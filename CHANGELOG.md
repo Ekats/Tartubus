@@ -5,6 +5,36 @@ All notable changes to Tartu Bussid will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.1] - 2025-11-11
+
+### Added
+- ⚡ **3-5x faster walking time loading** - Optimized API requests with batching and caching
+  - Walking routes cached in memory for 15 minutes (instant on revisit)
+  - Batched requests (2 at a time) to avoid API rate limits
+  - Smart GPS drift filtering (>100m threshold) prevents unnecessary refetches
+  - Only fetches walking routes for nearby stops (<2km)
+- 🎨 **Enhanced map stop popups** - Map view now shows same rich information as other tabs
+  - Distance with walking time display using street routing
+  - Timetable button (green calendar icon) for daily schedules
+  - Expandable departure cards showing upcoming stops
+  - Progressive disclosure (show more/less buttons)
+  - Favorite star toggle
+  - Real-time delay indicators (red/green badges)
+- 🔧 **Reusable StopCard component** - Eliminated ~200 lines of duplicate code
+  - Single component used in NearMe, Favorites, and Map overlay
+  - Ensures consistent UX across all views
+  - Easier maintenance and future updates
+
+### Performance
+- Walking time requests use LRU cache (50 entry max) with automatic eviction
+- GPS drift detection prevents refetching when user hasn't moved significantly
+- Smart distance check skips slow API calls for faraway stops (>2km)
+- Batched parallel requests (2 at a time) balance speed and API limits
+
+### Fixed
+- 🐛 **GPS drift no longer resets walking times** - Walking times persist during small GPS movements
+- 🚫 **No timeouts for faraway stops** - Walking routes only fetched for reachable distances
+
 ## [1.5.0] - 2025-11-05
 
 ### Added

@@ -6,11 +6,12 @@ import L from 'leaflet';
 import 'leaflet-polylinedecorator';
 import { useGeolocation } from '../hooks/useGeolocation';
 import { useFavorites } from '../hooks/useFavorites';
-import { getNearbyStops, getStopsByRoutes, getNextStopName, planJourney, decodePolyline } from '../services/digitransit';
+import { getNearbyStops, getStopsByRoutes, getNextStopName, planJourney, decodePolyline, getDailyTimetable, getWalkingRoute } from '../services/digitransit';
 import { getSetting } from '../utils/settings';
 import { reverseGeocode } from '../utils/geocoding';
-import { shouldShowDeparture, isDepartureLate } from '../utils/timeFormatter';
+import { shouldShowDeparture, isDepartureLate, getDelayInfo } from '../utils/timeFormatter';
 import CountdownTimer from './CountdownTimer';
+import StopCard from './StopCard';
 import 'leaflet/dist/leaflet.css';
 import 'leaflet.markercluster/dist/MarkerCluster.css';
 import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
@@ -345,6 +346,10 @@ function StopFinder({
   const [nearbyStopsForRouting, setNearbyStopsForRouting] = useState([]); // Stops with departure data for routing
   const [journeyPlans, setJourneyPlans] = useState([]); // Journey plans with transfers
   const [loadingJourney, setLoadingJourney] = useState(false);
+  const [showTimetable, setShowTimetable] = useState(null); // { stop, timetable }
+  const [loadingTimetable, setLoadingTimetable] = useState(false);
+  const [expandedDepartures, setExpandedDepartures] = useState(new Set()); // Set of "stopId-departureIdx" keys
+  const [walkingTime, setWalkingTime] = useState(null); // Walking time to selected stop
   // selectedJourney state is now lifted to App.jsx and passed as prop
   const mapRef = useRef(null);
   const moveTimeoutRef = useRef(null);
@@ -496,6 +501,41 @@ function StopFinder({
       setNearbyStopsForRouting({ nearUser: [], nearDestination: [] });
     }
   }, [selectedStop, location.lat, location.lon]);
+
+  // Fetch walking time to selected stop (only for nearby stops within 2km)
+  useEffect(() => {
+    if (selectedStop && location.lat && location.lon) {
+      // Calculate straight-line distance first
+      const latDiff = selectedStop.lat - location.lat;
+      const lonDiff = selectedStop.lon - location.lon;
+      const straightLineDistance = Math.sqrt(latDiff * latDiff + lonDiff * lonDiff) * 111000; // meters
+
+      // Only fetch walking route if stop is within 2km (reasonable walking distance)
+      if (straightLineDistance <= 2000) {
+        const fetchWalkingTime = async () => {
+          try {
+            const route = await getWalkingRoute(
+              { lat: location.lat, lon: location.lon },
+              { lat: selectedStop.lat, lon: selectedStop.lon },
+              8000
+            );
+            setWalkingTime(route);
+          } catch (error) {
+            console.log('Failed to get walking route for selected stop');
+            setWalkingTime(null);
+          }
+        };
+        fetchWalkingTime();
+      } else {
+        // Too far to walk - don't fetch walking route
+        console.log(`📍 Stop is ${Math.round(straightLineDistance)}m away - too far for walking route`);
+        setWalkingTime(null);
+      }
+    } else {
+      setWalkingTime(null);
+    }
+  }, [selectedStop, location.lat, location.lon]);
+
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false); // Toggle for favorites-only view
   const boundsUpdateTimeoutRef = useRef(null);
 
@@ -1857,7 +1897,10 @@ function StopFinder({
                           const expansionLevel = expandedPopupStops.get(stop.gtfsId) || 0;
                           // Filter out departures that are too far in the past
                           const validDepartures = stop.stoptimesWithoutPatterns.filter(dep =>
-                            shouldShowDeparture(dep.scheduledArrival)
+                            shouldShowDeparture(dep.scheduledArrival, {
+                              realtimeArrival: dep.realtimeArrival,
+                              realtime: dep.realtime
+                            })
                           );
                           const totalDepartures = validDepartures.length;
                           let visibleCount = 3;
@@ -1866,7 +1909,13 @@ function StopFinder({
 
                           const departureItems = validDepartures.slice(0, visibleCount).map((departure, idx) => {
                             const nextStop = getNextStopName(departure);
-                            const isLate = isDepartureLate(departure.scheduledArrival);
+                            const realtimeData = {
+                              realtimeArrival: departure.realtimeArrival,
+                              realtime: departure.realtime,
+                              arrivalDelay: departure.arrivalDelay
+                            };
+                            const isLate = isDepartureLate(departure.scheduledArrival, realtimeData);
+                            const delayInfo = getDelayInfo(departure.scheduledArrival, realtimeData);
                             return (
                               <div
                                 key={idx}
@@ -1887,9 +1936,19 @@ function StopFinder({
                                     )}
                                   </div>
                                 </div>
-                                <span className={`font-semibold text-xs shrink-0 ${isLate ? 'text-gray-500' : ''}`}>
-                                  <CountdownTimer scheduledArrival={departure.scheduledArrival} />
-                                </span>
+                                <div className="flex flex-col items-end shrink-0">
+                                  <span className={`font-semibold text-xs ${isLate ? 'text-gray-500' : ''}`}>
+                                    <CountdownTimer
+                                      scheduledArrival={departure.scheduledArrival}
+                                      realtimeData={realtimeData}
+                                    />
+                                  </span>
+                                  {delayInfo && (
+                                    <span className={`text-[10px] ${delayInfo.isLate ? 'text-red-500' : 'text-green-600'}`}>
+                                      {delayInfo.isLate ? `+${delayInfo.minutes}m` : `-${delayInfo.minutes}m`}
+                                    </span>
+                                  )}
+                                </div>
                               </div>
                             );
                           });
@@ -2397,21 +2456,39 @@ function StopFinder({
                             </div>
                           </div>
                           <div className="space-y-1">
-                            {item.departures.map((dep, depIdx) => (
-                              <div key={depIdx} className="flex items-center justify-between text-sm">
-                                <div className="flex items-center gap-2">
-                                  <span className="bg-blue-600 text-white px-2 py-0.5 rounded font-bold text-xs">
-                                    {dep.trip?.route?.shortName || '?'}
-                                  </span>
-                                  <span className="text-gray-700 dark:text-gray-300 text-xs">
-                                    → {dep.headsign}
-                                  </span>
+                            {item.departures.map((dep, depIdx) => {
+                              const realtimeData = {
+                                realtimeArrival: dep.realtimeArrival,
+                                realtime: dep.realtime,
+                                arrivalDelay: dep.arrivalDelay
+                              };
+                              const delayInfo = getDelayInfo(dep.scheduledArrival, realtimeData);
+                              return (
+                                <div key={depIdx} className="flex items-center justify-between text-sm">
+                                  <div className="flex items-center gap-2">
+                                    <span className="bg-blue-600 text-white px-2 py-0.5 rounded font-bold text-xs">
+                                      {dep.trip?.route?.shortName || '?'}
+                                    </span>
+                                    <span className="text-gray-700 dark:text-gray-300 text-xs">
+                                      → {dep.headsign}
+                                    </span>
+                                  </div>
+                                  <div className="flex flex-col items-end">
+                                    <span className="font-semibold text-green-600 dark:text-green-400 text-xs">
+                                      <CountdownTimer
+                                        scheduledArrival={dep.scheduledArrival}
+                                        realtimeData={realtimeData}
+                                      />
+                                    </span>
+                                    {delayInfo && (
+                                      <span className={`text-[10px] ${delayInfo.isLate ? 'text-red-500' : 'text-green-600'}`}>
+                                        {delayInfo.isLate ? `+${delayInfo.minutes}m` : `-${delayInfo.minutes}m`}
+                                      </span>
+                                    )}
+                                  </div>
                                 </div>
-                                <span className="font-semibold text-green-600 dark:text-green-400 text-xs">
-                                  <CountdownTimer scheduledArrival={dep.scheduledArrival} />
-                                </span>
-                              </div>
-                            ))}
+                              );
+                            })}
                           </div>
                         </div>
                       ))}
@@ -2447,111 +2524,15 @@ function StopFinder({
               </div>
             )}
 
-            {/* Next departures */}
-            {selectedStop.stoptimesWithoutPatterns && selectedStop.stoptimesWithoutPatterns.length > 0 ? (
-              <div className="space-y-2">
-                <h3 className="font-semibold text-lg text-gray-800 dark:text-gray-200">Next buses:</h3>
-                <div className="space-y-2">
-                  {(() => {
-                    const expansionLevel = expandedPopupStops.get(selectedStop.gtfsId) || 0;
-                    // Filter out departures that are too far in the past
-                    const validDepartures = selectedStop.stoptimesWithoutPatterns.filter(dep =>
-                      shouldShowDeparture(dep.scheduledArrival)
-                    );
-                    const totalDepartures = validDepartures.length;
-                    let visibleCount = 3;
-                    if (expansionLevel === 1) visibleCount = 8;
-                    if (expansionLevel >= 2) visibleCount = totalDepartures;
-
-                    const departureItems = validDepartures.slice(0, visibleCount).map((departure, idx) => {
-                      const nextStop = getNextStopName(departure);
-                      const isLate = isDepartureLate(departure.scheduledArrival);
-                      return (
-                        <div
-                          key={idx}
-                          className={`${isLate ? 'bg-gray-100 dark:bg-gray-900 opacity-60' : 'bg-gray-50 dark:bg-gray-800'} rounded-lg p-3 border ${isLate ? 'border-gray-300 dark:border-gray-800' : 'border-gray-200 dark:border-gray-700'}`}
-                        >
-                          <div className="flex items-center justify-between gap-2">
-                            <div className="flex items-center gap-3 flex-1 min-w-0">
-                              <span className={`${isLate ? 'bg-gray-400 dark:bg-gray-600' : 'bg-blue-600'} text-white px-3 py-1 rounded font-bold text-sm shrink-0`}>
-                                {departure.trip?.route?.shortName || '?'}
-                              </span>
-                              <div className="flex-1 min-w-0">
-                                <div className={`font-medium truncate ${isLate ? 'text-gray-500 dark:text-gray-500' : 'text-gray-800 dark:text-gray-200'}`}>
-                                  {departure.headsign || 'Unknown'}
-                                </div>
-                                {nextStop && (
-                                  <div className="text-sm text-gray-500 dark:text-gray-400 truncate">
-                                    → {nextStop}
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                            <span className={`font-bold text-lg shrink-0 ${isLate ? 'text-gray-500 dark:text-gray-500' : 'text-blue-600 dark:text-blue-400'}`}>
-                              <CountdownTimer scheduledArrival={departure.scheduledArrival} />
-                            </span>
-                          </div>
-                        </div>
-                      );
-                    });
-
-                    let expansionButton = null;
-                    if (totalDepartures > 3) {
-                      if (expansionLevel === 0) {
-                        expansionButton = (
-                          <button
-                            onClick={() => expandPopupStop(selectedStop.gtfsId)}
-                            className="w-full text-center text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 py-3 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-750 transition-colors"
-                          >
-                            {`··· ${t('nearMe.showMore')} (${Math.min(5, totalDepartures - 3)})`}
-                          </button>
-                        );
-                      } else if (expansionLevel === 1 && totalDepartures > 8) {
-                        expansionButton = (
-                          <div className="flex gap-2">
-                            <button
-                              onClick={() => collapsePopupStop(selectedStop.gtfsId)}
-                              className="flex-1 text-center text-sm text-gray-600 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 py-3 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-750 transition-colors"
-                            >
-                              − {t('nearMe.showLess')}
-                            </button>
-                            <button
-                              onClick={() => expandPopupStop(selectedStop.gtfsId)}
-                              className="flex-1 text-center text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 py-3 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-750 transition-colors"
-                            >
-                              {`··· ${t('nearMe.showAll')} (${totalDepartures - 8})`}
-                            </button>
-                          </div>
-                        );
-                      } else {
-                        expansionButton = (
-                          <button
-                            onClick={() => collapsePopupStop(selectedStop.gtfsId)}
-                            className="w-full text-center text-sm text-gray-600 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 py-3 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-750 transition-colors"
-                          >
-                            − {t('nearMe.showLess')}
-                          </button>
-                        );
-                      }
-                    }
-
-                    return (
-                      <>
-                        {departureItems}
-                        {expansionButton}
-                      </>
-                    );
-                  })()}
-                </div>
-              </div>
-            ) : (
-              <div className="text-center py-8">
-                <svg className="w-16 h-16 mx-auto text-gray-400 dark:text-gray-600 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <p className="text-gray-500 dark:text-gray-400">No upcoming departures</p>
-              </div>
-            )}
+            {/* Use StopCard component for consistent UI */}
+            <StopCard
+              stop={selectedStop}
+              distance={selectedStop.distance}
+              walkingTime={walkingTime}
+              onNavigateToMap={null}
+              showMapButton={false}
+              variant="overlay"
+            />
           </div>
         </div>
       )}
