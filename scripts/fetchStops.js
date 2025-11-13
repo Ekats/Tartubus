@@ -9,7 +9,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const DIGITRANSIT_API = 'https://api.digitransit.fi/routing/v2/finland/gtfs/v1';
-const API_KEY = 'b382044ff66f4e598cf2515ae8507b3e';
+const API_KEY = process.env.VITE_DIGITRANSIT_API_KEY;
 
 async function fetchAllStops() {
   console.log('🔍 Fetching all stops in Estonia...');

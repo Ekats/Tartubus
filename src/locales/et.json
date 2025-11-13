@@ -103,6 +103,13 @@
     "away": "kaugusel"
   },
   "settings": {
+    "routeData": "Marsruudiandmete uuendus",
+    "dataSource": "Andmeallikas",
+    "bundled": "Komplekteeritud",
+    "routeDataDescription": "Värskenda marsruudi teavet, et saada uusimad bussiliinid ja peatused.",
+    "updateRoutes": "Uuenda marsruute",
+    "note": "Märkus",
+    "routeUpdateNote": "Marsruute uuendatakse GitHubis igal ööl automaatselt. Allalaadimise suurus on ligikaudu 60 MB.",
     "title": "Seaded",
     "description": "Seadista bussijälgija eelistused",
     "appearance": "Välimus",

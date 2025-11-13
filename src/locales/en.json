@@ -105,6 +105,13 @@
   "settings": {
     "title": "Settings",
     "description": "Configure your bus tracker preferences",
+    "routeData": "Route Data Update",
+    "dataSource": "Data Source",
+    "bundled": "Bundled",
+    "routeDataDescription": "Update route information to get the latest bus routes and stops.",
+    "updateRoutes": "Update Routes",
+    "note": "Note",
+    "routeUpdateNote": "Routes are automatically updated nightly on GitHub. Download size is approximately 60 MB.",
     "appearance": "Appearance",
     "darkMode": "Dark Mode",
     "mapSettings": "Map Settings",
