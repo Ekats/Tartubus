@@ -5,6 +5,26 @@ All notable changes to Tartu Bussid will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.3] - 2025-11-13
+
+### Fixed
+- 🐛 **Critical: Fixed location persistence across tabs** - GPS location now shared across all tabs instead of resetting
+  - Lifted `useGeolocation` hook to App.jsx for single source of truth
+  - NearMe tab no longer resets to "Requesting location..." when switching from Map tab
+  - Prevents showing default "Riia 2, Uueturu, Tartu" location after tab switches
+- ⏱️ **Increased GPS timeout** - Changed from 5s to 15s for better Android GPS cold start reliability
+- 📍 **Smarter location detection** - Now detects default coordinates to prevent premature reverse geocoding
+- 🔧 **Better location caching** - Allows 10s cached position (maximumAge) for faster response
+
+### Technical
+- Shared geolocation state persists across component unmount/remount cycles
+- App.jsx now manages single `useGeolocation()` instance passed as prop to NearMe and StopFinder
+- Prevents multiple GPS instances from competing and causing state resets
+
+### Documentation
+- 📝 **Android build instructions** - Added Android Studio build process to INSTRUCTIONS.md
+- Version management guidelines for versionCode increments
+
 ## [1.5.1] - 2025-11-11
 
 ### Added
