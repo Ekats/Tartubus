@@ -28,6 +28,7 @@ export function useGeolocation() {
     lat: DEFAULT_LAT,
     lon: DEFAULT_LON,
     accuracy: null,
+    hasRealFix: false, // Track if we have a real GPS fix
   });
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -38,6 +39,7 @@ export function useGeolocation() {
     lat: DEFAULT_LAT,
     lon: DEFAULT_LON
   });
+  const hasReceivedFirstFix = useRef(false); // Track if we've ever received a GPS fix
 
   const getLocation = () => {
     if (!navigator.geolocation) {
@@ -59,14 +61,16 @@ export function useGeolocation() {
           newLon
         );
 
-        // Only update if moved significantly or this is first location
-        if (distance >= MIN_DISTANCE_THRESHOLD || lastReportedLocation.current.lat === DEFAULT_LAT) {
+        // Always update on first fix, then only if moved significantly
+        if (!hasReceivedFirstFix.current || distance >= MIN_DISTANCE_THRESHOLD) {
           setLocation({
             lat: newLat,
             lon: newLon,
             accuracy: position.coords.accuracy,
+            hasRealFix: true,
           });
           lastReportedLocation.current = { lat: newLat, lon: newLon };
+          hasReceivedFirstFix.current = true;
         }
 
         setError(null);
@@ -79,8 +83,8 @@ export function useGeolocation() {
       },
       {
         enableHighAccuracy: true,
-        timeout: 5000,
-        maximumAge: 0,
+        timeout: 15000, // Increased to 15s for Android GPS cold start
+        maximumAge: 10000, // Allow cached position up to 10s old for faster response
       }
     );
   };
@@ -102,15 +106,17 @@ export function useGeolocation() {
           newLon
         );
 
-        // Only update if moved significantly (>10m) to prevent GPS drift spam
-        if (distance >= MIN_DISTANCE_THRESHOLD) {
+        // Always update on first fix, then only if moved significantly (>10m)
+        if (!hasReceivedFirstFix.current || distance >= MIN_DISTANCE_THRESHOLD) {
           console.log(`📍 Location changed by ${distance.toFixed(1)}m, updating...`);
           setLocation({
             lat: newLat,
             lon: newLon,
             accuracy: position.coords.accuracy,
+            hasRealFix: true,
           });
           lastReportedLocation.current = { lat: newLat, lon: newLon };
+          hasReceivedFirstFix.current = true;
         } else {
           console.log(`📍 GPS drift detected (${distance.toFixed(1)}m), ignoring...`);
         }

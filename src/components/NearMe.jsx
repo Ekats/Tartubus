@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useGeolocation } from '../hooks/useGeolocation';
 import { useNearbyStops } from '../hooks/useNearbyStops';
 import { useFavorites } from '../hooks/useFavorites';
 import { formatDistance, shouldShowDeparture, isDepartureLate, formatArrivalTime, formatClockTime, getDelayInfo } from '../utils/timeFormatter';
@@ -10,9 +9,10 @@ import { getNextStopName, getDailyTimetable, getWalkingRoute } from '../services
 import CountdownTimer from './CountdownTimer';
 import LocationPermissionInfo from './LocationPermissionInfo';
 
-function NearMe({ onNavigateToMap, manualLocation: manualLocationProp, onClearManualLocation, customTime }) {
+function NearMe({ geolocationHook, onNavigateToMap, manualLocation: manualLocationProp, onClearManualLocation, customTime }) {
   const { t } = useTranslation();
-  const { location, error: locationError, loading: locationLoading, getLocation, startWatching, stopWatching } = useGeolocation();
+  // Use shared geolocation hook from App.jsx instead of creating a new instance
+  const { location, error: locationError, loading: locationLoading, getLocation, startWatching, stopWatching } = geolocationHook;
   const { stops, loading: stopsLoading, error: stopsError, fetchNearbyStops } = useNearbyStops();
   const { isFavorite, toggleFavorite } = useFavorites();
   const [hasSearched, setHasSearched] = useState(true); // Start as true for auto-trigger
@@ -206,7 +206,13 @@ function NearMe({ onNavigateToMap, manualLocation: manualLocationProp, onClearMa
   // Fetch address when location is available
   useEffect(() => {
     const loc = activeLocation;
-    if (loc.lat && loc.lon) {
+    // Check if location is NOT the default Riia 2 coordinates
+    const DEFAULT_LAT = 58.3776;
+    const DEFAULT_LON = 26.7290;
+    const isDefaultLocation = Math.abs(loc.lat - DEFAULT_LAT) < 0.0001 && Math.abs(loc.lon - DEFAULT_LON) < 0.0001;
+
+    // Only reverse geocode if we have a real GPS fix (not default coords) OR manual location is set
+    if (loc.lat && loc.lon && (!isDefaultLocation || manualLocationProp)) {
       reverseGeocode(loc.lat, loc.lon).then(addr => {
         if (addr) {
           setAddress(addr);
@@ -214,8 +220,11 @@ function NearMe({ onNavigateToMap, manualLocation: manualLocationProp, onClearMa
           setAddress(t('nearMe.noLocation'));
         }
       });
+    } else if (isDefaultLocation && !manualLocationProp) {
+      // Still at default location, waiting for real GPS fix
+      setAddress(t('nearMe.requestingLocation'));
     }
-  }, [activeLocation.lat, activeLocation.lon, manualLocationProp]);
+  }, [activeLocation.lat, activeLocation.lon, manualLocationProp, t]);
 
   // Fetch walking times for stops (only for closest 5 stops to avoid API overload)
   // Triggers when: (1) stops first load, or (2) location changes >100m

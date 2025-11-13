@@ -9,11 +9,16 @@ import Settings from './components/Settings'
 import InstallPrompt from './components/InstallPrompt'
 import DateTimePicker from './components/DateTimePicker'
 import { useDarkMode } from './hooks/useDarkMode'
+import { useGeolocation } from './hooks/useGeolocation'
 import { initializeCaches } from './services/digitransit'
 
 function App() {
   const [activeView, setActiveView] = useState('nearme')
   const { isDarkMode, toggleDarkMode } = useDarkMode()
+
+  // Shared GPS location across all tabs - single source of truth
+  const geolocationHook = useGeolocation()
+
   const [selectedStop, setSelectedStop] = useState(null)
   const [locationSelectionMode, setLocationSelectionMode] = useState(false)
   const [manualLocation, setManualLocation] = useState(null)
@@ -126,6 +131,7 @@ function App() {
     switch (activeView) {
       case 'nearme':
         return <NearMe
+          geolocationHook={geolocationHook}
           manualLocation={manualLocation}
           customTime={customTime}
           onNavigateToMap={(stop) => {
@@ -142,6 +148,7 @@ function App() {
         />
       case 'map':
         return <StopFinder
+          geolocationHook={geolocationHook}
           isDarkMode={isDarkMode}
           selectedStop={selectedStop}
           locationSelectionMode={locationSelectionMode}

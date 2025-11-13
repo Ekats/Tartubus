@@ -303,6 +303,7 @@ function RouteLineWithArrows({ positions, color, headsign, routeName, stopCount 
 }
 
 function StopFinder({
+  geolocationHook,
   isDarkMode,
   selectedStop: highlightedStop,
   locationSelectionMode,
@@ -321,7 +322,8 @@ function StopFinder({
     console.log('🗺️ StopFinder received highlightedStop:', highlightedStop);
   }, [highlightedStop]);
 
-  const { location: gpsLocation, getLocation, startWatching, stopWatching, watching } = useGeolocation();
+  // Use shared geolocation hook from App.jsx instead of creating a new instance
+  const { location: gpsLocation, getLocation, startWatching, stopWatching, watching } = geolocationHook;
 
   // Use manual location if available, otherwise use GPS location
   const location = manualLocation || gpsLocation;
