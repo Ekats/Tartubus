@@ -5,6 +5,19 @@ All notable changes to Tartu Bussid will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.4] - 2025-11-13
+
+### Fixed
+- 🐛 **GPS startup issue on NearMe tab** - GPS now starts immediately when app launches (if permission already granted)
+  - App.jsx now initializes GPS tracking at root level
+  - No longer waiting for NearMe's permission checking logic to start GPS
+  - Fixes issue where location wouldn't load until switching to Map tab
+
+### Technical
+- Moved GPS initialization from component level to App.jsx useEffect
+- Checks localStorage for 'location_modal_seen' before starting GPS
+- Ensures single GPS instance starts tracking on app mount
+
 ## [1.5.3] - 2025-11-13
 
 ### Fixed

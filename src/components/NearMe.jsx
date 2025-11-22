@@ -54,6 +54,10 @@ function NearMe({ geolocationHook, onNavigateToMap, manualLocation: manualLocati
           // Browser will prompt - show our info modal first only if not seen before
           if (!hasSeenModal) {
             setShowLocationInfo(true);
+          } else {
+            // Modal has been seen before, safe to request location (will trigger browser prompt)
+            getLocation();
+            startWatching();
           }
         } else if (result.state === 'granted') {
           // Already granted - but still show modal first if user hasn't seen it

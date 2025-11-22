@@ -34,6 +34,19 @@ function App() {
     initializeCaches();
   }, [])
 
+  // Start GPS tracking on app startup
+  useEffect(() => {
+    // Check if user has seen the location modal and has permission
+    const hasSeenModal = localStorage.getItem('location_modal_seen');
+
+    if (hasSeenModal) {
+      // Modal was seen before, safe to start GPS immediately
+      geolocationHook.getLocation();
+      geolocationHook.startWatching();
+    }
+    // If modal hasn't been seen, NearMe component will handle showing it and starting GPS
+  }, [])
+
   // Android back button handler
   useEffect(() => {
     let backButtonListener;

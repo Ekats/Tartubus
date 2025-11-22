@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useFavorites } from '../hooks/useFavorites';
 import { getNextStopName, getDailyTimetable } from '../services/digitransit';
-import { shouldShowDeparture, isDepartureLate, getDelayInfo } from '../utils/timeFormatter';
+import { shouldShowDeparture, isDepartureLate, getDelayInfo, formatClockTime } from '../utils/timeFormatter';
 import CountdownTimer from './CountdownTimer';
 
 /**
@@ -220,8 +220,7 @@ export default function StopCard({
                           <span className="text-gray-400">•</span>
                           <span className="flex-1">{upcomingStop.stop?.name || 'Unknown'}</span>
                           <span className="text-gray-500 dark:text-gray-500">
-                            {Math.floor(upcomingStop.scheduledArrival / 60).toString().padStart(2, '0')}:
-                            {(upcomingStop.scheduledArrival % 60).toString().padStart(2, '0')}
+                            {formatClockTime(upcomingStop.scheduledArrival)}
                           </span>
                         </div>
                       ))}
@@ -307,8 +306,7 @@ export default function StopCard({
                             key={idx}
                             className="bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-100 px-2 py-1 rounded text-sm"
                           >
-                            {Math.floor(dep.scheduledArrival / 60).toString().padStart(2, '0')}:
-                            {(dep.scheduledArrival % 60).toString().padStart(2, '0')}
+                            {formatClockTime(dep.scheduledArrival)}
                           </span>
                         ))}
                       </div>

@@ -449,7 +449,7 @@ function Settings() {
 
         {/* Version info */}
         <div className="text-center text-xs text-gray-500 dark:text-gray-400 pb-4">
-          Tartu Bussid v1.5.2
+          Tartu Bussid v1.5.4
         </div>
       </div>
     </div>
