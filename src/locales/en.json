@@ -220,5 +220,11 @@
     "arriving": "Arriving",
     "route": "Route",
     "direction": "Direction"
+  },
+  "androidPrompt": {
+    "title": "Get the App",
+    "description": "Tartu Bussid is available on Google Play. Get faster performance and offline support!",
+    "getApp": "Get on Google Play",
+    "dismiss": "Continue in browser"
   }
 }

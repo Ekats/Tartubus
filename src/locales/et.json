@@ -220,5 +220,11 @@
     "arriving": "Saabub",
     "route": "Liin",
     "direction": "Suund"
+  },
+  "androidPrompt": {
+    "title": "Hangi äpp",
+    "description": "Tartu Bussid on saadaval Google Plays. Saa kiirem jõudlus ja võrguühenduseta tugi!",
+    "getApp": "Hangi Google Playst",
+    "dismiss": "Jätka brauseris"
   }
 }

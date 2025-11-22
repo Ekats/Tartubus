@@ -7,6 +7,7 @@ import Favorites from './components/Favorites'
 import BottomNav from './components/BottomNav'
 import Settings from './components/Settings'
 import InstallPrompt from './components/InstallPrompt'
+import AndroidAppPrompt from './components/AndroidAppPrompt'
 import DateTimePicker from './components/DateTimePicker'
 import { useDarkMode } from './hooks/useDarkMode'
 import { useGeolocation } from './hooks/useGeolocation'
@@ -213,8 +214,9 @@ function App() {
       {/* Floating bottom navigation */}
       <BottomNav activeView={activeView} onViewChange={setActiveView} />
 
-      {/* iOS install prompt */}
+      {/* Install prompts */}
       <InstallPrompt />
+      <AndroidAppPrompt />
 
       {/* Exit prompt toast */}
       {showExitPrompt && (

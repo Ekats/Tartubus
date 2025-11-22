@@ -5,19 +5,17 @@ import en from './locales/en.json';
 import uk from './locales/uk.json';
 import ru from './locales/ru.json';
 
-// Get saved language or detect browser language, default to Estonian
+// Get saved language or detect browser language, default to English for unsupported languages
 const getSavedLanguage = () => {
   const saved = localStorage.getItem('language');
   console.log('🌐 Saved language from localStorage:', saved);
   if (saved) return saved;
 
-  // Check browser language - detect English, Ukrainian, Russian, or default to Estonian
+  // Check browser language - detect Estonian, Ukrainian, Russian, or default to English
   const browserLang = navigator.language.split('-')[0];
   console.log('🌐 Browser language detected:', browserLang);
-  let selectedLang = 'et'; // Default to Estonian
-  if (browserLang === 'en') selectedLang = 'en';
-  else if (browserLang === 'uk') selectedLang = 'uk';
-  else if (browserLang === 'ru') selectedLang = 'ru';
+  const supportedLanguages = ['et', 'en', 'uk', 'ru'];
+  let selectedLang = supportedLanguages.includes(browserLang) ? browserLang : 'en';
   console.log('🌐 Using language:', selectedLang);
   return selectedLang;
 };
@@ -32,7 +30,7 @@ i18n
       ru: { translation: ru },
     },
     lng: getSavedLanguage(),
-    fallbackLng: 'et', // Default to Estonian
+    fallbackLng: 'en', // Default to English for unsupported languages
     interpolation: {
       escapeValue: false,
     },

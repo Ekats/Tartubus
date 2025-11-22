@@ -6,10 +6,9 @@ import { format, formatDistanceToNow, differenceInMinutes } from 'date-fns';
  * @param {number} secondsSinceMidnight - Seconds since midnight (e.g., 43200 = 12:00 PM)
  */
 export function formatClockTime(secondsSinceMidnight) {
-  const arrivalTime = new Date();
-  arrivalTime.setHours(0, 0, 0, 0);
-  arrivalTime.setSeconds(secondsSinceMidnight);
-  return format(arrivalTime, 'HH:mm');
+  const hours = Math.floor(secondsSinceMidnight / 3600) % 24;
+  const minutes = Math.floor((secondsSinceMidnight % 3600) / 60);
+  return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
 }
 
 /**
