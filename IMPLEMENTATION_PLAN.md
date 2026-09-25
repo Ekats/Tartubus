@@ -2,9 +2,90 @@
 
 - **Reviewed commit:** `888a7f7` (`master`, 2026-09-25)
 - **Scope:** `src/`, `scripts/`, `.github/workflows/`, `public/service-worker.js`, `vite.config.js`, `index.html`
-- **Status:** plan only. No code has been changed.
+- **Status:** plan only. No code has been changed yet.
 
-Every item below lists the problem, the evidence, **why it matters** (the reason for fixing it and for its place in the order), the concrete change, how to check it, and its size. File references use `path:line` at the reviewed commit.
+Every item below lists the problem, the evidence, **why it matters** (the reason for fixing it and for its place in the order), the concrete change, how to check it, and its size.
+
+---
+
+## Brief for the implementing agent
+
+Read this section first. It holds the rules that apply to every item.
+
+### Goal
+
+Fix the findings in Phases 0–4 in the order given, then the Phase 5 backlog if the task prompt asks for it. Each numbered item is one self-contained commit.
+
+### Precedence
+
+1. The task prompt you were given overrides this document (for example, if it names a subset of items, a branch, or different decisions).
+2. §6 "Resolved decisions" is binding unless the task prompt overrides it. Don't stop to ask about those points.
+3. If something in the code contradicts this plan (the bug is already fixed, or the code has moved), trust the code: skip or adapt the item and say so in your report. Don't force the plan's wording onto code that has changed.
+
+### Finding code: line numbers are hints only
+
+The `path:line` references are for commit `888a7f7` and will drift as soon as earlier items land. **Locate code by symbol or string**, and use the line only as a starting point. Anchors for the most-edited spots:
+
+| Item | Search for |
+|------|-----------|
+| 1 | `customTime?.toISOString()` in `StopFinder.jsx`; `export async function planJourney` in `digitransit.js` |
+| 2 | `includes('TARTU')` in `digitransit.js`; `const CITY_ZONES` in `StopFinder.jsx` |
+| 3 | `const fetchNearbyStops = async` in `useNearbyStops.js`; `Auto-refresh departure times every 30 seconds` in `NearMe.jsx` |
+| 4 | `const saveFavorites` in `useFavorites.js` |
+| 5 | `const CACHE_VERSION` in `public/service-worker.js`; `FORCE_RELOAD` in `main.jsx` |
+| 6 | `routesWithMetadata` and `routes.json` in `scripts/fetchRoutes.js` |
+| 7, 8 | `build:skip-routes` and `electron-packager` in `build-releases.yml` |
+| 9 | `'i18nextLng'` (3 places); `const FULL_CLEAR_VERSION` in `digitransit.js` |
+| 10 | `location_modal_seen`; `useGeolocation()` in `Favorites.jsx` |
+| 11 | ``const cacheKey = `stops_`` and `getStaleCache(` in `digitransit.js` |
+| 12 | `arrivalTime.setHours(0, 0, 0, 0)` in `timeFormatter.js` and `CountdownTimer.jsx` |
+| 13 | `const allRoutes = new Set()` and `const handleRefresh` in `StopFinder.jsx` |
+| 14 | the keys in the item 14 table |
+
+### Dependencies between items
+
+Implement in this order: **0.1 → 0.2 → 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 → 9 → 10 → 11 → 12 → 13 → 14**. The hard dependencies are:
+
+| Item | Needs | Why |
+|------|-------|-----|
+| 11, 13, B12 | 2 | Item 2 creates `src/utils/geo.js` (`CITY_ZONES`, haversine), which these reuse |
+| 10 | 9 | Item 10 adds a key to the `STORAGE_KEYS` module that item 9 creates |
+| 12 | 11 | Both change the compressed cache format; item 12 adds `serviceDay` to the `expandCachedStops()` that item 11 creates |
+| 12 (cache bump) | 9 | Bumping `SOFT_CLEAR_VERSION` is only safe once item 9 makes the soft clear delete cache prefixes only |
+| B2 | 6 | Same change |
+| All tests | 0.1 | Test runner |
+
+### Working rules
+
+- **One commit per numbered item.** Put the item number in the message, for example `fix(#1): pass customTime to journey planning`, and follow the repo's normal commit style otherwise.
+- **After each commit**, run `npm test`, `npm run lint:i18n` (once they exist) and `npm run build:skip-routes`. All three must pass before you move on. Use `build:skip-routes`, **not** `npm run build`: the `prebuild` hook runs `fetchRoutes.js`, which needs an API key and rewrites the 86 MiB data file.
+- **Add or update unit tests** for every item whose change is in a pure function or hook (items 1–4 and 9–12 at least). Each item's **Check** line says what to test.
+- **Dependencies:** install with `npm install` (not `npm ci`) when adding packages, so `package-lock.json` is updated. `deploy.yml` uses `npm ci`, which fails if the lockfile is out of sync. Commit both files together.
+- **Keep changes minimal:** fix what each item describes and nothing else. Don't reformat files, rename unrelated symbols or remove the existing `console.log` calls.
+- **Match the surrounding style:** functional React components with hooks, plain JavaScript (no TypeScript), Tailwind classes, and translations through `t()` with keys in all four locale files.
+
+### Don't
+
+- Don't open, `cat` or diff `public/data/routes.min.json` whole. It's 86 MiB. Use `node` or `python` to read specific fields.
+- Don't edit `routes.min.json` or `stops.json` by hand, and don't run `npm run fetch-routes` or `npm run build` (both need the API key and rewrite the data files).
+- Don't commit `public/data/routes.json`, `dist/`, `node_modules/` or `.env`.
+- Don't rewrite git history, force-push, or push to `master`.
+- Don't push `v*` tags, create releases, or trigger workflows unless the task prompt says so. Tag pushes start the release pipeline.
+- Don't open or merge pull requests unless the task prompt says so. The PR split in §0 is a suggestion for whoever reviews the work.
+- Don't add new runtime dependencies. `vitest` (a devDependency) is the only planned addition.
+- Don't change the public shape of hooks other code uses (`useFavorites`, `useGeolocation`, `useNearbyStops`) beyond what an item states.
+
+### Environment facts
+
+- Node 20 in CI (`actions/setup-node` with `node-version: '20'`); newer locally is fine.
+- `node_modules` isn't installed in a fresh clone; run `npm install` first.
+- There's probably **no Digitransit API key** where you run. Live API calls will return 401, so rely on unit tests with fixtures or mocked `fetch`, and say in the report which manual smoke-test steps you couldn't run.
+- GitHub Actions workflows (items 6–8) can't be run locally. Check them with a YAML linter (`npx --yes yaml-lint` or similar), re-read them carefully, and say in the report that they're unverified until they run in CI.
+- The repo has no `CLAUDE.md`, no linter config and no existing tests.
+
+### What to report when done
+
+For every item: done, adapted (and how), or skipped (and why); tests added; which checks passed; which could not be run. Also list the translation strings from item 14 that need a native speaker's check, and anything you found that contradicts this plan.
 
 ---
 
@@ -163,7 +244,7 @@ Add it to `COMMANDS.md` or the PR template, and run it for every PR:
   1. **Make the output deterministic.** In `fetchRoutes.js`, compute a SHA-256 of `JSON.stringify(routes)`, compare it with the `contentHash` stored in the existing `routes.min.json`, and **don't write the file** when it's unchanged. Store `contentHash`, and set `lastUpdated`/`version` only when the content really changes. The existing `git diff --quiet` check then works as intended.
   2. **Stop writing `public/data/routes.json`** (`fetchRoutes.js:93-94`). It's a 210 MB pretty-printed copy that nothing reads, and because it sits in `public/`, every `npm run build` copies it into `dist/`. Also add it to `.gitignore`.
   3. **Trigger a deploy after a real change.** Add `permissions: actions: write` to `update-routes.yml`, and after the push run `gh workflow run deploy.yml --ref master` with `env: GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}`. The `workflow_dispatch` event is exempt from the `GITHUB_TOKEN` restriction. (A `workflow_run` trigger in `deploy.yml` would also work, but it fires even when nothing changed.)
-  4. **Get away from the 100 MiB wall.** This needs a decision from you; see §6. Options:
+  4. **Get away from the 100 MiB wall.** Resolved in §6, decision 1: use option (a). The options were:
      - (a) Keep only routes with at least one stop inside the supported city zones (Tartu 8 km, Tallinn 20 km). That's likely a large reduction, since the feed covers all of Estonia.
      - (b) Drop per-pattern stop objects in favour of stop ids that reference `stops.json`.
      - (c) Stop committing the file: publish it as a release asset or Pages artifact built in CI.
@@ -215,7 +296,7 @@ Add it to `COMMANDS.md` or the PR template, and run it for every PR:
 
      Better still, commit `electron/main.cjs` and `electron/package.json` to the repo instead of generating them with `echo`. Generated code in YAML is untestable and was the source of this bug.
   2. Take the version from the tag (`${GITHUB_REF_NAME#v}`) instead of the hard-coded `1.5.0`.
-  3. **Android job:** the cause of its failure isn't known, because the logs have expired. Re-run it with `workflow_dispatch` after this PR and read the log. Likely suspects are `assembleRelease` without signing configuration, or a Capacitor 7 / Java 21 / AGP mismatch. Don't guess; fix from the log.
+  3. **Android job:** the cause of its failure isn't known, because the logs have expired. Don't guess at a fix. If you can trigger the workflow and read its logs, fix from the log. Otherwise leave the Android job unchanged and list it in your report as needing a CI run to diagnose. Likely suspects are `assembleRelease` without signing configuration, or a Capacitor 7 / Java 21 / AGP mismatch.
   4. Make `create-release` publish whatever succeeded (`if: always()` plus a per-artifact existence check), so a single broken platform no longer blocks the whole release.
 - **Check:** push a `v1.5.6-rc1` tag on a fork or with `workflow_dispatch`; all jobs are green and a draft release has the 5 assets.
 - **Size:** M.
@@ -306,7 +387,7 @@ Add it to `COMMANDS.md` or the PR template, and run it for every PR:
   1. Add **`serviceDay`** to the `stoptimesWithoutPatterns` selection in the nearby-stops query, and to every other stoptime query (favorites, timetable). In the Digitransit/OTP schema, `Stoptime.serviceDay` is the Unix timestamp of the trip's service date at local midnight. The absolute departure time is then simply `(serviceDay + (realtime ? realtimeArrival : scheduledArrival)) * 1000`. It's exact, independent of the device's time zone, and correct across midnight. That removes the 12-hour heuristic everywhere.
   2. Keep `serviceDay` in the compressed cache format (item 11) and in `expandCachedStops`.
   3. Add a `referenceTime` parameter (default `new Date()`) to `shouldShowDeparture`, `isDepartureLate` and `formatArrivalTime`, and pass `customTime ?? new Date()` from `NearMe`, `Favorites`, `StopCard` and `CountdownTimer`.
-  4. **Behaviour in planned-time mode** (your decision, §6): a live countdown ("50 min") makes no sense for a planned time. Recommendation: when `customTime` is set, show clock times ("08:12") and minutes *relative to the chosen time* ("+12 min"), and don't run the 1-second countdown timer.
+  4. **Behaviour in planned-time mode** (resolved in §6, decision 2): a live countdown ("50 min") makes no sense for a planned time. Recommendation: when `customTime` is set, show clock times ("08:12") and minutes *relative to the chosen time* ("+12 min"), and don't run the 1-second countdown timer.
   5. Format clock times in `Europe/Tallinn` explicitly with `Intl.DateTimeFormat('et-EE', { timeZone: 'Europe/Tallinn', hour: '2-digit', minute: '2-digit' })`, so they match stop displays whatever the device's time zone.
 - **Check:** unit tests with a fixed `serviceDay`, `referenceTime` values on the same day, the next day and across midnight, plus a non-Tallinn `TZ` (run vitest with `TZ=America/New_York`). Manually: smoke test step 6.
 - **Size:** M. The query change touches several call sites, which is why it's grouped with item 11.
@@ -347,7 +428,7 @@ Add it to `COMMANDS.md` or the PR template, and run it for every PR:
   i18next returns the key itself when a key is missing, which is truthy, so every `t(key) || 'fallback'` in the code **never** falls back.
 - **Why it matters:** visible gibberish ("Stop 1234 • nearMe.dailyTimetable"), including inside a confirmation dialog the user has to understand before deleting data.
 - **Change:**
-  1. Add all 12 keys to all four locale files. English can be taken from the existing inline fallbacks. The Estonian, Russian and Ukrainian texts need a native speaker's check; I can draft them, but mark them for review.
+  1. Add all 12 keys to all four locale files. English can be taken from the existing inline fallbacks. Draft the Estonian, Russian and Ukrainian texts yourself, matching the tone of nearby keys in each file, and list every drafted string in your report so a native speaker can check it.
   2. Remove the `|| 'fallback'` pattern (or switch to `t(key, { defaultValue })` where a fallback is really wanted), because the current pattern is dead code that gives false confidence.
   3. The Phase 0.2 check keeps this from recurring.
 - **Size:** S.
@@ -376,13 +457,15 @@ These are independent and can be picked up in any order. The size and the reason
 
 ---
 
-## 6. Decisions I need from you before implementing
+## 6. Resolved decisions
 
-1. **Route file vs. GitHub's 100 MiB limit (item 6, step 4).** Recommended: (a), filter the bundled routes to the supported city zones. The alternatives are (b), a slimmer schema, and (c), not committing the file at all. Doing nothing means the nightly job starts failing once the national feed grows by about 14 %.
-2. **Display in planned-time mode (item 12, step 4).** Recommended: clock times plus "+N min from the chosen time", with no live countdown. The alternative is to keep the countdowns relative to the chosen time.
-3. **`FULL_CLEAR_VERSION` (item 9, step 5).** Recommended: set it to `'never'`. A full wipe deletes favorites, and there's no pending migration that needs it.
-4. **Route search scope (item 2).** Only the Tartu zone, or the zone the map is currently in (Tartu or Tallinn)? Recommended: the current map zone, defaulting to Tartu, because `CITY_ZONES` already defines both.
-5. **Translations (item 14).** Can you (or someone you trust) check the Estonian, Russian and Ukrainian strings I draft?
+These were open questions. Each now has a default that you must follow unless the task prompt overrides it.
+
+1. **Route file vs. GitHub's 100 MiB limit (item 6, step 4):** use **option (a)**. In `fetchRoutes.js`, keep only routes with at least one pattern stop inside a `CITY_ZONES` zone (from `src/utils/geo.js`, created in item 2; import it or duplicate the two zone definitions in the script if importing app code from a Node script is awkward). Log the file size before and after. Doing nothing isn't an option: the nightly job starts failing once the national feed grows by about 14 %.
+2. **Display in planned-time mode (item 12, step 4):** when `customTime` is set, show the clock time plus "+N min" measured from the chosen time, and **don't** run the live countdown. With no `customTime`, keep today's behaviour.
+3. **`FULL_CLEAR_VERSION` (item 9, step 5):** set it to `'never'`. A full wipe deletes favorites, and no pending migration needs it.
+4. **Route search scope (item 2):** search the city zone the map is currently in (Tartu or Tallinn), defaulting to Tartu when the map isn't open or the zone is unknown.
+5. **Translations (item 14):** draft all four languages and list the Estonian, Russian and Ukrainian strings in your report for native review. Don't block on the review.
 
 ---
 
@@ -399,6 +482,8 @@ These are independent and can be picked up in any order. The size and the reason
 ---
 
 ## 8. Definition of done
+
+The parts that need CI, a real device or the API key can't be completed by the implementing agent alone. Mark those as "to verify" in the report rather than as done.
 
 - `npm test` and `npm run lint:i18n` pass locally and in `deploy.yml`.
 - All six smoke-test steps in §0.3 pass on the web build **and** the Android build.
