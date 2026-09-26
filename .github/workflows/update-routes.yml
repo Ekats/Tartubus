@@ -10,6 +10,7 @@ on:
 
 permissions:
   contents: write
+  actions: write  # To start the deploy workflow after a data change
 
 jobs:
   update-routes:
@@ -51,3 +52,11 @@ jobs:
           git add public/data/routes.min.json
           git commit -m "🚌 Auto-update route data ($(date +'%Y-%m-%d'))"
           git push
+
+      # Pushes made with GITHUB_TOKEN don't start other workflows, but
+      # workflow_dispatch is exempt, so start the deploy explicitly
+      - name: Deploy updated route data
+        if: steps.check_changes.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh workflow run deploy.yml --ref master
