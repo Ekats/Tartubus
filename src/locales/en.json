@@ -40,7 +40,13 @@
     "showLess": "Show less",
     "showAll": "Show all",
     "moreStops": "{{count}} more stops",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "viewTimetable": "View timetable",
+    "showOnMap": "Show on map",
+    "dailyTimetable": "Daily timetable",
+    "noTimetableData": "No timetable data available",
+    "unableToFindStops": "Unable to find nearby stops",
+    "findNextBuses": "Near Me - Find Next Buses"
   },
   "map": {
     "title": "Map",
@@ -100,7 +106,8 @@
     "failedToLoad": "Failed to load departures",
     "viewOnMap": "View on map",
     "removeFromFavorites": "Remove from favorites",
-    "away": "away"
+    "away": "away",
+    "addToFavorites": "Add to favorites"
   },
   "settings": {
     "title": "Settings",
@@ -175,7 +182,14 @@
     "fullClearDesc": "WARNING: Deletes favorites, settings, everything!",
     "fullClearConfirm": "⚠️ WARNING: This will delete EVERYTHING including your favorites and settings! Are you sure?",
     "fullClearConfirm2": "This action cannot be undone. Delete all data?",
-    "cacheCleared": "Cache cleared! Reloading..."
+    "cacheCleared": "Cache cleared! Reloading...",
+    "clearRoutesConfirm": "Revert to bundled routes? Downloaded routes will be deleted.",
+    "downloaded": "Downloaded",
+    "lastUpdated": "Last Updated",
+    "routes": "Routes",
+    "updating": "Updating...",
+    "revertToBundled": "Revert to Bundled Data",
+    "updateFailed": "Update failed"
   },
   "locationInfo": {
     "title": "Location Permission",

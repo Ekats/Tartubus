@@ -115,7 +115,7 @@ function Settings() {
   };
 
   const handleClearDownloadedRoutes = () => {
-    if (window.confirm(t('settings.clearRoutesConfirm') || 'Revert to bundled routes? Downloaded routes will be deleted.')) {
+    if (window.confirm(t('settings.clearRoutesConfirm'))) {
       clearDownloadedRoutes();
       setRoutesInfo(getRoutesVersionInfo());
       setSaved(true);
@@ -320,12 +320,12 @@ function Settings() {
                   <div className="flex justify-between">
                     <span className="text-gray-600 dark:text-gray-400">{t('settings.dataSource') || 'Data Source'}:</span>
                     <span className="font-medium text-gray-800 dark:text-gray-200">
-                      {routesInfo.source === 'downloaded' ? (t('settings.downloaded') || 'Downloaded') : (t('settings.bundled') || 'Bundled')}
+                      {routesInfo.source === 'downloaded' ? t('settings.downloaded') : t('settings.bundled')}
                     </span>
                   </div>
                   {routesInfo.lastUpdated && (
                     <div className="flex justify-between">
-                      <span className="text-gray-600 dark:text-gray-400">{t('settings.lastUpdated') || 'Last Updated'}:</span>
+                      <span className="text-gray-600 dark:text-gray-400">{t('settings.lastUpdated')}:</span>
                       <span className="font-medium text-gray-800 dark:text-gray-200">
                         {new Date(routesInfo.lastUpdated).toLocaleDateString()}
                       </span>
@@ -333,7 +333,7 @@ function Settings() {
                   )}
                   {routesInfo.routeCount && (
                     <div className="flex justify-between">
-                      <span className="text-gray-600 dark:text-gray-400">{t('settings.routes') || 'Routes'}:</span>
+                      <span className="text-gray-600 dark:text-gray-400">{t('settings.routes')}:</span>
                       <span className="font-medium text-gray-800 dark:text-gray-200">
                         {routesInfo.routeCount}
                       </span>
@@ -351,7 +351,7 @@ function Settings() {
                 {updatingRoutes ? (
                   <>
                     <span className="animate-spin">⟳</span>
-                    <span>{t('settings.updating') || 'Updating...'}</span>
+                    <span>{t('settings.updating')}</span>
                   </>
                 ) : (
                   <>
@@ -367,14 +367,14 @@ function Settings() {
                   onClick={handleClearDownloadedRoutes}
                   className="mt-3 w-full bg-gray-500 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded-lg transition-colors"
                 >
-                  {t('settings.revertToBundled') || 'Revert to Bundled Data'}
+                  {t('settings.revertToBundled')}
                 </button>
               )}
 
               {/* Error message */}
               {routesUpdateError && (
                 <div className="mt-4 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg p-3 text-sm text-red-700 dark:text-red-400">
-                  <p className="font-medium">{t('settings.updateFailed') || 'Update failed'}:</p>
+                  <p className="font-medium">{t('settings.updateFailed')}:</p>
                   <p>{routesUpdateError}</p>
                 </div>
               )}

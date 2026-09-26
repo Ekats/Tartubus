@@ -31,6 +31,7 @@ export function useGeolocation() {
     hasRealFix: false, // Track if we have a real GPS fix
   });
   const [error, setError] = useState(null);
+  const [errorCode, setErrorCode] = useState(null); // GeolocationPositionError code (1 = permission denied)
   const [loading, setLoading] = useState(false);
   const [watching, setWatching] = useState(false);
 
@@ -74,10 +75,12 @@ export function useGeolocation() {
         }
 
         setError(null);
+        setErrorCode(null);
         setLoading(false);
       },
       (err) => {
         setError(err.message);
+        setErrorCode(err.code);
         setLoading(false);
         // Keep default location
       },
@@ -122,9 +125,11 @@ export function useGeolocation() {
         }
 
         setError(null);
+        setErrorCode(null);
       },
       (err) => {
         setError(err.message);
+        setErrorCode(err.code);
       },
       {
         enableHighAccuracy: true,
@@ -141,5 +146,5 @@ export function useGeolocation() {
   const startWatching = () => setWatching(true);
   const stopWatching = () => setWatching(false);
 
-  return { location, error, loading, getLocation, startWatching, stopWatching, watching };
+  return { location, error, errorCode, loading, getLocation, startWatching, stopWatching, watching };
 }

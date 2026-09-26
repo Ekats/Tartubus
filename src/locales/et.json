@@ -40,7 +40,13 @@
     "showLess": "Näita vähem",
     "showAll": "Näita kõiki",
     "moreStops": "veel {{count}} peatust",
-    "cancel": "Tühista"
+    "cancel": "Tühista",
+    "viewTimetable": "Vaata sõiduplaani",
+    "showOnMap": "Näita kaardil",
+    "dailyTimetable": "Päeva sõiduplaan",
+    "noTimetableData": "Sõiduplaani andmed puuduvad",
+    "unableToFindStops": "Lähedalasuvaid peatusi ei leitud",
+    "findNextBuses": "Minu lähedal – leia järgmised bussid"
   },
   "map": {
     "title": "Kaart",
@@ -100,7 +106,8 @@
     "failedToLoad": "Väljumiste laadimine nurjus",
     "viewOnMap": "Vaata kaardil",
     "removeFromFavorites": "Eemalda lemmikutest",
-    "away": "kaugusel"
+    "away": "kaugusel",
+    "addToFavorites": "Lisa lemmikutesse"
   },
   "settings": {
     "routeData": "Marsruudiandmete uuendus",
@@ -175,7 +182,14 @@
     "fullClearDesc": "HOIATUS: Kustutab lemmikud, seaded, kõik!",
     "fullClearConfirm": "⚠️ HOIATUS: See kustutab KÕIK, kaasa arvatud lemmikud ja seaded! Kas oled kindel?",
     "fullClearConfirm2": "Seda tegevust ei saa tagasi võtta. Kas kustutada kõik andmed?",
-    "cacheCleared": "Vahemälu tühjendatud! Laadime uuesti..."
+    "cacheCleared": "Vahemälu tühjendatud! Laadime uuesti...",
+    "clearRoutesConfirm": "Kas taastada komplekteeritud marsruudid? Allalaaditud marsruudid kustutatakse.",
+    "downloaded": "Allalaaditud",
+    "lastUpdated": "Viimati uuendatud",
+    "routes": "Marsruudid",
+    "updating": "Uuendamine...",
+    "revertToBundled": "Taasta komplekteeritud andmed",
+    "updateFailed": "Uuendamine nurjus"
   },
   "locationInfo": {
     "title": "Asukoha luba",

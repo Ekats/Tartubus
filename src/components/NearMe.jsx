@@ -12,7 +12,7 @@ import LocationPermissionInfo from './LocationPermissionInfo';
 function NearMe({ geolocationHook, onNavigateToMap, manualLocation: manualLocationProp, onClearManualLocation, customTime }) {
   const { t } = useTranslation();
   // Use shared geolocation hook from App.jsx instead of creating a new instance
-  const { location, error: locationError, loading: locationLoading, getLocation, startWatching, stopWatching } = geolocationHook;
+  const { location, error: locationError, errorCode: locationErrorCode, loading: locationLoading, getLocation, startWatching, stopWatching } = geolocationHook;
   const { stops, loading: stopsLoading, error: stopsError, fetchNearbyStops } = useNearbyStops();
   const { isFavorite, toggleFavorite } = useFavorites();
   const [hasSearched, setHasSearched] = useState(true); // Start as true for auto-trigger
@@ -369,7 +369,9 @@ function NearMe({ geolocationHook, onNavigateToMap, manualLocation: manualLocati
 
   const loading = locationLoading || stopsLoading;
   // A GPS error (e.g. permission denied) is irrelevant once the user picked a manual location
-  const error = (manualLocationProp ? null : locationError) || stopsError;
+  // Show a translated message for a denied permission instead of the browser's own text
+  const gpsError = locationErrorCode === 1 ? t('nearMe.locationDenied') : locationError;
+  const error = (manualLocationProp ? null : gpsError) || stopsError;
 
   return (
     <div className="p-4 pb-48 h-full overflow-y-auto dark:bg-gray-900">
@@ -448,7 +450,7 @@ function NearMe({ geolocationHook, onNavigateToMap, manualLocation: manualLocati
         >
           <span className="flex items-center justify-center gap-3">
             <span className="text-2xl">📍</span>
-            Near Me - Find Next Buses
+            {t('nearMe.findNextBuses')}
           </span>
         </button>
       )}
@@ -459,7 +461,7 @@ function NearMe({ geolocationHook, onNavigateToMap, manualLocation: manualLocati
           <div className="flex items-center gap-2 text-red-700 dark:text-red-400">
             <span className="text-xl">⚠️</span>
             <div>
-              <div className="font-semibold">Unable to find nearby stops</div>
+              <div className="font-semibold">{t('nearMe.unableToFindStops')}</div>
               <div className="text-sm">{error}</div>
             </div>
           </div>

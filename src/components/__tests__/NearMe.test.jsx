@@ -24,6 +24,7 @@ function deniedGeolocationHook() {
   return {
     location: { lat: 58.3776, lon: 26.7290, accuracy: null, hasRealFix: false },
     error: GPS_DENIED,
+    errorCode: 1, // GeolocationPositionError.PERMISSION_DENIED
     loading: false,
     getLocation: vi.fn(),
     startWatching: vi.fn(),
@@ -44,9 +45,11 @@ afterEach(() => {
 });
 
 describe('NearMe with location permission denied', () => {
-  it('shows the GPS error when no manual location is set', async () => {
+  it('shows a translated error when no manual location is set', async () => {
     const container = await render({ geolocationHook: deniedGeolocationHook(), manualLocation: null });
-    expect(container.textContent).toContain(GPS_DENIED);
+    expect(container.textContent).toContain('Unable to find nearby stops');
+    expect(container.textContent).toContain('Location permission denied');
+    expect(container.textContent).not.toContain(GPS_DENIED); // the browser's own wording
   });
 
   it('does not show the GPS error once a manual location is set', async () => {
@@ -54,6 +57,13 @@ describe('NearMe with location permission denied', () => {
       geolocationHook: deniedGeolocationHook(),
       manualLocation: { lat: 58.3800, lon: 26.7200 },
     });
-    expect(container.textContent).not.toContain(GPS_DENIED);
+    expect(container.textContent).not.toContain('Unable to find nearby stops');
+    expect(container.textContent).not.toContain('Location permission denied');
+  });
+
+  it('shows the browser message for other GPS errors, such as a timeout', async () => {
+    const hook = { ...deniedGeolocationHook(), error: 'Timeout expired', errorCode: 3 };
+    const container = await render({ geolocationHook: hook, manualLocation: null });
+    expect(container.textContent).toContain('Timeout expired');
   });
 });
