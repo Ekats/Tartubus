@@ -1,7 +1,7 @@
 # Tartubus: Remaining Work
 
 - **Status as of 2026-09-26:** the critical fixes are in [PR #2](https://github.com/Ekats/Tartubus/pull/2) (branch `claude/quirky-curie-tvlihl`): items 0.1, 1, 2, 3, 5, 6, 7 and 8 of `IMPLEMENTATION_PLAN.md`. **This file lists everything that is still open**, so it can be handed to an implementing agent on its own.
-- **Update 2026-09-27:** items 0.2 and 14 are done (crossed out below), together with the hardcoded Near Me strings and the untranslated "permission denied" message.
+- **Update 2026-09-27:** items 0.2, 4 and 14 are done (crossed out below), together with the hardcoded Near Me strings and the untranslated "permission denied" message.
 - `IMPLEMENTATION_PLAN.md` keeps the full history (evidence and reasons for the done items). Item numbers here match it.
 
 ---
@@ -30,7 +30,7 @@
 
 ### Order and dependencies
 
-Suggested order: **~~0.2~~ → 4 → 9 → 10 → 11 → 12 → 13 → ~~14~~ → backlog.** Skip F3–F5 unless the task prompt gives the owner's decision.
+Suggested order: **~~0.2~~ → ~~4~~ → 9 → 10 → 11 → 12 → 13 → ~~14~~ → backlog.** Skip F3–F5 unless the task prompt gives the owner's decision.
 
 | Item | Needs | Why |
 |------|-------|-----|
@@ -110,7 +110,9 @@ Add it to `COMMANDS.md` or the PR template, and run it for every PR:
 
 ### Phase 1
 
-### 4. Favorites can be silently deleted
+### ~~4. Favorites can be silently deleted~~ ✅
+
+- **Status: done.** One module-level favorites store inside `useFavorites.js`, read through `useSyncExternalStore`; the hook's API is unchanged. Also syncs across tabs via the `storage` event, refuses address search results, and hides the star for them in `StopCard`. Tests in `src/hooks/__tests__/useFavorites.test.jsx` (all three fail on the old hook).
 
 - **Evidence:**
   - `useFavorites` (`src/hooks/useFavorites.js`) keeps a separate `useState` copy per hook instance. It loads that copy once on mount and writes the **whole local copy** back on every change (`saveFavorites`, line 27).

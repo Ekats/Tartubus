@@ -1,37 +1,67 @@
-import { useState, useEffect } from 'react';
+import { useSyncExternalStore } from 'react';
 
 const FAVORITES_KEY = 'tartu_bus_favorites';
+
+// One shared favorites list for every useFavorites() caller. Each caller used to keep
+// its own copy and write it back whole, so two mounted components (e.g. StopFinder and
+// the StopCard in its overlay) could overwrite each other's changes.
+let favoritesCache = null;
+const listeners = new Set();
+
+function readFavorites() {
+  try {
+    const stored = localStorage.getItem(FAVORITES_KEY);
+    const parsed = stored ? JSON.parse(stored) : [];
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (error) {
+    console.error('Error loading favorites:', error);
+    return [];
+  }
+}
+
+function getSnapshot() {
+  if (favoritesCache === null) {
+    favoritesCache = readFavorites();
+  }
+  return favoritesCache;
+}
+
+function notify() {
+  listeners.forEach(listener => listener());
+}
+
+function subscribe(listener) {
+  listeners.add(listener);
+  return () => listeners.delete(listener);
+}
+
+// Keep other open tabs in sync (key is null when localStorage was cleared)
+if (typeof window !== 'undefined') {
+  window.addEventListener('storage', (event) => {
+    if (event.key === FAVORITES_KEY || event.key === null) {
+      favoritesCache = readFavorites();
+      notify();
+    }
+  });
+}
+
+// Save to localStorage and update every caller
+function saveFavorites(newFavorites) {
+  try {
+    localStorage.setItem(FAVORITES_KEY, JSON.stringify(newFavorites));
+    favoritesCache = newFavorites;
+    notify();
+  } catch (error) {
+    console.error('Error saving favorites:', error);
+  }
+}
 
 /**
  * Custom hook to manage favorite bus stops
  * Stores favorites in localStorage as an array of stop objects
  */
 export function useFavorites() {
-  const [favorites, setFavorites] = useState([]);
-
-  // Load favorites from localStorage on mount
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem(FAVORITES_KEY);
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        setFavorites(Array.isArray(parsed) ? parsed : []);
-      }
-    } catch (error) {
-      console.error('Error loading favorites:', error);
-      setFavorites([]);
-    }
-  }, []);
-
-  // Save to localStorage whenever favorites change
-  const saveFavorites = (newFavorites) => {
-    try {
-      localStorage.setItem(FAVORITES_KEY, JSON.stringify(newFavorites));
-      setFavorites(newFavorites);
-    } catch (error) {
-      console.error('Error saving favorites:', error);
-    }
-  };
+  const favorites = useSyncExternalStore(subscribe, getSnapshot);
 
   // Add a stop to favorites
   const addFavorite = (stop) => {
@@ -40,8 +70,15 @@ export function useFavorites() {
       return;
     }
 
+    // Address search results are not stops
+    if (stop.isSearchResult || stop.gtfsId.startsWith('search:')) {
+      return;
+    }
+
+    const current = getSnapshot();
+
     // Check if already favorited
-    if (favorites.some(fav => fav.gtfsId === stop.gtfsId)) {
+    if (current.some(fav => fav.gtfsId === stop.gtfsId)) {
       console.log('Stop already favorited');
       return;
     }
@@ -56,14 +93,12 @@ export function useFavorites() {
       addedAt: Date.now(),
     };
 
-    const newFavorites = [...favorites, favoriteStop];
-    saveFavorites(newFavorites);
+    saveFavorites([...current, favoriteStop]);
   };
 
   // Remove a stop from favorites
   const removeFavorite = (gtfsId) => {
-    const newFavorites = favorites.filter(fav => fav.gtfsId !== gtfsId);
-    saveFavorites(newFavorites);
+    saveFavorites(getSnapshot().filter(fav => fav.gtfsId !== gtfsId));
   };
 
   // Check if a stop is favorited
@@ -73,7 +108,7 @@ export function useFavorites() {
 
   // Toggle favorite status
   const toggleFavorite = (stop) => {
-    if (isFavorite(stop.gtfsId)) {
+    if (getSnapshot().some(fav => fav.gtfsId === stop.gtfsId)) {
       removeFavorite(stop.gtfsId);
     } else {
       addFavorite(stop);
