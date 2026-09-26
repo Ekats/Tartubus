@@ -1,5 +1,7 @@
 # Tartubus: Implementation Plan for the Code Review Findings
 
+> **Open work now lives in [`REMAINING_WORK.md`](REMAINING_WORK.md).** Hand that file to an implementing agent; this one is the full record, including the evidence for the items already fixed in PR #2.
+
 - **Reviewed commit:** `888a7f7` (`master`, 2026-09-25)
 - **Scope:** `src/`, `scripts/`, `.github/workflows/`, `public/service-worker.js`, `vite.config.js`, `index.html`
 - **Status:** items 0.1, 1, 2, 3, 5, 6, 7 and 8 are done (crossed out below). Everything else is still open.
