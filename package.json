@@ -14,7 +14,8 @@
     "android:open": "npx cap open android",
     "android:build": "npm run build && npx cap sync android && npx cap open android",
     "android:apk": "npm run build && npx cap sync android && cd android && gradlew assembleDebug",
-    "test": "vitest run"
+    "test": "vitest run",
+    "lint:i18n": "node scripts/checkLocales.js"
   },
   "dependencies": {
     "@capacitor/android": "^7.4.4",

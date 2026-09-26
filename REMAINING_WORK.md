@@ -1,6 +1,7 @@
 # Tartubus: Remaining Work
 
 - **Status as of 2026-09-26:** the critical fixes are in [PR #2](https://github.com/Ekats/Tartubus/pull/2) (branch `claude/quirky-curie-tvlihl`): items 0.1, 1, 2, 3, 5, 6, 7 and 8 of `IMPLEMENTATION_PLAN.md`. **This file lists everything that is still open**, so it can be handed to an implementing agent on its own.
+- **Update 2026-09-27:** items 0.2 and 14 are done (crossed out below), together with the hardcoded Near Me strings and the untranslated "permission denied" message.
 - `IMPLEMENTATION_PLAN.md` keeps the full history (evidence and reasons for the done items). Item numbers here match it.
 
 ---
@@ -29,7 +30,7 @@
 
 ### Order and dependencies
 
-Suggested order: **0.2 → 4 → 9 → 10 → 11 → 12 → 13 → 14 → backlog.** Skip F3–F5 unless the task prompt gives the owner's decision.
+Suggested order: **~~0.2~~ → 4 → 9 → 10 → 11 → 12 → 13 → ~~14~~ → backlog.** Skip F3–F5 unless the task prompt gives the owner's decision.
 
 | Item | Needs | Why |
 |------|-------|-----|
@@ -85,7 +86,9 @@ These came out of the work on the critical fixes. **F1–F2 need someone with Gi
 
 ### Phase 0
 
-### 0.2 Add a locale consistency check
+### ~~0.2 Add a locale consistency check~~ ✅
+
+- **Status: done.** `scripts/checkLocales.js`, `npm run lint:i18n`, and a "Check translations" step in `deploy.yml` before the build.
 
 - **Problem:** 12 translation keys used in code exist in none of the 4 locale files (item 14). Nothing catches this.
 - **Why it matters:** it's the cheapest way to stop raw key names like `settings.clearRoutesConfirm` from reaching users again.
@@ -223,7 +226,9 @@ Add it to `COMMANDS.md` or the PR template, and run it for every PR:
 - **Check:** open the map and tap "Filter routes" at once; the list is full; pan and zoom; it stays full.
 - **Size:** S.
 
-### 14. Raw translation keys appear on screen
+### ~~14. Raw translation keys appear on screen~~ ✅
+
+- **Status: done.** All 12 keys added in all four locales, and the dead `|| 'fallback'` text removed for them. Also added `nearMe.unableToFindStops` and `nearMe.findNextBuses` for strings that were hardcoded English, and Near Me now shows the translated `nearMe.locationDenied` instead of the browser's own "permission denied" text (`useGeolocation` exposes `errorCode`). **The Estonian, Russian and Ukrainian texts were drafted by the agent and need a native speaker's check**: the 14 new keys in `src/locales/{et,ru,uk}.json`. Other `t('…') || 'fallback'` uses in `Settings.jsx` whose keys already existed were left as they are.
 
 - **Evidence:** these 12 keys are used in code and exist in none of `en/et/ru/uk.json`:
 
