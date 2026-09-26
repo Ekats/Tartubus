@@ -7,6 +7,7 @@ import 'leaflet-polylinedecorator';
 import { useGeolocation } from '../hooks/useGeolocation';
 import { useFavorites } from '../hooks/useFavorites';
 import { getNearbyStops, getStopsByRoutes, getNextStopName, planJourney, decodePolyline, getDailyTimetable, getWalkingRoute } from '../services/digitransit';
+import { CITY_ZONES } from '../utils/geo';
 import { getSetting } from '../utils/settings';
 import { reverseGeocode } from '../utils/geocoding';
 import { shouldShowDeparture, isDepartureLate, getDelayInfo } from '../utils/timeFormatter';
@@ -310,6 +311,7 @@ function StopFinder({
   manualLocation,
   selectedJourney,
   selectedRoute,
+  customTime,
   onJourneyChange,
   onRouteChange,
   onLocationSelected,
@@ -413,25 +415,6 @@ function StopFinder({
       });
     };
   }, []);
-
-  // Define city zones for filtering routes
-  const CITY_ZONES = {
-    tartu: {
-      name: 'Tartu',
-      center: { lat: 58.3776, lon: 26.7290 },
-      radius: 8000, // 8km radius (reduced from 15km)
-      feed: 'Viro',
-      cityFilter: 'Tartu' // Filter routes by city name
-    },
-    tallinn: {
-      name: 'Tallinn',
-      center: { lat: 59.4370, lon: 24.7536 },
-      radius: 20000, // 20km radius
-      feed: 'Viro',
-      cityFilter: 'Tallinn'
-    },
-    // Add more cities as needed
-  };
 
   // Default to Tartu center
   const defaultCenter = { lat: 58.3776, lon: 26.7290 };
@@ -668,6 +651,30 @@ function StopFinder({
   }, [selectedStop?.gtfsId]); // Only re-run when selected stop changes
 
   // Auto-zoom map to fit the selected journey route
+  // Show a route picked in the header search: filter the map to it and zoom to its stops
+  useEffect(() => {
+    if (!selectedRoute?.routeNumber) return;
+
+    setSelectedRoutes(new Set([selectedRoute.routeNumber]));
+
+    const coords = (selectedRoute.patterns || []).flatMap(pattern =>
+      (pattern.stops || []).map(stop => [stop.lat, stop.lon])
+    );
+    if (coords.length === 0) return;
+
+    // Small delay to ensure map is fully initialized after component mount
+    const zoomTimeout = setTimeout(() => {
+      if (!mapRef.current) return;
+      try {
+        mapRef.current.fitBounds(L.latLngBounds(coords), { padding: [50, 50], maxZoom: 15 });
+      } catch (error) {
+        console.error('Error fitting route bounds:', error);
+      }
+    }, 100);
+
+    return () => clearTimeout(zoomTimeout);
+  }, [selectedRoute]);
+
   useEffect(() => {
     if (!selectedJourney) return;
 
@@ -728,14 +735,16 @@ function StopFinder({
       const currentParams = {
         stopId: selectedStop.gtfsId,
         lat: Math.round(location.lat * 1000) / 1000, // Round to ~100m precision
-        lon: Math.round(location.lon * 1000) / 1000
+        lon: Math.round(location.lon * 1000) / 1000,
+        time: customTime ? customTime.getTime() : null
       };
 
       const lastParams = lastJourneyParamsRef.current;
       if (lastParams &&
           lastParams.stopId === currentParams.stopId &&
           lastParams.lat === currentParams.lat &&
-          lastParams.lon === currentParams.lon) {
+          lastParams.lon === currentParams.lon &&
+          lastParams.time === currentParams.time) {
         console.log('❌ Journey planning skipped: same parameters');
         // Same parameters, don't refetch
         return;
@@ -836,7 +845,7 @@ function StopFinder({
             const durationA = (new Date(a.end) - new Date(a.start)) / 60000;
             const durationB = (new Date(b.end) - new Date(b.start)) / 60000;
             // Prefer routes to the main stop if duration is similar
-            if (Math.abs(durationA - durationB) < 5) {
+            if (Math.abs(durationA - durationB) < 5 && a.isMainStop !== b.isMainStop) {
               return b.isMainStop ? 1 : -1;
             }
             return durationA - durationB;
@@ -855,7 +864,7 @@ function StopFinder({
     };
 
     fetchJourneyPlans();
-  }, [selectedStop, location.lat, location.lon]);
+  }, [selectedStop, location.lat, location.lon, customTime]);
 
   // When city zone changes, reload stops for new zone
   useEffect(() => {
@@ -1267,12 +1276,17 @@ function StopFinder({
       newRoutes.add(route);
     }
     setSelectedRoutes(newRoutes);
+    // Keep the route picked in search in sync with the filter
+    if (selectedRoute && !newRoutes.has(selectedRoute.routeNumber)) {
+      onRouteChange?.(null);
+    }
   };
 
   const clearFilters = () => {
     setSelectedRoutes(new Set());
     setRouteStops([]);
     setRoutePatterns([]);
+    if (selectedRoute) onRouteChange?.(null);
   };
 
   // Format time ago

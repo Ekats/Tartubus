@@ -1,0 +1,11 @@
+{
+  "name": "tartubus",
+  "productName": "Tartubus",
+  "version": "0.0.0",
+  "private": true,
+  "main": "main.cjs",
+  "devDependencies": {
+    "@electron/packager": "^20.3.0",
+    "electron": "^44.4.5"
+  }
+}

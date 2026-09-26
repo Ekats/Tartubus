@@ -34,8 +34,8 @@ npm run preview
 npm run fetch-routes
 ```
 - Downloads route geometry from Digitransit API
-- Saves to `public/data/routes.json` (150MB, gitignored)
-- Creates `public/data/routes.min.json` (smaller, committed to git)
+- Writes `public/data/routes.min.json` (committed to git), keeping only routes that serve a supported city zone
+- Leaves the file untouched when the route data hasn't changed
 - Runs automatically before each build
 
 ## 🌐 Deployment
