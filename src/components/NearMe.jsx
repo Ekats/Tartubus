@@ -368,7 +368,8 @@ function NearMe({ geolocationHook, onNavigateToMap, manualLocation: manualLocati
   }, [fetchNearbyStops]);
 
   const loading = locationLoading || stopsLoading;
-  const error = locationError || stopsError;
+  // A GPS error (e.g. permission denied) is irrelevant once the user picked a manual location
+  const error = (manualLocationProp ? null : locationError) || stopsError;
 
   return (
     <div className="p-4 pb-48 h-full overflow-y-auto dark:bg-gray-900">
