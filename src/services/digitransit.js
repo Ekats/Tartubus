@@ -1,3 +1,5 @@
+import { CITY_ZONES, isRouteInZone } from '../utils/geo';
+
 // Use Routing v2 Finland GraphQL API
 const isDev = import.meta.env.DEV;
 const API_BASE = isDev ? '/api/digitransit' : 'https://api.digitransit.fi';
@@ -482,47 +484,10 @@ export function getNextStopName(stoptime) {
 }
 
 /**
- * Get all bus routes
- */
-export async function getRoutes() {
-  const graphqlQuery = `
-    query GetRoutes {
-      routes {
-        gtfsId
-        shortName
-        longName
-        mode
-        patterns {
-          code
-          directionId
-          headsign
-          stops {
-            name
-            gtfsId
-            lat
-            lon
-          }
-        }
-      }
-    }
-  `;
-
-  const data = await query(graphqlQuery);
-
-  // Filter for Tartu city routes
-  const tartuRoutes = (data.routes || []).filter(route => {
-    const gtfsId = route.gtfsId || '';
-    return gtfsId.toUpperCase().includes('TARTU');
-  });
-
-  return tartuRoutes;
-}
-
-/**
  * Search for a specific route by number (e.g., "3", "12")
  * Returns route info with patterns and stops
  */
-export async function searchRouteByNumber(routeNumber) {
+export async function searchRouteByNumber(routeNumber, zone = CITY_ZONES.tartu) {
   const graphqlQuery = `
     query SearchRoute($routeNumber: String!) {
       routes(name: $routeNumber) {
@@ -549,13 +514,13 @@ export async function searchRouteByNumber(routeNumber) {
   try {
     const data = await query(graphqlQuery, { routeNumber });
 
-    // Filter for Tartu routes
-    const tartuRoutes = (data.routes || []).filter(route => {
-      const gtfsId = route.gtfsId || '';
-      return gtfsId.toUpperCase().includes('TARTU') && route.shortName === routeNumber;
-    });
+    // All Estonian routes share the 'Viro:' feed, so filter by geography:
+    // keep exact number matches that have a stop inside the city zone
+    const zoneRoutes = (data.routes || []).filter(route =>
+      route.shortName === routeNumber && isRouteInZone(route, zone)
+    );
 
-    return tartuRoutes;
+    return zoneRoutes;
   } catch (error) {
     console.error('Error searching route:', error);
     return [];
