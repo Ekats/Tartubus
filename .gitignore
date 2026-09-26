@@ -75,3 +75,7 @@ android/local.properties
 
 # Unused pretty-printed route dump (no longer written by fetchRoutes.js)
 public/data/routes.json
+
+# Desktop packaging output (build-releases.yml)
+electron-app/
+release/
