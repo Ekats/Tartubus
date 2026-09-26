@@ -8,11 +8,14 @@ import { reverseGeocode } from '../utils/geocoding';
 import { getNextStopName, getDailyTimetable, getWalkingRoute } from '../services/digitransit';
 import CountdownTimer from './CountdownTimer';
 import LocationPermissionInfo from './LocationPermissionInfo';
+import { getLocationConsent, setLocationConsent } from '../hooks/useGeolocation';
+
+const NO_LOCATION = { lat: null, lon: null };
 
 function NearMe({ geolocationHook, onNavigateToMap, manualLocation: manualLocationProp, onClearManualLocation, customTime }) {
   const { t } = useTranslation();
   // Use shared geolocation hook from App.jsx instead of creating a new instance
-  const { location, error: locationError, errorCode: locationErrorCode, loading: locationLoading, getLocation, startWatching, stopWatching } = geolocationHook;
+  const { location, error: locationError, errorCode: locationErrorCode, loading: locationLoading, getLocation, startWatching } = geolocationHook;
   const { stops, loading: stopsLoading, error: stopsError, fetchNearbyStops } = useNearbyStops();
   const { isFavorite, toggleFavorite } = useFavorites();
   const [hasSearched, setHasSearched] = useState(true); // Start as true for auto-trigger
@@ -28,74 +31,57 @@ function NearMe({ geolocationHook, onNavigateToMap, manualLocation: manualLocati
   const [walkingTimes, setWalkingTimes] = useState(new Map()); // Map of stopId -> {duration, distance}
   const lastWalkingFetchLocationRef = useRef(null); // Track location for walking time fetches
 
-  // Check if browser will ask for permission (not already granted)
+  // Ask for location consent once, and respect the answer.
+  // GPS itself is started by App.jsx when consent is 'granted'.
   useEffect(() => {
     const checkPermission = async () => {
-      // Check if we've already shown the modal or have permission
-      const hasSeenModal = localStorage.getItem('location_modal_seen');
-
-      if (!navigator.permissions) {
-        // Permissions API not supported
-        // ALWAYS show modal first if not seen before, regardless of permission state
-        if (!hasSeenModal) {
-          setShowLocationInfo(true);
-        } else {
-          // Modal has been seen before, safe to request location
-          getLocation();
-          startWatching();
-        }
-        return;
+      const consent = getLocationConsent();
+      if (consent === 'declined') {
+        return; // The user chose a manual location - don't ask again
       }
 
+      let permission = null;
       try {
-        const result = await navigator.permissions.query({ name: 'geolocation' });
+        permission = navigator.permissions ? await navigator.permissions.query({ name: 'geolocation' }) : null;
+      } catch {
+        // Permissions API unavailable (e.g. some WebViews)
+      }
 
-        if (result.state === 'prompt') {
-          // Browser will prompt - show our info modal first only if not seen before
-          if (!hasSeenModal) {
-            setShowLocationInfo(true);
-          } else {
-            // Modal has been seen before, safe to request location (will trigger browser prompt)
-            getLocation();
-            startWatching();
-          }
-        } else if (result.state === 'granted') {
-          // Already granted - but still show modal first if user hasn't seen it
-          if (!hasSeenModal) {
-            setShowLocationInfo(true);
-          } else {
-            // Modal has been seen before, safe to use granted permission
-            getLocation();
-            startWatching();
-          }
-        } else if (result.state === 'denied') {
-          // Permission denied - show button to request again
-          setLocationPermissionDenied(true);
-        }
-
-        // Listen for permission changes
-        result.addEventListener('change', () => {
-          if (result.state === 'denied') {
-            setLocationPermissionDenied(true);
-          } else if (result.state === 'granted') {
-            setLocationPermissionDenied(false);
-            // Only auto-start if modal has been seen
-            const hasSeenModal = localStorage.getItem('location_modal_seen');
-            if (hasSeenModal) {
-              getLocation();
-              startWatching();
-            }
-          }
-        });
-      } catch (err) {
-        // Fallback if permissions query fails
-        if (!hasSeenModal) {
-          setShowLocationInfo(true);
-        } else {
+      if (consent === null) {
+        const hasSeenModal = localStorage.getItem('location_modal_seen');
+        if (hasSeenModal && permission?.state === 'granted') {
+          // User from before consent was stored, who allowed location
+          setLocationConsent('granted');
           getLocation();
           startWatching();
+        } else if (hasSeenModal && permission?.state === 'denied') {
+          // User from before consent was stored, who blocked location
+          setLocationConsent('declined');
+          return;
+        } else {
+          // New user, or an earlier answer we can't tell: ask (once)
+          setShowLocationInfo(true);
         }
       }
+
+      if (!permission) return;
+      if (permission.state === 'denied') {
+        // Permission denied in the browser - show button to request again
+        setLocationPermissionDenied(true);
+      }
+
+      // Listen for permission changes
+      permission.addEventListener('change', () => {
+        if (permission.state === 'denied') {
+          setLocationPermissionDenied(true);
+        } else if (permission.state === 'granted') {
+          setLocationPermissionDenied(false);
+          if (getLocationConsent() === 'granted') {
+            getLocation();
+            startWatching();
+          }
+        }
+      });
     };
 
     checkPermission();
@@ -104,6 +90,7 @@ function NearMe({ geolocationHook, onNavigateToMap, manualLocation: manualLocati
   const handleAllowLocation = () => {
     setShowLocationInfo(false);
     localStorage.setItem('location_modal_seen', 'true');
+    setLocationConsent('granted');
     getLocation();
     startWatching();
   };
@@ -111,6 +98,7 @@ function NearMe({ geolocationHook, onNavigateToMap, manualLocation: manualLocati
   const handleDeclineLocation = () => {
     setShowLocationInfo(false);
     localStorage.setItem('location_modal_seen', 'true');
+    setLocationConsent('declined');
     // User declined, they can use manual location
   };
 
@@ -128,15 +116,6 @@ function NearMe({ geolocationHook, onNavigateToMap, manualLocation: manualLocati
     }
   }, [location.lat, location.lon, manualLocationProp]);
 
-  // Stop watching location when manual location is set
-  // Note: We don't auto-start watching here - that's handled by the permission check
-  useEffect(() => {
-    if (manualLocationProp) {
-      stopWatching();
-    }
-    // Don't auto-start watching - let the permission flow handle it
-  }, [manualLocationProp]);
-
   const handleFindNearby = () => {
     const loc = activeLocation;
     // If we already have location, just refresh the stops
@@ -145,8 +124,10 @@ function NearMe({ geolocationHook, onNavigateToMap, manualLocation: manualLocati
       // Force refresh to bypass cache and get fresh departure times
       fetchNearbyStops(loc.lat, loc.lon, radius, true, customTime);
     } else {
-      // Otherwise, get location first
+      // Otherwise, get location first (an explicit request counts as consent)
+      setLocationConsent('granted');
       getLocation();
+      startWatching();
       setHasSearched(true);
     }
   };
@@ -156,6 +137,8 @@ function NearMe({ geolocationHook, onNavigateToMap, manualLocation: manualLocati
   };
 
   const handleUseGPS = () => {
+    // An explicit request counts as consent; App.jsx starts GPS once the manual location is cleared
+    setLocationConsent('granted');
     if (onClearManualLocation) {
       onClearManualLocation();
     }
@@ -204,8 +187,8 @@ function NearMe({ geolocationHook, onNavigateToMap, manualLocation: manualLocati
     });
   };
 
-  // Use manual location if set, otherwise use GPS location
-  const activeLocation = manualLocationProp || location;
+  // Use manual location if set, otherwise a real GPS fix - never the default city-centre coordinates
+  const activeLocation = manualLocationProp || (location.hasRealFix ? location : NO_LOCATION);
 
   // Fetch address when location is available
   useEffect(() => {
@@ -729,7 +712,7 @@ function NearMe({ geolocationHook, onNavigateToMap, manualLocation: manualLocati
       )}
 
       {/* No Stops Found */}
-      {!loading && hasSearched && stops.length === 0 && !error && (
+      {!loading && hasSearched && activeLocation.lat && stops.length === 0 && !error && (
         <div className="mt-6 text-center text-gray-600 dark:text-gray-400">
           <div className="text-4xl mb-2">🤷</div>
           <div className="font-medium">No bus stops found nearby</div>

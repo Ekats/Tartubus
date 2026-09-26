@@ -1,10 +1,12 @@
-import { describe, it, expect, vi, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { createElement, act } from 'react';
 import { createRoot } from 'react-dom/client';
 import '../../i18n';
 
+const mocks = vi.hoisted(() => ({ fetchNearbyStops: vi.fn() }));
+
 vi.mock('../../hooks/useNearbyStops', () => ({
-  useNearbyStops: () => ({ stops: [], loading: false, error: null, fetchNearbyStops: vi.fn() }),
+  useNearbyStops: () => ({ stops: [], loading: false, error: null, fetchNearbyStops: mocks.fetchNearbyStops }),
 }));
 vi.mock('../../hooks/useFavorites', () => ({
   useFavorites: () => ({ isFavorite: () => false, toggleFavorite: vi.fn() }),
@@ -40,8 +42,105 @@ async function render(props) {
   return container;
 }
 
+// Let the async permission check settle
+const flush = () => act(async () => { await new Promise(resolve => setTimeout(resolve, 0)); });
+
+function idleGeolocationHook() {
+  return {
+    location: { lat: 58.3776, lon: 26.7290, accuracy: null, hasRealFix: false }, // default coords, no fix
+    error: null,
+    errorCode: null,
+    loading: false,
+    getLocation: vi.fn(),
+    startWatching: vi.fn(),
+    stopWatching: vi.fn(),
+  };
+}
+
+function setBrowserPermission(state) {
+  Object.defineProperty(navigator, 'permissions', {
+    configurable: true,
+    value: { query: async () => ({ state, addEventListener: () => {} }) },
+  });
+}
+
+function clickButton(container, label) {
+  const button = [...container.querySelectorAll('button')].find(b => b.textContent.includes(label));
+  if (!button) throw new Error(`No button "${label}"`);
+  act(() => button.click());
+}
+
+beforeEach(() => {
+  localStorage.clear();
+  mocks.fetchNearbyStops.mockClear();
+  setBrowserPermission('prompt');
+});
+
 afterEach(() => {
   act(() => root?.unmount());
+});
+
+describe('NearMe location consent', () => {
+  it('remembers "Use Manual Location": no GPS and no dialog on the next visit', async () => {
+    const hook = idleGeolocationHook();
+    let container = await render({ geolocationHook: hook, manualLocation: null });
+    await flush();
+    clickButton(container, 'Use Manual Location');
+
+    expect(localStorage.getItem('location_consent')).toBe('declined');
+
+    act(() => root.unmount());
+    const nextHook = idleGeolocationHook();
+    container = await render({ geolocationHook: nextHook, manualLocation: null });
+    await flush();
+
+    expect(container.textContent).not.toContain('Allow Location Access');
+    expect(nextHook.getLocation).not.toHaveBeenCalled();
+    expect(nextHook.startWatching).not.toHaveBeenCalled();
+  });
+
+  it('allowing stores consent and starts GPS', async () => {
+    const hook = idleGeolocationHook();
+    const container = await render({ geolocationHook: hook, manualLocation: null });
+    await flush();
+    clickButton(container, 'Allow Location Access');
+
+    expect(localStorage.getItem('location_consent')).toBe('granted');
+    expect(hook.startWatching).toHaveBeenCalled();
+  });
+
+  it('does not look up stops around the default city-centre coordinates', async () => {
+    localStorage.setItem('location_consent', 'declined');
+    const container = await render({ geolocationHook: idleGeolocationHook(), manualLocation: null });
+    await flush();
+
+    expect(mocks.fetchNearbyStops).not.toHaveBeenCalled();
+    expect(container.textContent).not.toContain('No bus stops found nearby');
+  });
+
+  it('moves an earlier user who allowed location to "granted" without asking again', async () => {
+    localStorage.setItem('location_modal_seen', 'true');
+    setBrowserPermission('granted');
+    const hook = idleGeolocationHook();
+    const container = await render({ geolocationHook: hook, manualLocation: null });
+    await flush();
+
+    expect(localStorage.getItem('location_consent')).toBe('granted');
+    expect(hook.startWatching).toHaveBeenCalled();
+    expect(container.textContent).not.toContain('Allow Location Access');
+  });
+
+  it('moves an earlier user who blocked location to "declined" without asking again', async () => {
+    localStorage.setItem('location_modal_seen', 'true');
+    setBrowserPermission('denied');
+    const hook = idleGeolocationHook();
+    const container = await render({ geolocationHook: hook, manualLocation: null });
+    await flush();
+
+    expect(localStorage.getItem('location_consent')).toBe('declined');
+    expect(hook.getLocation).not.toHaveBeenCalled();
+    expect(container.textContent).not.toContain('Allow Location Access');
+  });
 });
 
 describe('NearMe with location permission denied', () => {

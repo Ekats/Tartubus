@@ -20,6 +20,25 @@ const calculateDistance = (lat1, lon1, lat2, lon2) => {
   return R * c;
 };
 
+// The user's answer to the location dialog: 'granted', 'declined', or null (not asked yet)
+const LOCATION_CONSENT_KEY = 'location_consent';
+
+export function getLocationConsent() {
+  try {
+    return localStorage.getItem(LOCATION_CONSENT_KEY);
+  } catch {
+    return null;
+  }
+}
+
+export function setLocationConsent(value) {
+  try {
+    localStorage.setItem(LOCATION_CONSENT_KEY, value);
+  } catch {
+    // Storage unavailable - the choice just isn't remembered
+  }
+}
+
 /**
  * Custom hook to get user's device location
  */

@@ -10,7 +10,7 @@ import InstallPrompt from './components/InstallPrompt'
 import AndroidAppPrompt from './components/AndroidAppPrompt'
 import DateTimePicker from './components/DateTimePicker'
 import { useDarkMode } from './hooks/useDarkMode'
-import { useGeolocation } from './hooks/useGeolocation'
+import { useGeolocation, getLocationConsent } from './hooks/useGeolocation'
 import { initializeCaches } from './services/digitransit'
 
 function App() {
@@ -35,18 +35,17 @@ function App() {
     initializeCaches();
   }, [])
 
-  // Start GPS tracking on app startup
+  // The only place GPS starts automatically: at startup and when a manual location
+  // is cleared, and only if the user allowed location. A manual location stops it.
+  // (NearMe asks for consent; the map's tracking button is an explicit opt-in.)
   useEffect(() => {
-    // Check if user has seen the location modal and has permission
-    const hasSeenModal = localStorage.getItem('location_modal_seen');
-
-    if (hasSeenModal) {
-      // Modal was seen before, safe to start GPS immediately
+    if (manualLocation) {
+      geolocationHook.stopWatching();
+    } else if (getLocationConsent() === 'granted') {
       geolocationHook.getLocation();
       geolocationHook.startWatching();
     }
-    // If modal hasn't been seen, NearMe component will handle showing it and starting GPS
-  }, [])
+  }, [manualLocation])
 
   // Android back button handler
   useEffect(() => {
@@ -184,6 +183,7 @@ function App() {
         />
       case 'favorites':
         return <Favorites
+          geolocationHook={geolocationHook}
           manualLocation={manualLocation}
           customTime={customTime}
           onNavigateToMap={(stop) => {

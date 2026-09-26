@@ -4,7 +4,7 @@ import { MapContainer, TileLayer, Marker, Popup, Tooltip, Polyline, useMap, useM
 import MarkerClusterGroup from 'react-leaflet-cluster';
 import L from 'leaflet';
 import 'leaflet-polylinedecorator';
-import { useGeolocation } from '../hooks/useGeolocation';
+import { useGeolocation, setLocationConsent } from '../hooks/useGeolocation';
 import { useFavorites } from '../hooks/useFavorites';
 import { getNearbyStops, getStopsByRoutes, getNextStopName, planJourney, decodePolyline, getDailyTimetable, getWalkingRoute } from '../services/digitransit';
 import { CITY_ZONES } from '../utils/geo';
@@ -303,6 +303,8 @@ function RouteLineWithArrows({ positions, color, headsign, routeName, stopCount 
   return null;
 }
 
+const NO_LOCATION = { lat: null, lon: null };
+
 function StopFinder({
   geolocationHook,
   isDarkMode,
@@ -327,8 +329,8 @@ function StopFinder({
   // Use shared geolocation hook from App.jsx instead of creating a new instance
   const { location: gpsLocation, getLocation, startWatching, stopWatching, watching } = geolocationHook;
 
-  // Use manual location if available, otherwise use GPS location
-  const location = manualLocation || gpsLocation;
+  // Use manual location if available, otherwise a real GPS fix - never the default city-centre coordinates
+  const location = manualLocation || (gpsLocation.hasRealFix ? gpsLocation : NO_LOCATION);
   const { isFavorite, toggleFavorite } = useFavorites();
   const [stops, setStops] = useState([]);
   const [nearbyStopIds, setNearbyStopIds] = useState(new Set());
@@ -574,19 +576,14 @@ function StopFinder({
   };
 
   // Load stops for current city zone on mount
+  // (GPS is started by App.jsx when the user allowed location - not here, and it keeps
+  // running when the map unmounts, since other tabs share it)
   useEffect(() => {
-    // Auto-request location on startup and start watching for movement (only if no manual location)
-    if (!manualLocation) {
-      getLocation();
-      startWatching();
-    }
-
     // Load ALL stops for the current city zone (one-time)
     loadCityZoneStops(currentCityZone);
 
-    // Cleanup: stop watching and clear timeouts when component unmounts
+    // Cleanup: clear timeouts when component unmounts
     return () => {
-      stopWatching();
       if (moveTimeoutRef.current) {
         clearTimeout(moveTimeoutRef.current);
       }
@@ -595,15 +592,6 @@ function StopFinder({
       }
     };
   }, []);
-
-  // Stop GPS tracking when manual location is set, resume when cleared
-  useEffect(() => {
-    if (manualLocation) {
-      stopWatching();
-    } else {
-      startWatching();
-    }
-  }, [manualLocation]);
 
   // Fetch departure times for stops that don't have them yet (loaded from stops.json)
   useEffect(() => {
@@ -1135,6 +1123,7 @@ function StopFinder({
       stopWatching();
       setLocationMessage('Location tracking stopped');
     } else {
+      setLocationConsent('granted'); // Tapping the tracking button is an explicit opt-in
       getLocation();
       startWatching();
       setLocationMessage('Location tracking started');

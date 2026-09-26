@@ -1,18 +1,21 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useFavorites } from '../hooks/useFavorites';
-import { useGeolocation } from '../hooks/useGeolocation';
 import { getStopById, getNextStopName, getWalkingRoute } from '../services/digitransit';
 import { shouldShowDeparture, isDepartureLate, formatArrivalTime, formatClockTime, getDelayInfo } from '../utils/timeFormatter';
 import CountdownTimer from './CountdownTimer';
 
-function Favorites({ onNavigateToMap, manualLocation, customTime }) {
+const NO_LOCATION = { lat: null, lon: null };
+
+function Favorites({ geolocationHook, onNavigateToMap, manualLocation, customTime }) {
   const { t } = useTranslation();
   const { favorites, removeFavorite, clearAllFavorites } = useFavorites();
-  const { location: gpsLocation, startWatching } = useGeolocation();
+  // Shared GPS from App.jsx (started there only if the user allowed location)
+  const { location: gpsLocation } = geolocationHook;
 
-  // Use manual location if available, otherwise use GPS location
-  const location = manualLocation || gpsLocation;
+  // Use manual location if available, otherwise a real GPS fix - never the default
+  // city-centre coordinates (distances and sorting would be measured from there)
+  const location = manualLocation || (gpsLocation.hasRealFix ? gpsLocation : NO_LOCATION);
   const [stopsWithDepartures, setStopsWithDepartures] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -20,11 +23,6 @@ function Favorites({ onNavigateToMap, manualLocation, customTime }) {
   const [expandedDepartures, setExpandedDepartures] = useState(new Set()); // Set of "stopId-departureIdx" keys
   const [walkingTimes, setWalkingTimes] = useState(new Map()); // Map of stopId -> {duration, distance}
   const lastWalkingFetchLocationRef = useRef(null); // Track location for walking time fetches
-
-  // Start watching location on mount
-  useEffect(() => {
-    startWatching();
-  }, []);
 
   // Fetch walking times for favorite stops (only nearby ones within 500m)
   // Triggers when: (1) stops first load, or (2) location changes >100m

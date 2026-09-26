@@ -1,7 +1,7 @@
 # Tartubus: Remaining Work
 
 - **Status as of 2026-09-26:** the critical fixes are in [PR #2](https://github.com/Ekats/Tartubus/pull/2) (branch `claude/quirky-curie-tvlihl`): items 0.1, 1, 2, 3, 5, 6, 7 and 8 of `IMPLEMENTATION_PLAN.md`. **This file lists everything that is still open**, so it can be handed to an implementing agent on its own.
-- **Update 2026-09-27:** items 0.2, 4, 9 and 14 are done (crossed out below), together with the hardcoded Near Me strings and the untranslated "permission denied" message.
+- **Update 2026-09-27:** items 0.2, 4, 9, 10 and 14 are done (crossed out below), together with the hardcoded Near Me strings and the untranslated "permission denied" message.
 - `IMPLEMENTATION_PLAN.md` keeps the full history (evidence and reasons for the done items). Item numbers here match it.
 
 ---
@@ -30,7 +30,7 @@
 
 ### Order and dependencies
 
-Suggested order: **~~0.2~~ → ~~4~~ → ~~9~~ → 10 → 11 → 12 → 13 → ~~14~~ → backlog.** Skip F3–F5 unless the task prompt gives the owner's decision.
+Suggested order: **~~0.2~~ → ~~4~~ → ~~9~~ → ~~10~~ → 11 → 12 → 13 → ~~14~~ → backlog.** Skip F3–F5 unless the task prompt gives the owner's decision.
 
 | Item | Needs | Why |
 |------|-------|-----|
@@ -155,7 +155,9 @@ Add it to `COMMANDS.md` or the PR template, and run it for every PR:
 - **Check:** a unit test that seeds every key, runs `softClearLocalStorage()`, and asserts that only `stops_*`/`route_*` are gone. Manually: fresh install → pick Estonian → relaunch twice → still Estonian.
 - **Size:** S.
 
-### 10. Declining location is not respected, and Favorites uses fake coordinates
+### ~~10. Declining location is not respected, and Favorites uses fake coordinates~~ ✅
+
+- **Status: done.** The dialog's answer is stored as `location_consent` (`granted`/`declined`; helpers in `useGeolocation.js`). Only `App.jsx` starts GPS automatically, and only with consent granted and no manual location; explicit actions (Allow, "Use GPS", "Find nearby", the map's tracking button) count as consent. Near Me, the map and Favorites no longer start GPS themselves; the map also stopped switching GPS off for everyone when it unmounts. Favorites uses the shared GPS (fixes B11). Near Me, the map and Favorites ignore the default city-centre coordinates until a real fix or a manual location exists. Existing users are moved over from the browser's permission state (granted → granted, denied → declined, otherwise the dialog once more). A separate "Use my location" button (step 5) was not added: the existing "Use GPS" / "Find nearby" buttons already reverse a decline. Tests: 5 consent tests in `src/components/__tests__/NearMe.test.jsx` (all fail on the old code); also checked in Chromium against `vite preview` (decline → no geolocation calls across all tabs and a reload; allow → GPS keeps running after leaving the map).
 
 - **Evidence:**
   - "Use Manual Location" (`NearMe.jsx:113`) sets the same `location_modal_seen = 'true'` as the Accept handler just above it.
