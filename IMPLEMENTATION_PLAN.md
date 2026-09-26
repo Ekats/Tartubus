@@ -2,7 +2,21 @@
 
 - **Reviewed commit:** `888a7f7` (`master`, 2026-09-25)
 - **Scope:** `src/`, `scripts/`, `.github/workflows/`, `public/service-worker.js`, `vite.config.js`, `index.html`
-- **Status:** plan only. No code has been changed yet.
+- **Status:** items 0.1, 1, 2, 3, 5, 6, 7 and 8 are done (crossed out below). Everything else is still open.
+
+| Item | State | Commit |
+|------|-------|--------|
+| 0.1 Test setup | ✅ done | `59a06dc` |
+| 0.2 Locale check | open | |
+| 1 Journey planning crash | ✅ done | `d297ba9` |
+| 2 Route search | ✅ done (with deviation) | `faf5ea7` |
+| 3 Near Me auto-refresh | ✅ done | `5efebe9` |
+| 4 Favorites overwrite | open | |
+| 5 Service worker | ✅ done | `fb90aca` |
+| 6 Nightly route data | ✅ done (needs a CI run) | `db38693` |
+| 7 Release API key | ✅ done (needs a CI run) | `069c3a4` |
+| 8 Desktop releases | ✅ done except Android (needs a CI run) | `069c3a4` |
+| 9–14, backlog | open | |
 
 Every item below lists the problem, the evidence, **why it matters** (the reason for fixing it and for its place in the order), the concrete change, how to check it, and its size.
 
@@ -14,7 +28,7 @@ Read this section first. It holds the rules that apply to every item.
 
 ### Goal
 
-Fix the findings in Phases 0–4 in the order given, then the Phase 5 backlog if the task prompt asks for it. Each numbered item is one self-contained commit.
+Items 0.1, 1, 2, 3, 5, 6, 7 and 8 are already done (see the status table); don't redo them. Fix the remaining findings in Phases 0–4 in the order given, then the Phase 5 backlog if the task prompt asks for it. Each numbered item is one self-contained commit.
 
 ### Precedence
 
@@ -48,7 +62,7 @@ Implement in this order: **0.1 → 0.2 → 1 → 2 → 3 → 4 → 5 → 6 → 7
 
 | Item | Needs | Why |
 |------|-------|-----|
-| 11, 13, B12 | 2 | Item 2 creates `src/utils/geo.js` (`CITY_ZONES`, haversine), which these reuse |
+| 11, 13, B12 | 2 (done) | `src/utils/geo.js` (`CITY_ZONES`, `haversineDistance`, `isRouteInZone`) already exists; reuse it |
 | 10 | 9 | Item 10 adds a key to the `STORAGE_KEYS` module that item 9 creates |
 | 12 | 11 | Both change the compressed cache format; item 12 adds `serviceDay` to the `expandCachedStops()` that item 11 creates |
 | 12 (cache bump) | 9 | Bumping `SOFT_CLEAR_VERSION` is only safe once item 9 makes the soft clear delete cache prefixes only |
@@ -72,7 +86,7 @@ Implement in this order: **0.1 → 0.2 → 1 → 2 → 3 → 4 → 5 → 6 → 7
 - Don't rewrite git history, force-push, or push to `master`.
 - Don't push `v*` tags, create releases, or trigger workflows unless the task prompt says so. Tag pushes start the release pipeline.
 - Don't open or merge pull requests unless the task prompt says so. The PR split in §0 is a suggestion for whoever reviews the work.
-- Don't add new runtime dependencies. `vitest` (a devDependency) is the only planned addition.
+- Don't add new runtime dependencies. `vitest` and `happy-dom` (devDependencies) are already installed for tests.
 - Don't change the public shape of hooks other code uses (`useFavorites`, `useGeolocation`, `useNearbyStops`) beyond what an item states.
 
 ### Environment facts
@@ -81,7 +95,7 @@ Implement in this order: **0.1 → 0.2 → 1 → 2 → 3 → 4 → 5 → 6 → 7
 - `node_modules` isn't installed in a fresh clone; run `npm install` first.
 - There's probably **no Digitransit API key** where you run. Live API calls will return 401, so rely on unit tests with fixtures or mocked `fetch`, and say in the report which manual smoke-test steps you couldn't run.
 - GitHub Actions workflows (items 6–8) can't be run locally. Check them with a YAML linter (`npx --yes yaml-lint` or similar), re-read them carefully, and say in the report that they're unverified until they run in CI.
-- The repo has no `CLAUDE.md`, no linter config and no existing tests.
+- The repo has no `CLAUDE.md` and no linter config. Tests live in `src/**/__tests__/` and `scripts/__tests__/` and run with `npm test`.
 
 ### What to report when done
 
@@ -113,7 +127,9 @@ Merge **B before or together with A**, for the reason in rule 2.
 
 ## Phase 0: Safety net (before any fix)
 
-### 0.1 Add a minimal unit-test setup
+### ~~0.1 Add a minimal unit-test setup~~ ✅
+
+- **Status: done in `59a06dc`.** Added `vitest` plus `happy-dom` (the service module touches `window` at import time, so tests need a DOM environment); `test.environment` is set in `vite.config.js`. `npm test` runs 8 tests.
 
 - **Problem:** the repo has no tests and no test script (`package.json` has only `dev`, `build`, `fetch-routes` and Android scripts). Every fix below would be checked only by hand.
 - **Why it matters:** several fixes change pure functions (time formatting, cache keys, storage keep-lists). Those are cheap to test and easy to regress. The time and cache bugs (items 11–12) went unnoticed precisely because nothing exercises them.
@@ -146,7 +162,9 @@ Add it to `COMMANDS.md` or the PR template, and run it for every PR:
 
 ## Phase 1: Broken core features
 
-### 1. Multi-leg journey planning always fails
+### ~~1. Multi-leg journey planning always fails~~ ✅
+
+- **Status: done in `d297ba9`.** All four steps done. `planJourney` now sends `dateTime: { earliestDeparture }` (field names checked against the OpenTripPlanner schema). Unit-tested with a mocked `fetch`; the test fails on the old code.
 
 - **Evidence:** `src/components/StopFinder.jsx:792` reads `customTime?.toISOString()`, but `StopFinder` never destructures `customTime` from its props (`StopFinder.jsx:305-317`). `App.jsx` *does* pass `customTime={customTime}` to `StopFinder`. The `ReferenceError` is thrown synchronously inside `destinationsToTry.map`, caught at line 848, and turned into `setJourneyPlans([])`.
 - **Second bug in the same path:** `planJourney` (`src/services/digitransit.js:1386`) computes `dateTime` but never adds it to the GraphQL query or to `variables` (`digitransit.js:1470-1488`). A custom time would be ignored even after the crash is fixed.
@@ -159,7 +177,9 @@ Add it to `COMMANDS.md` or the PR template, and run it for every PR:
 - **Check:** smoke test step 2. Then set a custom time 3 h ahead and confirm the first leg's `startTime` is at or after it.
 - **Size:** S.
 
-### 2. Route search never returns anything, and the selected route is never drawn
+### ~~2. Route search never returns anything, and the selected route is never drawn~~ ✅
+
+- **Status: done in `faf5ea7`.** Steps 1, 3 and 4 done; `src/utils/geo.js` now exists (`CITY_ZONES`, `haversineDistance`, `isRouteInZone`). **Deviation:** step 2 (search the bundled routes) was not done, because the first search would then download the whole routes file; search still uses the API and filters by zone. The unused `getRoutes()` was deleted. Header search always uses the Tartu zone, because the header doesn't know which zone the map shows (decision 4 applies only partly). Unit-tested: `4` returns only `Viro:254190` (Ringtee - Kummeli).
 
 - **Evidence:**
   - `searchRouteByNumber` (`digitransit.js:555`) keeps only routes whose `gtfsId` contains `TARTU`. The same filter is used at `digitransit.js:515`.
@@ -175,7 +195,9 @@ Add it to `COMMANDS.md` or the PR template, and run it for every PR:
 - **Check:** smoke test step 3. Also add a unit test that `searchRouteByNumber('4')` against a fixture returns only routes with stops inside the Tartu zone.
 - **Size:** M.
 
-### 3. Near Me stops auto-refreshing after the first redraw
+### ~~3. Near Me stops auto-refreshing after the first redraw~~ ✅
+
+- **Status: done in `5efebe9`.** Steps 1–3 done. Checked in a browser with a mocked API and a simulated clock: the old code made 1 request in 5 minutes, the fixed code 3. **Note:** the 30 s refresh still goes through the 2-minute `stops_*` cache (existing behaviour, left as is), so live delays update about every 2 minutes.
 
 - **Evidence:**
   - `useNearbyStops` (`src/hooks/useNearbyStops.js:12`) creates a new `fetchNearbyStops` function on every render.
@@ -209,7 +231,9 @@ Add it to `COMMANDS.md` or the PR template, and run it for every PR:
 
 ## Phase 2: Delivery pipeline (gets fixes to users)
 
-### 5. The service worker keeps serving the old app forever
+### ~~5. The service worker keeps serving the old app forever~~ ✅
+
+- **Status: done in `fb90aca`.** Steps 1–3 done. **Step 4 is not needed:** the only lazily loaded file (`web-*.js`, Capacitor's web plugin) loads at startup, so an open page never needs an old file after an update. Checked in headless Chromium: on a normal navigation the old 1.5.5 worker served the stale `index.html` (bug confirmed); the new worker serves the new one, works offline, refreshes data files on the next load, and a client on the old worker upgrades and receives `UPDATE_READY`.
 
 - **Evidence:**
   - `public/service-worker.js:57` answers **every** same-origin GET cache-first, including `index.html`, the JS bundles and `data/*.json`.
@@ -228,7 +252,9 @@ Add it to `COMMANDS.md` or the PR template, and run it for every PR:
 - **Check:** build twice and confirm the two `dist/service-worker.js` files differ. Deploy to a test Pages branch or run `vite preview`; load, rebuild, reload once; DevTools → Application shows the new worker and the new bundle hash. Take the site offline and it still opens.
 - **Size:** M. It's the riskiest change in the plan, which is why it's a PR of its own.
 
-### 6. Nightly route data never reaches the live site, and a 86 MiB file is committed daily
+### ~~6. Nightly route data never reaches the live site, and a 86 MiB file is committed daily~~ ✅
+
+- **Status: done in `db38693`.** Steps 1–3 and 5 done, and step 4 option (a) is done in the script. A dry run on the current data gives 2312 → 843 routes and 86 → 34.3 MiB, and a second run reports "unchanged". **The committed data file was not regenerated here** (no API key); the next nightly run will shrink it and start a deploy. Not verified until that run happens in CI.
 
 - **Evidence:**
   - `scripts/fetchRoutes.js:75-76` writes a fresh `lastUpdated`/`version` into `routes.min.json` on every run, so the workflow's `git diff --quiet` check (`update-routes.yml:40`) never reports "unchanged".
@@ -254,7 +280,9 @@ Add it to `COMMANDS.md` or the PR template, and run it for every PR:
 - **Check:** run the workflow twice in a row with `workflow_dispatch`. The second run must say unchanged and create no commit. After a real change, a `deploy.yml` run appears in Actions.
 - **Size:** S for steps 1–3 and 5; M for step 4.
 
-### 7. Release builds contain no API key
+### ~~7. Release builds contain no API key~~ ✅
+
+- **Status: done in `069c3a4`.** Done: every build step gets the four `VITE_*` variables and fails early if the key is missing. Needs a real CI run to confirm.
 
 - **Evidence:** none of the five `npm run build:skip-routes` steps in `build-releases.yml` (lines 28, 63, 97, 135, 205) pass `VITE_DIGITRANSIT_API_KEY` or the `VITE_EMAILJS_*` secrets, unlike `deploy.yml`. Vite inlines `import.meta.env.VITE_*` at build time, so the value becomes `undefined`, and `digitransit.js:26` sends `digitransit-subscription-key: undefined`, which is rejected with 401.
 - **Why it matters:** every downloadable build (web zip, APK, desktop) is dead on arrival: no stops, no departures, no feedback form.
@@ -273,7 +301,9 @@ Add it to `COMMANDS.md` or the PR template, and run it for every PR:
 - **Note:** any `VITE_*` value is public by design, because it ends up in the JS that users download. That's acceptable for a Digitransit subscription key used from a client app, but don't put anything secret behind a `VITE_` prefix.
 - **Size:** S.
 
-### 8. Desktop (Electron) release jobs cannot succeed, so no release is ever created
+### ~~8. Desktop (Electron) release jobs cannot succeed, so no release is ever created~~ ✅
+
+- **Status: done in `069c3a4`.** Steps 1, 2 and 4 done: the committed `electron/` app (`main.cjs` + `package.json`) serves `dist` over `app://`, because pages loaded from `file://` can't fetch `data/*.json`. Electron 44, `@electron/packager` 20. The release is now published as a **draft**. Checked locally: the Linux packaging step runs as written, and the packaged app renders and loads `stops.json`. **Step 3 (Android) not done:** the logs have expired, so the job is unchanged. Windows and macOS need a CI run to verify.
 
 - **Evidence:**
   - The desktop jobs (`build-releases.yml:109`, `176`, `246`) run `electron-packager .` on the repository root.
