@@ -15,6 +15,9 @@ export default defineConfig({
     outDir: 'dist',
     sourcemap: false,
   },
+  test: {
+    environment: 'happy-dom',
+  },
   server: {
     proxy: {
       // Proxy API requests to bypass CORS in development
