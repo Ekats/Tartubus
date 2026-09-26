@@ -1,7 +1,7 @@
 # Tartubus: Remaining Work
 
 - **Status as of 2026-09-26:** the critical fixes are in [PR #2](https://github.com/Ekats/Tartubus/pull/2) (branch `claude/quirky-curie-tvlihl`): items 0.1, 1, 2, 3, 5, 6, 7 and 8 of `IMPLEMENTATION_PLAN.md`. **This file lists everything that is still open**, so it can be handed to an implementing agent on its own.
-- **Update 2026-09-27:** items 0.2, 4, 9, 10 and 14 are done (crossed out below), together with the hardcoded Near Me strings and the untranslated "permission denied" message.
+- **Update 2026-09-27:** items 0.2, 4, 9, 10, 11 and 14 are done (crossed out below), together with the hardcoded Near Me strings and the untranslated "permission denied" message.
 - `IMPLEMENTATION_PLAN.md` keeps the full history (evidence and reasons for the done items). Item numbers here match it.
 
 ---
@@ -30,7 +30,7 @@
 
 ### Order and dependencies
 
-Suggested order: **~~0.2~~ → ~~4~~ → ~~9~~ → ~~10~~ → 11 → 12 → 13 → ~~14~~ → backlog.** Skip F3–F5 unless the task prompt gives the owner's decision.
+Suggested order: **~~0.2~~ → ~~4~~ → ~~9~~ → ~~10~~ → ~~11~~ → 12 → 13 → ~~14~~ → backlog.** Skip F3–F5 unless the task prompt gives the owner's decision.
 
 | Item | Needs | Why |
 |------|-------|-----|
@@ -181,7 +181,9 @@ Add it to `COMMANDS.md` or the PR template, and run it for every PR:
 
 ### Phase 4: Data correctness
 
-### 11. The nearby-stops cache returns data for the wrong time and place
+### ~~11. The nearby-stops cache returns data for the wrong time and place~~ ✅
+
+- **Status: done.** One `nearbyStopsCacheKey()` (3 decimals, ~110 m × ~60 m) replaces three copies of the key. Planned-time queries never read or write the cache and get their own in-flight slot (`requestKey` includes the minute). `expandCachedStops()` rebuilds `trip.route` and recomputes `distance` from the caller's point, and is used for both the fresh-cache path and the offline stale fallback. **For item 12:** add `serviceDay` to `expandCachedStops()` and to the compressed format in `getNearbyStops`. Tests: `src/services/__tests__/getNearbyStops.test.js` (all four fail on the old code).
 
 - **Evidence:**
   - `getNearbyStops` (`digitransit.js:73-75`, with helpers at 1170-1188) keys its cache, **and** its in-flight request sharing, on coordinates rounded to 0.01° (a cell of about 1.1 km × 0.6 km at 58° N) plus radius, and leaves out `customTime`.

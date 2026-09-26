@@ -1,4 +1,4 @@
-import { CITY_ZONES, isRouteInZone } from '../utils/geo';
+import { CITY_ZONES, isRouteInZone, haversineDistance } from '../utils/geo';
 
 // Use Routing v2 Finland GraphQL API
 const isDev = import.meta.env.DEV;
@@ -70,57 +70,32 @@ async function query(graphqlQuery, variables = {}, timeout = 20000) {
  */
 export async function getNearbyStops(lat, lon, radius = 500, forceRefresh = false, customTime = null) {
   // Calculate cache key once
-  const roundedLat = Math.round(lat * 100) / 100;
-  const roundedLon = Math.round(lon * 100) / 100;
-  const cacheKey = `stops_${roundedLat}_${roundedLon}_${radius}`;
+  const cacheKey = nearbyStopsCacheKey(lat, lon, radius);
+  // The cache only holds "now" data: planned-time queries never read or write it,
+  // and get their own in-flight slot so they don't share a "now" request
+  const requestKey = customTime ? `${cacheKey}_t${Math.floor(customTime.getTime() / 60000)}` : cacheKey;
 
   // Check fresh cache first (unless force refresh is requested)
-  if (!forceRefresh) {
+  if (forceRefresh) {
+    console.log('🔄 Force refresh requested, bypassing cache');
+  } else if (!customTime) {
     const cachedStops = getCachedNearbyStops(lat, lon, radius);
     if (cachedStops) {
-      // Reconstruct trip objects from compressed cache
-      return cachedStops.map(stop => ({
-        ...stop,
-        stoptimesWithoutPatterns: stop.stoptimesWithoutPatterns?.map(st => ({
-          scheduledArrival: st.scheduledArrival,
-          scheduledDeparture: st.scheduledDeparture,
-          realtimeArrival: st.realtimeArrival,
-          realtimeDeparture: st.realtimeDeparture,
-          arrivalDelay: st.arrivalDelay,
-          departureDelay: st.departureDelay,
-          realtime: st.realtime,
-          headsign: st.headsign,
-          stopPosition: st.stopPosition,
-          trip: {
-            route: {
-              shortName: st.routeShortName,
-              longName: st.routeLongName,
-              gtfsId: st.routeGtfsId
-            },
-            stoptimes: st.allStoptimes?.map(ns => ({
-              stop: { gtfsId: null, name: ns.name },
-              stopPosition: ns.position,
-              scheduledArrival: ns.scheduledArrival
-            })) || []
-          }
-        })) || []
-      }));
+      return expandCachedStops(cachedStops, lat, lon);
     }
-  } else {
-    console.log('🔄 Force refresh requested, bypassing cache');
   }
 
   // Check if there's already a request in flight for this location
-  if (inFlightRequests.has(cacheKey)) {
-    console.log(`⏳ Request already in flight for ${cacheKey}, waiting... (forceRefresh=${forceRefresh})`);
+  if (inFlightRequests.has(requestKey)) {
+    console.log(`⏳ Request already in flight for ${requestKey}, waiting... (forceRefresh=${forceRefresh})`);
     if (forceRefresh) {
       console.log('⚠️ Force refresh but using in-flight request - this might return cached data!');
     }
-    return inFlightRequests.get(cacheKey);
+    return inFlightRequests.get(requestKey);
   }
 
   // Try to get stale cache as fallback (in case of network errors)
-  const staleCache = getStaleCache(cacheKey);
+  const staleCache = customTime ? null : getStaleCache(cacheKey);
   console.log(`🔍 Fetching fresh data for ${cacheKey}, stale cache available: ${!!staleCache}`);
 
   const graphqlQuery = `
@@ -250,20 +225,22 @@ export async function getNearbyStops(lat, lon, radius = 500, forceRefresh = fals
 
       // Only cache small radius queries (< 2km) to avoid quota issues
       // Map view with 8km radius loads 500+ stops which is too large
-      if (radius < 2000) {
+      if (customTime) {
+        // Planned-time data never goes into the "now" cache
+      } else if (radius < 2000) {
         setCachedNearbyStops(lat, lon, radius, compressedResult);
       } else {
         console.log(`⚠️ Skipping cache for large radius query (${radius}m) to avoid quota issues`);
       }
 
       // Remove from in-flight tracking
-      inFlightRequests.delete(cacheKey);
+      inFlightRequests.delete(requestKey);
 
       return result;
 
     } catch (error) {
       // Remove from in-flight tracking
-      inFlightRequests.delete(cacheKey);
+      inFlightRequests.delete(requestKey);
 
       console.error('Error fetching nearby stops:', error);
 
@@ -273,7 +250,7 @@ export async function getNearbyStops(lat, lon, radius = 500, forceRefresh = fals
           staleStopsCount: staleCache.length,
           error: error.message
         });
-        return staleCache;
+        return expandCachedStops(staleCache, lat, lon);
       }
 
       console.error('❌ No stale cache available, throwing error');
@@ -282,7 +259,7 @@ export async function getNearbyStops(lat, lon, radius = 500, forceRefresh = fals
   })();
 
   // Store the promise so duplicate requests can wait for it
-  inFlightRequests.set(cacheKey, requestPromise);
+  inFlightRequests.set(requestKey, requestPromise);
 
   return requestPromise;
 }
@@ -1114,26 +1091,60 @@ function setCachedData(cacheKey, data) {
 }
 
 /**
+ * Cache key for nearby-stops data. Coordinates are rounded to 3 decimals
+ * (~110 m x ~60 m at Tartu's latitude), so a cached result is only reused
+ * close to the point it was fetched for.
+ */
+function nearbyStopsCacheKey(lat, lon, radius) {
+  return `stops_${lat.toFixed(3)}_${lon.toFixed(3)}_${radius}`;
+}
+
+/**
+ * Rebuild full stop objects from the compressed cache format, with distances
+ * measured from the caller's point (the cached ones are from the original query point)
+ */
+function expandCachedStops(stops, lat, lon) {
+  return stops.map(stop => ({
+    ...stop,
+    distance: Math.round(haversineDistance(lat, lon, stop.lat, stop.lon)),
+    stoptimesWithoutPatterns: stop.stoptimesWithoutPatterns?.map(st => ({
+      scheduledArrival: st.scheduledArrival,
+      scheduledDeparture: st.scheduledDeparture,
+      realtimeArrival: st.realtimeArrival,
+      realtimeDeparture: st.realtimeDeparture,
+      arrivalDelay: st.arrivalDelay,
+      departureDelay: st.departureDelay,
+      realtime: st.realtime,
+      headsign: st.headsign,
+      stopPosition: st.stopPosition,
+      trip: {
+        route: {
+          shortName: st.routeShortName,
+          longName: st.routeLongName,
+          gtfsId: st.routeGtfsId
+        },
+        stoptimes: st.allStoptimes?.map(ns => ({
+          stop: { gtfsId: null, name: ns.name },
+          stopPosition: ns.position,
+          scheduledArrival: ns.scheduledArrival
+        })) || []
+      }
+    })) || []
+  }));
+}
+
+/**
  * Get cached nearby stops data
  */
 function getCachedNearbyStops(lat, lon, radius) {
-  // Round coordinates to ~1km grid to reduce cache entries
-  // (0.01 degrees ≈ 1.1km at Tartu's latitude)
-  const roundedLat = Math.round(lat * 100) / 100;
-  const roundedLon = Math.round(lon * 100) / 100;
-  const cacheKey = `stops_${roundedLat}_${roundedLon}_${radius}`;
-  return getCachedData(cacheKey, STOPS_CACHE_DURATION, 'stops');
+  return getCachedData(nearbyStopsCacheKey(lat, lon, radius), STOPS_CACHE_DURATION, 'stops');
 }
 
 /**
  * Save nearby stops data to cache
  */
 function setCachedNearbyStops(lat, lon, radius, data) {
-  // Round coordinates to ~1km grid to reduce cache entries
-  const roundedLat = Math.round(lat * 100) / 100;
-  const roundedLon = Math.round(lon * 100) / 100;
-  const cacheKey = `stops_${roundedLat}_${roundedLon}_${radius}`;
-  setCachedData(cacheKey, data);
+  setCachedData(nearbyStopsCacheKey(lat, lon, radius), data);
 }
 
 /**
