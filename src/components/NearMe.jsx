@@ -323,34 +323,49 @@ function NearMe({ geolocationHook, onNavigateToMap, manualLocation: manualLocati
   }, [activeLocation.lat, activeLocation.lon, hasSearched, manualLocationProp, customTime]);
 
   // Auto-refresh departure times every 30 seconds
-  // Use ref to track interval location so we don't restart on small GPS updates
-  const intervalLocationRef = useRef(null);
+  // The interval is created once and reads the latest location/time from a ref,
+  // so re-renders and GPS updates don't tear it down
+  const latestRefreshParamsRef = useRef(null);
+  latestRefreshParamsRef.current = { lat: activeLocation.lat, lon: activeLocation.lon, customTime };
 
   useEffect(() => {
-    const loc = activeLocation;
-    if (!loc.lat || !loc.lon) return;
-
-    // Only create new interval if location changed significantly (>100m) or first time
-    const lastLoc = intervalLocationRef.current;
-    const locationChanged = !lastLoc ||
-      Math.abs(lastLoc.lat - loc.lat) > 0.001 ||
-      Math.abs(lastLoc.lon - loc.lon) > 0.001;
-
-    if (!locationChanged) return; // Don't restart interval for tiny GPS updates
-
-    intervalLocationRef.current = { lat: loc.lat, lon: loc.lon };
-
-    const interval = setInterval(() => {
+    const refresh = () => {
+      const { lat, lon, customTime: time } = latestRefreshParamsRef.current || {};
+      if (!lat || !lon) return;
       const radius = getSetting('nearbyRadius') || 500;
-      const currentLoc = intervalLocationRef.current;
-      if (currentLoc) {
-        // Refresh without force (use cache if available < 2 min old)
-        fetchNearbyStops(currentLoc.lat, currentLoc.lon, radius, false, customTime);
-      }
-    }, 30000); // 30 seconds
+      // Refresh without force (use cache if available < 2 min old)
+      fetchNearbyStops(lat, lon, radius, false, time);
+    };
 
-    return () => clearInterval(interval);
-  }, [activeLocation.lat, activeLocation.lon, fetchNearbyStops, customTime]);
+    let interval = null;
+    const start = () => {
+      if (!interval) interval = setInterval(refresh, 30000); // 30 seconds
+    };
+    const stop = () => {
+      if (interval) {
+        clearInterval(interval);
+        interval = null;
+      }
+    };
+
+    // Pause while the app is in the background, refresh as soon as it's visible again
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') {
+        stop();
+      } else {
+        refresh();
+        start();
+      }
+    };
+
+    if (document.visibilityState !== 'hidden') start();
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      stop();
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [fetchNearbyStops]);
 
   const loading = locationLoading || stopsLoading;
   const error = locationError || stopsError;
