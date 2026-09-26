@@ -310,6 +310,7 @@ function StopFinder({
   manualLocation,
   selectedJourney,
   selectedRoute,
+  customTime,
   onJourneyChange,
   onRouteChange,
   onLocationSelected,
@@ -728,14 +729,16 @@ function StopFinder({
       const currentParams = {
         stopId: selectedStop.gtfsId,
         lat: Math.round(location.lat * 1000) / 1000, // Round to ~100m precision
-        lon: Math.round(location.lon * 1000) / 1000
+        lon: Math.round(location.lon * 1000) / 1000,
+        time: customTime ? customTime.getTime() : null
       };
 
       const lastParams = lastJourneyParamsRef.current;
       if (lastParams &&
           lastParams.stopId === currentParams.stopId &&
           lastParams.lat === currentParams.lat &&
-          lastParams.lon === currentParams.lon) {
+          lastParams.lon === currentParams.lon &&
+          lastParams.time === currentParams.time) {
         console.log('❌ Journey planning skipped: same parameters');
         // Same parameters, don't refetch
         return;
@@ -836,7 +839,7 @@ function StopFinder({
             const durationA = (new Date(a.end) - new Date(a.start)) / 60000;
             const durationB = (new Date(b.end) - new Date(b.start)) / 60000;
             // Prefer routes to the main stop if duration is similar
-            if (Math.abs(durationA - durationB) < 5) {
+            if (Math.abs(durationA - durationB) < 5 && a.isMainStop !== b.isMainStop) {
               return b.isMainStop ? 1 : -1;
             }
             return durationA - durationB;
@@ -855,7 +858,7 @@ function StopFinder({
     };
 
     fetchJourneyPlans();
-  }, [selectedStop, location.lat, location.lon]);
+  }, [selectedStop, location.lat, location.lon, customTime]);
 
   // When city zone changes, reload stops for new zone
   useEffect(() => {

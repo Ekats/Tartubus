@@ -1391,10 +1391,12 @@ export async function planJourney(from, to, options = {}) {
         $origin: PlanLabeledLocationInput!
         $destination: PlanLabeledLocationInput!
         $numItineraries: Int!
+        $dateTime: PlanDateTimeInput
       ) {
         planConnection(
           origin: $origin
           destination: $destination
+          dateTime: $dateTime
           first: $numItineraries
           modes: {
             direct: [WALK]
@@ -1484,7 +1486,8 @@ export async function planJourney(from, to, options = {}) {
           }
         }
       },
-      numItineraries
+      numItineraries,
+      dateTime: { earliestDeparture: dateTime }
     };
 
     const data = await query(planQuery, variables, 30000);
