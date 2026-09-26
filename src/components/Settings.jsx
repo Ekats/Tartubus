@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { getSettings, updateSetting } from '../utils/settings';
-import { updateRoutesFromGitHub, getRoutesVersionInfo, clearDownloadedRoutes } from '../services/digitransit';
+import { updateRoutesFromGitHub, getRoutesVersionInfo, clearDownloadedRoutes, clearCachedData } from '../services/digitransit';
 import Feedback from './Feedback';
 
 function Settings() {
@@ -42,32 +42,8 @@ function Settings() {
 
   const handleSoftClearCache = () => {
     if (window.confirm(t('settings.softClearConfirm') || 'Clear cached data? Your favorites and settings will be preserved.')) {
-      // Clear all cache except preserved keys
-      const preserveKeys = [
-        'tartu_bus_favorites',
-        'tartu-bus-settings',
-        'darkMode',
-        'i18nextLng',
-        'app_build_hash',
-        'cache_soft_clear_version',
-        'cache_full_clear_version'
-      ];
-
-      const preserved = {};
-      preserveKeys.forEach(key => {
-        const value = localStorage.getItem(key);
-        if (value !== null) {
-          preserved[key] = value;
-        }
-      });
-
-      // Clear everything
-      localStorage.clear();
-
-      // Restore preserved data
-      Object.entries(preserved).forEach(([key, value]) => {
-        localStorage.setItem(key, value);
-      });
+      // Clear cached API data only; favorites, settings and language stay
+      clearCachedData();
 
       setCacheCleared(true);
       setTimeout(() => {

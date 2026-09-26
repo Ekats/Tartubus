@@ -1,7 +1,7 @@
 # Tartubus: Remaining Work
 
 - **Status as of 2026-09-26:** the critical fixes are in [PR #2](https://github.com/Ekats/Tartubus/pull/2) (branch `claude/quirky-curie-tvlihl`): items 0.1, 1, 2, 3, 5, 6, 7 and 8 of `IMPLEMENTATION_PLAN.md`. **This file lists everything that is still open**, so it can be handed to an implementing agent on its own.
-- **Update 2026-09-27:** items 0.2, 4 and 14 are done (crossed out below), together with the hardcoded Near Me strings and the untranslated "permission denied" message.
+- **Update 2026-09-27:** items 0.2, 4, 9 and 14 are done (crossed out below), together with the hardcoded Near Me strings and the untranslated "permission denied" message.
 - `IMPLEMENTATION_PLAN.md` keeps the full history (evidence and reasons for the done items). Item numbers here match it.
 
 ---
@@ -30,7 +30,7 @@
 
 ### Order and dependencies
 
-Suggested order: **~~0.2~~ → ~~4~~ → 9 → 10 → 11 → 12 → 13 → ~~14~~ → backlog.** Skip F3–F5 unless the task prompt gives the owner's decision.
+Suggested order: **~~0.2~~ → ~~4~~ → ~~9~~ → 10 → 11 → 12 → 13 → ~~14~~ → backlog.** Skip F3–F5 unless the task prompt gives the owner's decision.
 
 | Item | Needs | Why |
 |------|-------|-----|
@@ -129,7 +129,9 @@ Add it to `COMMANDS.md` or the PR template, and run it for every PR:
 
 ### Phase 3: Storage and location consent
 
-### 9. Settings, language and route downloads are wiped by cache clears
+### ~~9. Settings, language and route downloads are wiped by cache clears~~ ✅
+
+- **Status: done, simpler than planned.** The only disposable localStorage entries are the `stops_*` and `route_*` caches (the walking-route cache is in memory), so instead of a `STORAGE_KEYS` module and keep-lists there is one `clearCachedData()` in `digitransit.js` that deletes just those prefixes. It is used by the startup cleanup, the soft-clear migration and Settings → Soft Clear. `FULL_CLEAR_VERSION` is `'never'` (D3), and the full-clear branch now also sets the soft-clear flag. The `i18nextLng` → `language` migration was skipped: the app never used i18next's language detector, so it never wrote `i18nextLng`. Also stops the app wiping other GitHub Pages sites' data on the shared `ekats.github.io` origin. Settings → Full Clear still calls `localStorage.clear()` on purpose. Tests: `src/services/__tests__/initializeCaches.test.js`.
 
 - **Evidence:**
   - **Two hand-copied keep-lists** (`initializeCaches` in `digitransit.js`, and `handleSoftClearCache` in `Settings.jsx`) keep `i18nextLng`, but the app stores the language under **`language`** (`src/i18n.js:10, 41`). A third copy in `src/main.jsx` was removed in PR #2, because the service worker no longer triggers a storage wipe.

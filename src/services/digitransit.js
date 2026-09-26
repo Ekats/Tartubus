@@ -862,29 +862,39 @@ window.showCacheDebug = showCacheDebugInfo;
  * Initialize caches on app startup
  * This cleans up old cached data and handles version changes
  */
+/**
+ * Remove cached API data (stops_ and route_ entries) from localStorage.
+ * Only these known cache prefixes are deleted, so user data (favorites, settings,
+ * language, dismissed prompts, downloaded-routes metadata) is never touched -
+ * nor is data of other apps sharing the same origin (e.g. other GitHub Pages sites).
+ * @returns {number} Number of removed entries
+ */
+export function clearCachedData() {
+  const keysToRemove = [];
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (key && (key.startsWith('stops_') || key.startsWith('route_'))) {
+      keysToRemove.push(key);
+    }
+  }
+  keysToRemove.forEach(key => localStorage.removeItem(key));
+  return keysToRemove.length;
+}
+
 export function initializeCaches() {
   console.log('🚀 Initializing caches...');
 
   // One-time migration flags for cache clear
-  // Soft clear: Clears cache but preserves favorites, settings, dark mode, language
-  // Full clear: Clears EVERYTHING including favorites (nuclear option)
+  // Soft clear: Clears cached API data only
+  // Full clear: Clears EVERYTHING including favorites (nuclear option, disabled with 'never')
   const SOFT_CLEAR_VERSION = 'v1.3.2-cache-format-update'; // Updated: new cache format with arrival times
-  const FULL_CLEAR_VERSION = 'v1.1-full-clear'; // Full wipe - clears everything including favorites
+  const FULL_CLEAR_VERSION = 'never'; // Was 'v1.1-full-clear', which wiped every new install's data
   const SOFT_CLEAR_KEY = 'cache_soft_clear_version';
   const FULL_CLEAR_KEY = 'cache_full_clear_version';
 
   // Use build hash that changes on every build/deployment
   const APP_BUILD_HASH = typeof __BUILD_HASH__ !== 'undefined' ? __BUILD_HASH__ : 'dev';
   const BUILD_HASH_KEY = 'app_build_hash';
-  const PRESERVE_KEYS_SOFT = [
-    'tartu_bus_favorites',      // User's favorite stops
-    'tartu-bus-settings',       // User settings (radius, max stops, etc)
-    'darkMode',                 // Dark mode preference
-    'i18nextLng',               // Language preference
-    BUILD_HASH_KEY,             // Build hash tracking
-    SOFT_CLEAR_KEY,             // Soft clear version tracking
-    FULL_CLEAR_KEY              // Full clear version tracking
-  ];
 
   try {
     // Check for FULL CLEAR first (nuclear option - wipes everything)
@@ -898,8 +908,9 @@ export function initializeCaches() {
       // Nuclear option - clear absolutely everything
       localStorage.clear();
 
-      // Only set the full clear flag so it doesn't happen again
+      // Set both clear flags so neither clear runs again on the next launch
       localStorage.setItem(FULL_CLEAR_KEY, FULL_CLEAR_VERSION);
+      localStorage.setItem(SOFT_CLEAR_KEY, SOFT_CLEAR_VERSION);
       localStorage.setItem(BUILD_HASH_KEY, APP_BUILD_HASH);
 
       console.log('💥 Full cache clear complete - all user data removed');
@@ -911,22 +922,7 @@ export function initializeCaches() {
       if (needsSoftClear) {
         console.log(`🧹 Soft cache clear needed (${storedSoftClear || 'first load'} → ${SOFT_CLEAR_VERSION})`);
 
-        // Store important data temporarily
-        const preserved = {};
-        PRESERVE_KEYS_SOFT.forEach(key => {
-          const value = localStorage.getItem(key);
-          if (value !== null) {
-            preserved[key] = value;
-          }
-        });
-
-        // Clear everything
-        localStorage.clear();
-
-        // Restore preserved data
-        Object.entries(preserved).forEach(([key, value]) => {
-          localStorage.setItem(key, value);
-        });
+        const removed = clearCachedData();
 
         // Set soft clear flag so this doesn't happen again
         localStorage.setItem(SOFT_CLEAR_KEY, SOFT_CLEAR_VERSION);
@@ -934,7 +930,7 @@ export function initializeCaches() {
         // Also update build hash
         localStorage.setItem(BUILD_HASH_KEY, APP_BUILD_HASH);
 
-        console.log(`✅ Soft cache clear complete, preserved ${Object.keys(preserved).length} important items`);
+        console.log(`✅ Soft cache clear complete, removed ${removed} cached entries`);
       } else {
         // No migration needed, just update build hash for tracking
         localStorage.setItem(BUILD_HASH_KEY, APP_BUILD_HASH);
@@ -944,23 +940,11 @@ export function initializeCaches() {
     // Always clean temporary cache on startup
     console.log('🧹 Clearing temporary cache (stops & routes)...');
 
-    const keysToRemove = [];
-
     // Remove cache entries - routes are now bundled, stops are time-sensitive
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
+    const removedCount = clearCachedData();
 
-      // Clear stops and route cache on every page reload
-      if (key && (key.startsWith('stops_') || key.startsWith('route_'))) {
-        keysToRemove.push(key);
-      }
-    }
-
-    // Remove marked entries
-    keysToRemove.forEach(key => localStorage.removeItem(key));
-
-    if (keysToRemove.length > 0) {
-      console.log(`🗑️ Cleared ${keysToRemove.length} temporary cache entries`);
+    if (removedCount > 0) {
+      console.log(`🗑️ Cleared ${removedCount} temporary cache entries`);
     }
 
     // Also clean up any old/expired entries
