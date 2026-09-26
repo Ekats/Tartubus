@@ -127,7 +127,7 @@ Add it to `COMMANDS.md` or the PR template, and run it for every PR:
 ### 9. Settings, language and route downloads are wiped by cache clears
 
 - **Evidence:**
-  - **Two hand-copied keep-lists** (`digitransit.js` in `initializeCaches`, and `Settings.jsx` in `handleSoftClearCache`) keep `i18nextLng`. A third copy in `src/main.jsx` was already removed in PR #2 (the service worker no longer triggers a storage wipe), but the app stores the language under **`language`** (`src/i18n.js:10, 41`).
+  - **Two hand-copied keep-lists** (`initializeCaches` in `digitransit.js`, and `handleSoftClearCache` in `Settings.jsx`) keep `i18nextLng`, but the app stores the language under **`language`** (`src/i18n.js:10, 41`). A third copy in `src/main.jsx` was removed in PR #2, because the service worker no longer triggers a storage wipe.
   - None of the lists keeps `routes_metadata`, `install_prompt_dismissed`, `android_app_prompt_dismissed`, and neither keeps `location_modal_seen`.
   - On first launch, the full-clear branch (`digitransit.js:926-940`) records `cache_full_clear_version` but **never** `cache_soft_clear_version`, so every new install runs a soft clear on its second launch.
   - Every localStorage key the app actually uses: `tartu_bus_favorites`, `tartu-bus-settings`, `darkMode`, `language`, `location_modal_seen`, `install_prompt_dismissed`, `android_app_prompt_dismissed`, `routes_metadata`, plus the version/hash keys and `stops_*`/`route_*` cache entries.
