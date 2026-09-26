@@ -1,12 +1,36 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import fs from 'node:fs'
+import path from 'node:path'
 
 // Generate a build hash based on current timestamp
 const BUILD_HASH = Date.now().toString(36);
 
+// Stamp the build hash into the copied service worker so every deploy ships a
+// byte-different worker (browsers only install a new worker when its bytes change)
+function stampServiceWorker() {
+  let outDir = 'dist';
+  return {
+    name: 'stamp-service-worker',
+    apply: 'build',
+    configResolved(config) {
+      outDir = path.resolve(config.root, config.build.outDir);
+    },
+    closeBundle() {
+      const swPath = path.join(outDir, 'service-worker.js');
+      if (!fs.existsSync(swPath)) return;
+      const source = fs.readFileSync(swPath, 'utf8');
+      if (!source.includes('__BUILD_HASH__')) {
+        throw new Error('service-worker.js has no __BUILD_HASH__ placeholder to stamp');
+      }
+      fs.writeFileSync(swPath, source.replaceAll('__BUILD_HASH__', BUILD_HASH));
+    },
+  };
+}
+
 // https://vitejs.dev/config/
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), stampServiceWorker()],
   base: './', // Use relative paths for Capacitor compatibility
   define: {
     __BUILD_HASH__: JSON.stringify(BUILD_HASH),
