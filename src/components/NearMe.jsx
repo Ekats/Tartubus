@@ -555,8 +555,9 @@ function NearMe({ geolocationHook, onNavigateToMap, manualLocation: manualLocati
                     const validDepartures = stop.stoptimesWithoutPatterns.filter(dep =>
                       shouldShowDeparture(dep.scheduledArrival, {
                         realtimeArrival: dep.realtimeArrival,
-                        realtime: dep.realtime
-                      })
+                        realtime: dep.realtime,
+                        serviceDay: dep.serviceDay
+                      }, customTime)
                     );
                     const totalDepartures = validDepartures.length;
                     let visibleCount = 3; // Start with 3
@@ -575,9 +576,10 @@ function NearMe({ geolocationHook, onNavigateToMap, manualLocation: manualLocati
                         const realtimeData = {
                           realtimeArrival: departure.realtimeArrival,
                           realtime: departure.realtime,
-                          arrivalDelay: departure.arrivalDelay
+                          arrivalDelay: departure.arrivalDelay,
+                          serviceDay: departure.serviceDay
                         };
-                        const isLate = isDepartureLate(departure.scheduledArrival, realtimeData);
+                        const isLate = isDepartureLate(departure.scheduledArrival, realtimeData, customTime);
                         const delayInfo = getDelayInfo(departure.scheduledArrival, realtimeData);
 
                         return (
@@ -608,6 +610,7 @@ function NearMe({ geolocationHook, onNavigateToMap, manualLocation: manualLocati
                                     <CountdownTimer
                                       scheduledArrival={departure.scheduledArrival}
                                       realtimeData={realtimeData}
+                                      referenceTime={customTime}
                                     />
                                   </div>
                                   {delayInfo && (

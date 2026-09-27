@@ -16,6 +16,7 @@ export default function StopCard({
   onNavigateToMap,
   showMapButton = true,
   variant = 'card', // 'card' | 'overlay'
+  customTime = null, // Planned time picked by the user (null = now)
 }) {
   const { t } = useTranslation();
   const { isFavorite, toggleFavorite } = useFavorites();
@@ -63,8 +64,9 @@ export default function StopCard({
   const validDepartures = stop.stoptimesWithoutPatterns?.filter(dep =>
     shouldShowDeparture(dep.scheduledArrival, {
       realtimeArrival: dep.realtimeArrival,
-      realtime: dep.realtime
-    })
+      realtime: dep.realtime,
+      serviceDay: dep.serviceDay
+    }, customTime)
   ) || [];
 
   const totalDepartures = validDepartures.length;
@@ -157,9 +159,10 @@ export default function StopCard({
               const realtimeData = {
                 realtimeArrival: departure.realtimeArrival,
                 realtime: departure.realtime,
-                arrivalDelay: departure.arrivalDelay
+                arrivalDelay: departure.arrivalDelay,
+                serviceDay: departure.serviceDay
               };
-              const isLate = isDepartureLate(departure.scheduledArrival, realtimeData);
+              const isLate = isDepartureLate(departure.scheduledArrival, realtimeData, customTime);
               const delayInfo = getDelayInfo(departure.scheduledArrival, realtimeData);
 
               return (
@@ -190,6 +193,7 @@ export default function StopCard({
                           <CountdownTimer
                             scheduledArrival={departure.scheduledArrival}
                             realtimeData={realtimeData}
+                            referenceTime={customTime}
                           />
                         </div>
                         {delayInfo && (

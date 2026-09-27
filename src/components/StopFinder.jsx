@@ -467,10 +467,10 @@ function StopFinder({
           console.log('🚀 Fetching nearby stops for routing to:', selectedStop.name);
 
           // Fetch stops near the user's location
-          const nearbyUserStops = await getNearbyStops(location.lat, location.lon, 500, true);
+          const nearbyUserStops = await getNearbyStops(location.lat, location.lon, 500, true, customTime);
 
           // Also fetch stops near the destination (to find nearby alternatives)
-          const nearbyDestStops = await getNearbyStops(selectedStop.lat, selectedStop.lon, 300);
+          const nearbyDestStops = await getNearbyStops(selectedStop.lat, selectedStop.lon, 300, false, customTime);
 
           console.log('✅ Got', nearbyUserStops?.length, 'stops near user and', nearbyDestStops?.length, 'stops near destination');
 
@@ -487,7 +487,7 @@ function StopFinder({
     } else {
       setNearbyStopsForRouting({ nearUser: [], nearDestination: [] });
     }
-  }, [selectedStop, location.lat, location.lon]);
+  }, [selectedStop, location.lat, location.lon, customTime]);
 
   // Fetch walking time to selected stop (only for nearby stops within 2km)
   useEffect(() => {
@@ -615,7 +615,7 @@ function StopFinder({
       try {
         // Fetch stop with departure times from API
         const { getStopById } = await import('../services/digitransit');
-        const stopWithDepartures = await getStopById(selectedStop.gtfsId);
+        const stopWithDepartures = await getStopById(selectedStop.gtfsId, customTime);
 
         if (stopWithDepartures) {
           console.log('✅ Loaded', stopWithDepartures.stoptimesWithoutPatterns?.length || 0, 'departures for', selectedStop.name);
@@ -2465,7 +2465,8 @@ function StopFinder({
                               const realtimeData = {
                                 realtimeArrival: dep.realtimeArrival,
                                 realtime: dep.realtime,
-                                arrivalDelay: dep.arrivalDelay
+                                arrivalDelay: dep.arrivalDelay,
+                                serviceDay: dep.serviceDay
                               };
                               const delayInfo = getDelayInfo(dep.scheduledArrival, realtimeData);
                               return (
@@ -2483,6 +2484,7 @@ function StopFinder({
                                       <CountdownTimer
                                         scheduledArrival={dep.scheduledArrival}
                                         realtimeData={realtimeData}
+                                        referenceTime={customTime}
                                       />
                                     </span>
                                     {delayInfo && (
@@ -2537,6 +2539,7 @@ function StopFinder({
               onNavigateToMap={null}
               showMapButton={false}
               variant="overlay"
+              customTime={customTime}
             />
           </div>
         </div>

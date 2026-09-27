@@ -407,8 +407,9 @@ function Favorites({ geolocationHook, onNavigateToMap, manualLocation, customTim
                   const validDepartures = stop.stoptimesWithoutPatterns.filter(dep =>
                     shouldShowDeparture(dep.scheduledArrival, {
                       realtimeArrival: dep.realtimeArrival,
-                      realtime: dep.realtime
-                    })
+                      realtime: dep.realtime,
+                      serviceDay: dep.serviceDay
+                    }, customTime)
                   );
                   const totalDepartures = validDepartures.length;
                   let visibleCount = 3;
@@ -427,9 +428,10 @@ function Favorites({ geolocationHook, onNavigateToMap, manualLocation, customTim
                       const realtimeData = {
                         realtimeArrival: departure.realtimeArrival,
                         realtime: departure.realtime,
-                        arrivalDelay: departure.arrivalDelay
+                        arrivalDelay: departure.arrivalDelay,
+                        serviceDay: departure.serviceDay
                       };
-                      const isLate = isDepartureLate(departure.scheduledArrival, realtimeData);
+                      const isLate = isDepartureLate(departure.scheduledArrival, realtimeData, customTime);
                       const delayInfo = getDelayInfo(departure.scheduledArrival, realtimeData);
 
                       return (
@@ -460,6 +462,7 @@ function Favorites({ geolocationHook, onNavigateToMap, manualLocation, customTim
                                   <CountdownTimer
                                     scheduledArrival={departure.scheduledArrival}
                                     realtimeData={realtimeData}
+                                    referenceTime={customTime}
                                   />
                                 </span>
                                 {delayInfo && (

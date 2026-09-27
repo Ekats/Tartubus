@@ -1,4 +1,5 @@
 import { CITY_ZONES, isRouteInZone, haversineDistance } from '../utils/geo';
+import { shouldShowDeparture } from '../utils/timeFormatter';
 
 // Use Routing v2 Finland GraphQL API
 const isDev = import.meta.env.DEV;
@@ -110,6 +111,7 @@ export async function getNearbyStops(lat, lon, radius = 500, forceRefresh = fals
               lat
               lon
               stoptimesWithoutPatterns(numberOfDepartures: 20, startTime: $startTime, omitCanceled: false) {
+                serviceDay
                 scheduledArrival
                 scheduledDeparture
                 realtimeArrival
@@ -162,25 +164,13 @@ export async function getNearbyStops(lat, lon, radius = 500, forceRefresh = fals
         return gtfsId.startsWith('Viro:');
       });
 
-      // Get reference time for client-side filtering (safety check)
-      const currentSecondsFromMidnight = (referenceTime.getHours() * 3600) + (referenceTime.getMinutes() * 60) + referenceTime.getSeconds();
-
       const result = tartuStops.map(edge => {
         const stop = edge.node.stop;
         // Client-side safety filter: remove any departures that are clearly in the past
-        // (more than 10 minutes ago) to keep departed buses visible
-        const filteredDepartures = stop.stoptimesWithoutPatterns?.filter(departure => {
-          const scheduledArrival = departure.scheduledArrival;
-          const diff = scheduledArrival - currentSecondsFromMidnight;
-
-          // If more than 12 hours in the past, it's tomorrow's departure - keep it
-          if (diff < -43200) {
-            return true;
-          }
-
-          // Keep if scheduled arrival is within the last 10 minutes or in the future
-          return diff >= -600; // -600 seconds = -10 minutes
-        }) || [];
+        // (more than 10 minutes before the reference time) to keep departed buses visible
+        const filteredDepartures = stop.stoptimesWithoutPatterns?.filter(departure =>
+          shouldShowDeparture(departure.scheduledArrival, { serviceDay: departure.serviceDay }, referenceTime)
+        ) || [];
 
         return {
           ...stop,
@@ -199,6 +189,7 @@ export async function getNearbyStops(lat, lon, radius = 500, forceRefresh = fals
         distance: stop.distance,
         // Store only essential departure info (much smaller than full trip data)
         stoptimesWithoutPatterns: stop.stoptimesWithoutPatterns?.map(st => ({
+          serviceDay: st.serviceDay,
           scheduledArrival: st.scheduledArrival,
           scheduledDeparture: st.scheduledDeparture,
           realtimeArrival: st.realtimeArrival,
@@ -280,6 +271,7 @@ export async function getStops(lat, lon, radius = 500) {
               lat
               lon
               stoptimesWithoutPatterns(numberOfDepartures: 5, startTime: $startTime) {
+                serviceDay
                 scheduledArrival
                 realtimeArrival
                 arrivalDelay
@@ -319,6 +311,7 @@ export async function getDailyTimetable(gtfsId) {
         name
         code
         stoptimesWithoutPatterns(numberOfDepartures: 200, startTime: $startTime, omitCanceled: false) {
+          serviceDay
           scheduledArrival
           scheduledDeparture
           headsign
@@ -366,6 +359,7 @@ export async function getStopById(gtfsId, customTime = null) {
         lat
         lon
         stoptimesWithoutPatterns(numberOfDepartures: 20, startTime: $startTime, omitCanceled: false) {
+          serviceDay
           scheduledArrival
           scheduledDeparture
           realtimeArrival
@@ -407,20 +401,9 @@ export async function getStopById(gtfsId, customTime = null) {
     if (!data.stop) return null;
 
     // Client-side safety filter: remove any departures clearly in the past
-    const currentSecondsFromMidnight = (referenceTime.getHours() * 3600) + (referenceTime.getMinutes() * 60) + referenceTime.getSeconds();
-
-    const filteredDepartures = data.stop.stoptimesWithoutPatterns?.filter(departure => {
-      const scheduledArrival = departure.scheduledArrival;
-      const diff = scheduledArrival - currentSecondsFromMidnight;
-
-      // If more than 12 hours in the past, it's tomorrow's departure - keep it
-      if (diff < -43200) {
-        return true;
-      }
-
-      // Keep if scheduled arrival is within the last 10 minutes or in the future
-      return diff >= -600; // -600 seconds = -10 minutes
-    }) || [];
+    const filteredDepartures = data.stop.stoptimesWithoutPatterns?.filter(departure =>
+      shouldShowDeparture(departure.scheduledArrival, { serviceDay: departure.serviceDay }, referenceTime)
+    ) || [];
 
     return {
       ...data.stop,
@@ -1108,6 +1091,7 @@ function expandCachedStops(stops, lat, lon) {
     ...stop,
     distance: Math.round(haversineDistance(lat, lon, stop.lat, stop.lon)),
     stoptimesWithoutPatterns: stop.stoptimesWithoutPatterns?.map(st => ({
+      serviceDay: st.serviceDay,
       scheduledArrival: st.scheduledArrival,
       scheduledDeparture: st.scheduledDeparture,
       realtimeArrival: st.realtimeArrival,

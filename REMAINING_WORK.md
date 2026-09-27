@@ -1,7 +1,7 @@
 # Tartubus: Remaining Work
 
 - **Status as of 2026-09-26:** the critical fixes are in [PR #2](https://github.com/Ekats/Tartubus/pull/2) (branch `claude/quirky-curie-tvlihl`): items 0.1, 1, 2, 3, 5, 6, 7 and 8 of `IMPLEMENTATION_PLAN.md`. **This file lists everything that is still open**, so it can be handed to an implementing agent on its own.
-- **Update 2026-09-27:** items 0.2, 4, 9, 10, 11 and 14 are done (crossed out below), together with the hardcoded Near Me strings and the untranslated "permission denied" message.
+- **Update 2026-09-27:** items 0.2, 4, 9, 10, 11, 12 and 14 are done (crossed out below), together with the hardcoded Near Me strings and the untranslated "permission denied" message.
 - `IMPLEMENTATION_PLAN.md` keeps the full history (evidence and reasons for the done items). Item numbers here match it.
 
 ---
@@ -30,7 +30,7 @@
 
 ### Order and dependencies
 
-Suggested order: **~~0.2~~ → ~~4~~ → ~~9~~ → ~~10~~ → ~~11~~ → 12 → 13 → ~~14~~ → backlog.** Skip F3–F5 unless the task prompt gives the owner's decision.
+Suggested order: **~~0.2~~ → ~~4~~ → ~~9~~ → ~~10~~ → ~~11~~ → ~~12~~ → 13 → ~~14~~ → backlog.** Skip F3–F5 unless the task prompt gives the owner's decision.
 
 | Item | Needs | Why |
 |------|-------|-----|
@@ -201,7 +201,9 @@ Add it to `COMMANDS.md` or the PR template, and run it for every PR:
 - **Check:** unit tests for the key function (different `customTime` → different key; 300 m apart → different key) and for `expandCachedStops` (route short name survives the round trip). Manually: go offline and refresh; badges keep their route numbers.
 - **Size:** S–M.
 
-### 12. Departures are compared with the real clock, not the chosen time, and the service day is guessed
+### ~~12. Departures are compared with the real clock, not the chosen time, and the service day is guessed~~ ✅
+
+- **Status: done.** `serviceDay` is requested in all four stoptime queries and kept in the nearby-stops cache. New `getArrivalDate()` in `timeFormatter.js` gives the exact arrival time from `serviceDay` (falling back to the old guess, now relative to the reference time, when it's missing); `shouldShowDeparture`, `isDepartureLate` and `formatArrivalTime` take an optional `referenceTime` (null = now), and the two client-side filters in `digitransit.js` use `shouldShowDeparture`. Near Me, Favorites, the map's nearby-stops list and `StopCard` (new `customTime` prop) pass the chosen time; the map's routing and selected-stop fetches now request it too. With a chosen time, `CountdownTimer` shows the clock time and "+N min" and doesn't tick (D2). Clock times are formatted in `Europe/Tallinn`. Not changed: the dead `{false && <Popup>}` block in `StopFinder.jsx`; a map stop that already has departures isn't refetched when the time changes. Tests: `src/utils/__tests__/timeFormatter.test.js` (also pass with `TZ=America/New_York`) and `src/components/__tests__/CountdownTimer.test.jsx`.
 
 - **Evidence:**
   - `shouldShowDeparture`, `isDepartureLate` and `formatArrivalTime` (`src/utils/timeFormatter.js:20-143`), `CountdownTimer.jsx`, and the client-side filter in `getNearbyStops` (`digitransit.js:170-188`) all build "today at N seconds after midnight" and compare it with `new Date()`.

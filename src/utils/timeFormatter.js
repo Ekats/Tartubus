@@ -11,46 +11,65 @@ export function formatClockTime(secondsSinceMidnight) {
   return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
 }
 
+// Clock times as shown on Tartu's stop displays, whatever the device's time zone
+const TALLINN_CLOCK = new Intl.DateTimeFormat('et-EE', {
+  timeZone: 'Europe/Tallinn', hour: '2-digit', minute: '2-digit', hourCycle: 'h23',
+});
+
 /**
- * Format arrival time nicely (e.g., "2 min", "15:45")
- * Uses real-time arrival data when available, falls back to scheduled time
- * @param {number} secondsSinceMidnight - Scheduled seconds since midnight (e.g., 43200 = 12:00 PM)
- * @param {Object} realtimeData - Optional realtime data {realtimeArrival, realtime}
+ * Absolute arrival time of a departure.
+ * With `realtimeData.serviceDay` (the API's Unix timestamp, in seconds, of the service
+ * date's local midnight) the result is exact, across midnight and in any device time zone.
+ * Without it, falls back to the device clock: the reference day at N seconds after midnight,
+ * where anything more than 12 hours before the reference time counts as the next day.
+ * @param {number} secondsSinceMidnight - Scheduled seconds since midnight
+ * @param {Object} realtimeData - Optional {realtimeArrival, realtime, serviceDay}
+ * @param {Date|null} referenceTime - The time departures are compared with (the chosen time; null = now)
+ * @returns {{date: Date, exact: boolean}}
  */
-export function formatArrivalTime(secondsSinceMidnight, realtimeData = null) {
+export function getArrivalDate(secondsSinceMidnight, realtimeData = null, referenceTime = null) {
+  referenceTime = referenceTime || new Date();
   // Use real-time arrival if available, otherwise use scheduled
   const useRealtime = realtimeData?.realtime && realtimeData?.realtimeArrival != null;
   const actualArrival = useRealtime ? realtimeData.realtimeArrival : secondsSinceMidnight;
 
-  // Create a date object for today at the specified time
-  const now = new Date();
-  const arrivalTime = new Date();
-
-  // Set the time based on seconds since midnight
-  arrivalTime.setHours(0, 0, 0, 0); // Reset to midnight
-  arrivalTime.setSeconds(actualArrival); // Add seconds since midnight
-
-  const minutesUntil = differenceInMinutes(arrivalTime, now);
-
-  // If more than 12 hours in the past, it's probably tomorrow's departure
-  // (e.g., it's 01:00 and bus was scheduled for 23:00 yesterday)
-  if (minutesUntil < -720) {
-    // It's tomorrow, adjust the date
-    arrivalTime.setDate(arrivalTime.getDate() + 1);
-    const adjustedMinutes = differenceInMinutes(arrivalTime, now);
-
-    if (adjustedMinutes < 2) {
-      return 'Arriving';
-    } else if (adjustedMinutes < 60) {
-      return `${adjustedMinutes} min`;
-    } else {
-      return format(arrivalTime, 'HH:mm');
-    }
+  if (realtimeData?.serviceDay) {
+    return { date: new Date((realtimeData.serviceDay + actualArrival) * 1000), exact: true };
   }
+
+  const date = new Date(referenceTime);
+  date.setHours(0, 0, 0, 0);
+  date.setSeconds(actualArrival);
+  // More than 12 hours in the past: it's the next day's departure
+  // (e.g., it's 01:00 and bus was scheduled for 23:00)
+  if (differenceInMinutes(date, referenceTime) < -720) {
+    date.setDate(date.getDate() + 1);
+  }
+  return { date, exact: false };
+}
+
+/**
+ * Clock time ("08:12") of an arrival from getArrivalDate()
+ */
+export function formatArrivalClock({ date, exact }) {
+  return exact ? TALLINN_CLOCK.format(date) : format(date, 'HH:mm');
+}
+
+/**
+ * Format arrival time nicely (e.g., "2 min", "15:45")
+ * Uses real-time arrival data when available, falls back to scheduled time
+ * @param {number} secondsSinceMidnight - Scheduled seconds since midnight (e.g., 43200 = 12:00 PM)
+ * @param {Object} realtimeData - Optional realtime data {realtimeArrival, realtime, serviceDay}
+ * @param {Date|null} referenceTime - The time to count down from (null = now)
+ */
+export function formatArrivalTime(secondsSinceMidnight, realtimeData = null, referenceTime = null) {
+  referenceTime = referenceTime || new Date();
+  const arrival = getArrivalDate(secondsSinceMidnight, realtimeData, referenceTime);
+  const minutesUntil = differenceInMinutes(arrival.date, referenceTime);
 
   // Show clock time for buses that are past their scheduled time (up to 12 hours)
   if (minutesUntil < 0) {
-    return format(arrivalTime, 'HH:mm');
+    return formatArrivalClock(arrival);
   }
   // Show "Arriving" for buses under 2 minutes (matching physical displays at stops)
   else if (minutesUntil < 2) {
@@ -58,7 +77,7 @@ export function formatArrivalTime(secondsSinceMidnight, realtimeData = null) {
   } else if (minutesUntil < 60) {
     return `${minutesUntil} min`;
   } else {
-    return format(arrivalTime, 'HH:mm');
+    return formatArrivalClock(arrival);
   }
 }
 
@@ -89,61 +108,32 @@ export function formatDistance(meters) {
  * Check if a departure should still be visible (not too far in the past)
  * Keep departures visible for up to 10 minutes after scheduled time (for departed buses)
  * @param {number} scheduledArrival - Seconds since midnight
- * @param {Object} realtimeData - Optional realtime data {realtimeArrival, realtime}
+ * @param {Object} realtimeData - Optional realtime data {realtimeArrival, realtime, serviceDay}
+ * @param {Date|null} referenceTime - The time departures are compared with (null = now)
  * @returns {boolean} - true if departure should be shown
  */
-export function shouldShowDeparture(scheduledArrival, realtimeData = null) {
-  // Use real-time arrival if available, otherwise use scheduled
-  const useRealtime = realtimeData?.realtime && realtimeData?.realtimeArrival != null;
-  const actualArrival = useRealtime ? realtimeData.realtimeArrival : scheduledArrival;
-
-  const now = new Date();
-  const arrivalTime = new Date();
-
-  // Set the time based on seconds since midnight
-  arrivalTime.setHours(0, 0, 0, 0);
-  arrivalTime.setSeconds(actualArrival);
-
-  const minutesUntil = differenceInMinutes(arrivalTime, now);
-
-  // If more than 12 hours in the past, it's probably tomorrow's departure
-  // (e.g., it's 01:00 and bus was scheduled for 23:00 yesterday)
-  if (minutesUntil < -720) {
-    return true; // It's tomorrow's departure, show it
-  }
+export function shouldShowDeparture(scheduledArrival, realtimeData = null, referenceTime = null) {
+  referenceTime = referenceTime || new Date();
+  const { date } = getArrivalDate(scheduledArrival, realtimeData, referenceTime);
 
   // Show departures that are up to 10 minutes in the past (for departed buses)
   // and all future departures
-  return minutesUntil >= -10;
+  return differenceInMinutes(date, referenceTime) >= -10;
 }
 
 /**
  * Check if a departure is late (past its scheduled time)
  * @param {number} scheduledArrival - Seconds since midnight
- * @param {Object} realtimeData - Optional realtime data {realtimeArrival, realtime}
+ * @param {Object} realtimeData - Optional realtime data {realtimeArrival, realtime, serviceDay}
+ * @param {Date|null} referenceTime - The time departures are compared with (null = now)
  * @returns {boolean} - true if departure is late
  */
-export function isDepartureLate(scheduledArrival, realtimeData = null) {
-  // Use real-time arrival if available, otherwise use scheduled
-  const useRealtime = realtimeData?.realtime && realtimeData?.realtimeArrival != null;
-  const actualArrival = useRealtime ? realtimeData.realtimeArrival : scheduledArrival;
-
-  const now = new Date();
-  const arrivalTime = new Date();
-
-  // Set the time based on seconds since midnight
-  arrivalTime.setHours(0, 0, 0, 0);
-  arrivalTime.setSeconds(actualArrival);
-
-  const minutesUntil = differenceInMinutes(arrivalTime, now);
-
-  // If more than 12 hours in the past, it's probably tomorrow's departure
-  if (minutesUntil < -720) {
-    return false; // It's tomorrow's departure, not late
-  }
+export function isDepartureLate(scheduledArrival, realtimeData = null, referenceTime = null) {
+  referenceTime = referenceTime || new Date();
+  const { date } = getArrivalDate(scheduledArrival, realtimeData, referenceTime);
 
   // Late if past scheduled time (negative minutes)
-  return minutesUntil < 0;
+  return differenceInMinutes(date, referenceTime) < 0;
 }
 
 /**
