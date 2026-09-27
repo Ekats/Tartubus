@@ -1,7 +1,7 @@
 # Tartubus: Remaining Work
 
 - **Status as of 2026-09-26:** the critical fixes are in [PR #2](https://github.com/Ekats/Tartubus/pull/2) (branch `claude/quirky-curie-tvlihl`): items 0.1, 1, 2, 3, 5, 6, 7 and 8 of `IMPLEMENTATION_PLAN.md`. **This file lists everything that is still open**, so it can be handed to an implementing agent on its own.
-- **Update 2026-09-27:** items 0.2, 4, 9, 10, 11, 12 and 14 are done (crossed out below), together with the hardcoded Near Me strings and the untranslated "permission denied" message.
+- **Update 2026-09-27:** items 0.2, 4, 9, 10, 11, 12, 13 and 14 are done (crossed out below), together with the hardcoded Near Me strings and the untranslated "permission denied" message.
 - `IMPLEMENTATION_PLAN.md` keeps the full history (evidence and reasons for the done items). Item numbers here match it.
 
 ---
@@ -30,7 +30,7 @@
 
 ### Order and dependencies
 
-Suggested order: **~~0.2~~ → ~~4~~ → ~~9~~ → ~~10~~ → ~~11~~ → ~~12~~ → 13 → ~~14~~ → backlog.** Skip F3–F5 unless the task prompt gives the owner's decision.
+Suggested order: **~~0.2~~ → ~~4~~ → ~~9~~ → ~~10~~ → ~~11~~ → ~~12~~ → ~~13~~ → ~~14~~ → backlog.** Skip F3–F5 unless the task prompt gives the owner's decision.
 
 | Item | Needs | Why |
 |------|-------|-----|
@@ -222,7 +222,9 @@ Add it to `COMMANDS.md` or the PR template, and run it for every PR:
 - **Check:** unit tests with a fixed `serviceDay`, `referenceTime` values on the same day, the next day and across midnight, plus a non-Tallinn `TZ` (run vitest with `TZ=America/New_York`). Manually: smoke test step 6.
 - **Size:** M. The query change touches several call sites, which is why it's grouped with item 11.
 
-### 13. "Filter routes" on the map is empty
+### ~~13. "Filter routes" on the map is empty~~ ✅
+
+- **Status: done (step 1).** New `getRouteShortNamesInZone(zone)` in `digitransit.js` lists the route numbers serving a city zone from the bundled route data (memoized per zone and route-data version). The map loads it when the filter panel opens (lazily, the route file is large) and merges it with route numbers seen in loaded departures, so the list is complete before any departures arrive and survives pans and zooms. **Step 2 not done:** the unused `handleRefresh` in `StopFinder.jsx` was left as it is (dead code is flagged, not deleted, per the owner's rules); wiring it to a button would be a new feature. Tests: `src/services/__tests__/getRouteShortNamesInZone.test.js`; also checked in Chromium with the departures API blocked (the filter lists Tartu's routes 4, 7 and 12, not Tallinn's).
 
 - **Evidence:**
   - The filter list (`StopFinder.jsx:1202-1221`) is built from departures stored on `stops`.

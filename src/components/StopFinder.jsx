@@ -6,7 +6,7 @@ import L from 'leaflet';
 import 'leaflet-polylinedecorator';
 import { useGeolocation, setLocationConsent } from '../hooks/useGeolocation';
 import { useFavorites } from '../hooks/useFavorites';
-import { getNearbyStops, getStopsByRoutes, getNextStopName, planJourney, decodePolyline, getDailyTimetable, getWalkingRoute } from '../services/digitransit';
+import { getNearbyStops, getStopsByRoutes, getRouteShortNamesInZone, getNextStopName, planJourney, decodePolyline, getDailyTimetable, getWalkingRoute } from '../services/digitransit';
 import { CITY_ZONES } from '../utils/geo';
 import { getSetting } from '../utils/settings';
 import { reverseGeocode } from '../utils/geocoding';
@@ -340,6 +340,7 @@ function StopFinder({
   const [currentZoom, setCurrentZoom] = useState(13);
   const [selectedRoutes, setSelectedRoutes] = useState(new Set());
   const [showRouteFilter, setShowRouteFilter] = useState(false);
+  const [zoneRouteNames, setZoneRouteNames] = useState([]); // Route numbers serving the current city zone
   const [routeStops, setRouteStops] = useState([]);
   const [routePatterns, setRoutePatterns] = useState([]);
   const [loadingRoutes, setLoadingRoutes] = useState(false);
@@ -1197,8 +1198,9 @@ function StopFinder({
 
   const adjustedStops = adjustStopPositions(uniqueStops, currentZoom);
 
-  // Get all unique routes from all stops
-  const allRoutes = new Set();
+  // Routes for the filter: every route serving the current city zone (from the bundled
+  // route data), plus any seen in loaded departures
+  const allRoutes = new Set(zoneRouteNames);
   stops.forEach(stop => {
     if (stop.stoptimesWithoutPatterns) {
       stop.stoptimesWithoutPatterns.forEach(departure => {
@@ -1425,6 +1427,17 @@ function StopFinder({
 
     loadRouteStops();
   }, [selectedRoutes, currentCityZone]);
+
+  // Fill the route filter from the bundled route data when it's opened
+  // (loaded lazily: the route file is large)
+  useEffect(() => {
+    if (!showRouteFilter) return;
+    let cancelled = false;
+    getRouteShortNamesInZone(currentCityZone)
+      .then(names => { if (!cancelled) setZoneRouteNames(names); })
+      .catch(err => console.error('Error loading routes for filter:', err));
+    return () => { cancelled = true; };
+  }, [showRouteFilter, currentCityZone]);
 
   // Helper function to calculate distance from city center
   const getDistanceFromCity = (lat1, lon1, lat2, lon2) => {

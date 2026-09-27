@@ -585,6 +585,28 @@ async function loadRoutesFromBundle() {
   return allRoutesFetchPromise;
 }
 
+// Route numbers per city zone, recomputed when the loaded route data changes
+const zoneRouteNamesCache = new Map(); // zone name -> { routes, names }
+
+/**
+ * Route numbers (short names) of all bundled routes that serve a city zone.
+ * Static data, so the map's route filter is complete even before any departures are loaded.
+ * @param {Object} zone - A CITY_ZONES entry
+ * @returns {Promise<string[]>}
+ */
+export async function getRouteShortNamesInZone(zone) {
+  const routes = await loadRoutesFromBundle();
+  const cached = zoneRouteNamesCache.get(zone.name);
+  if (cached && cached.routes === routes) {
+    return cached.names;
+  }
+  const names = [...new Set(
+    routes.filter(route => route.shortName && isRouteInZone(route, zone)).map(route => route.shortName)
+  )];
+  zoneRouteNamesCache.set(zone.name, { routes, names });
+  return names;
+}
+
 // Update routes from GitHub
 async function updateRoutesFromGitHub() {
   const GITHUB_ROUTES_URL = 'https://raw.githubusercontent.com/ekats/Tartubus/master/public/data/routes.min.json';
