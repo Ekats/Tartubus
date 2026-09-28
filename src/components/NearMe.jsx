@@ -316,7 +316,7 @@ function NearMe({ geolocationHook, onNavigateToMap, manualLocation: manualLocati
       const { lat, lon, customTime: time } = latestRefreshParamsRef.current || {};
       if (!lat || !lon) return;
       const radius = getSetting('nearbyRadius') || 500;
-      // Refresh without force (use cache if available < 2 min old)
+      // Refresh without force (use cache if available < 1 min old)
       fetchNearbyStops(lat, lon, radius, false, time);
     };
 

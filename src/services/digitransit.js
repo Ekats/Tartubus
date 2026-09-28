@@ -525,7 +525,7 @@ export function decodePolyline(encoded) {
 
 // Cache expiration times
 // Departure times - cache for 2 minutes (fresh enough, provides offline resilience)
-const STOPS_CACHE_DURATION = 2 * 60 * 1000; // 2 minutes
+const STOPS_CACHE_DURATION = 60 * 1000; // 1 minute: Near Me's 30 s refresh gets fresh delays about once a minute
 // Limit number of cached location queries (keep 10 most recent for good offline UX)
 const MAX_STOPS_CACHE_ENTRIES = 10; // Reduced to prevent quota issues
 
