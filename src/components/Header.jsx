@@ -3,7 +3,7 @@ import { forwardGeocode } from '../utils/geocoding';
 import { searchRouteByNumber } from '../services/digitransit';
 import { useTranslation } from 'react-i18next';
 
-function Header({ isDarkMode, toggleDarkMode, onDestinationSelect, onRouteSelect, customTime, onTimePickerOpen }) {
+function Header({ isDarkMode, toggleDarkMode, onDestinationSelect, onRouteSelect, routeSearchZone, customTime, onTimePickerOpen }) {
   const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
@@ -43,8 +43,8 @@ function Header({ isDarkMode, toggleDarkMode, onDestinationSelect, onRouteSelect
       const isRouteNumber = /^\d+[a-zA-Z]?$/.test(searchQuery.trim());
 
       if (isRouteNumber) {
-        // Search for bus route
-        const routes = await searchRouteByNumber(searchQuery.trim());
+        // Search for bus route in the city zone the map shows (Tartu until the map is opened)
+        const routes = await searchRouteByNumber(searchQuery.trim(), routeSearchZone);
         const routeResults = routes.map(route => ({
           type: 'route',
           routeNumber: route.shortName,
@@ -70,7 +70,7 @@ function Header({ isDarkMode, toggleDarkMode, onDestinationSelect, onRouteSelect
         clearTimeout(searchTimeoutRef.current);
       }
     };
-  }, [searchQuery]);
+  }, [searchQuery, routeSearchZone]);
 
   const handleResultClick = (result) => {
     if (result.type === 'route') {

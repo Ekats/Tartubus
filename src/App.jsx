@@ -12,6 +12,7 @@ import DateTimePicker from './components/DateTimePicker'
 import { useDarkMode } from './hooks/useDarkMode'
 import { useGeolocation, getLocationConsent } from './hooks/useGeolocation'
 import { initializeCaches } from './services/digitransit'
+import { CITY_ZONES } from './utils/geo'
 
 function App() {
   const [activeView, setActiveView] = useState('nearme')
@@ -29,6 +30,7 @@ function App() {
   const [lastBackPress, setLastBackPress] = useState(0)
   const [customTime, setCustomTime] = useState(null) // null = use current time, otherwise use Date object
   const [showTimePicker, setShowTimePicker] = useState(false)
+  const [mapZone, setMapZone] = useState(CITY_ZONES.tartu) // City zone the map shows; route search uses it
 
   // Initialize caches on app startup
   useEffect(() => {
@@ -171,6 +173,7 @@ function App() {
           customTime={customTime}
           onJourneyChange={setSelectedJourney}
           onRouteChange={setSelectedRoute}
+          onZoneChange={setMapZone}
           onLocationSelected={(location) => {
             setManualLocation(location)
             setLocationSelectionMode(false)
@@ -205,6 +208,7 @@ function App() {
         toggleDarkMode={toggleDarkMode}
         onDestinationSelect={handleDestinationSelect}
         onRouteSelect={handleRouteSelect}
+        routeSearchZone={mapZone}
         customTime={customTime}
         onTimePickerOpen={() => setShowTimePicker(true)}
       />

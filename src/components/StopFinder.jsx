@@ -316,6 +316,7 @@ function StopFinder({
   customTime,
   onJourneyChange,
   onRouteChange,
+  onZoneChange,
   onLocationSelected,
   onCancelLocationSelection
 }) {
@@ -456,6 +457,12 @@ function StopFinder({
   };
 
   const [currentCityZone, setCurrentCityZone] = useState(getCurrentCityZone(center));
+
+  // Let App know which city zone the map shows (the header's route search uses it)
+  useEffect(() => {
+    onZoneChange?.(currentCityZone);
+  }, [currentCityZone.name]);
+
   const [cityZoneStopsLoaded, setCityZoneStopsLoaded] = useState(false);
   const [allZoneStops, setAllZoneStops] = useState([]); // Store ALL zone stops
   const [visibleBounds, setVisibleBounds] = useState(null); // Current viewport bounds
