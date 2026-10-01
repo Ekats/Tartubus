@@ -1,0 +1,172 @@
+name: Android
+
+# - Pull requests: build a debug APK, so a broken Android build is caught early.
+# - Manual run: debug APK, or a signed release (optionally uploaded to Google Play).
+# - Called by build-releases.yml on a v* tag: signed APK + AAB for the GitHub Release,
+#   and the AAB goes to Google Play's internal testing track.
+#
+# Secrets used for release builds (Settings -> Secrets and variables -> Actions):
+#   ANDROID_KEYSTORE_BASE64, ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS, ANDROID_KEY_PASSWORD
+#   PLAY_SERVICE_ACCOUNT_JSON (only for the Play upload)
+
+on:
+  pull_request:
+    paths:
+      - 'android/**'
+      - 'src/**'
+      - 'public/**'
+      - 'index.html'
+      - 'vite.config.js'
+      - 'capacitor.config.json'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/android.yml'
+  workflow_dispatch:
+    inputs:
+      release:
+        description: 'Signed release build (APK + AAB) instead of a debug APK'
+        type: boolean
+        default: false
+      upload_to_play:
+        description: 'Upload the AAB to Google Play (internal testing track); needs "release"'
+        type: boolean
+        default: false
+  workflow_call:
+    inputs:
+      release:
+        type: boolean
+        default: false
+      upload_to_play:
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    env:
+      RELEASE: ${{ inputs.release == true }}
+      UPLOAD_TO_PLAY: ${{ inputs.release == true && inputs.upload_to_play == true }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Install dependencies
+        run: npm ci
+
+      # v1.5.6 -> versionName 1.5.6, versionCode 10506. Google Play requires the
+      # versionCode to increase with every upload.
+      - name: Set app version
+        if: env.RELEASE == 'true'
+        run: |
+          if [ "$GITHUB_REF_TYPE" = "tag" ]; then VERSION="${GITHUB_REF_NAME#v}"; else VERSION="$(node -p "require('./package.json').version")"; fi
+          if ! [[ "$VERSION" =~ ^([0-9]+)\.([0-9]{1,2})\.([0-9]{1,2})$ ]]; then
+            echo "::error::Version '$VERSION' must look like 1.5.6 (minor and patch below 100)"; exit 1
+          fi
+          CODE=$(( BASH_REMATCH[1] * 10000 + 10#${BASH_REMATCH[2]} * 100 + 10#${BASH_REMATCH[3]} ))
+          echo "ANDROID_VERSION_NAME=$VERSION" >> "$GITHUB_ENV"
+          echo "ANDROID_VERSION_CODE=$CODE" >> "$GITHUB_ENV"
+          echo "Version $VERSION (versionCode $CODE)"
+
+      - name: Build web app (use committed routes.min.json)
+        run: |
+          # Vite inlines these at build time; without the key every API request fails with 401
+          if [ -z "$VITE_DIGITRANSIT_API_KEY" ]; then
+            if [ "$RELEASE" = "true" ]; then echo "::error::VITE_DIGITRANSIT_API_KEY secret is missing"; exit 1; fi
+            echo "::warning::VITE_DIGITRANSIT_API_KEY is not available (e.g. a pull request from a fork): this debug APK can't load departures"
+          fi
+          npm run build:skip-routes
+        env:
+          VITE_DIGITRANSIT_API_KEY: ${{ secrets.VITE_DIGITRANSIT_API_KEY }}
+          VITE_EMAILJS_SERVICE_ID: ${{ secrets.VITE_EMAILJS_SERVICE_ID }}
+          VITE_EMAILJS_TEMPLATE_ID: ${{ secrets.VITE_EMAILJS_TEMPLATE_ID }}
+          VITE_EMAILJS_PUBLIC_KEY: ${{ secrets.VITE_EMAILJS_PUBLIC_KEY }}
+
+      - name: Sync to Capacitor
+        run: npx cap sync android
+
+      - name: Make gradlew executable
+        working-directory: android
+        run: chmod +x gradlew
+
+      # -Dorg.gradle.java.home overrides the Windows JDK path in android/gradle.properties
+
+      - name: Build debug APK
+        if: env.RELEASE != 'true'
+        working-directory: android
+        run: ./gradlew assembleDebug --console=plain -Dorg.gradle.java.home="$JAVA_HOME"
+
+      - name: Upload debug APK
+        if: env.RELEASE != 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: tartubus-android-debug
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Build signed release APK and AAB
+        if: env.RELEASE == 'true'
+        working-directory: android
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          for name in ANDROID_KEYSTORE_BASE64 ANDROID_KEYSTORE_PASSWORD ANDROID_KEY_ALIAS ANDROID_KEY_PASSWORD; do
+            if [ -z "${!name}" ]; then echo "::error::$name secret is missing"; exit 1; fi
+          done
+          export ANDROID_KEYSTORE_FILE="$RUNNER_TEMP/upload-keystore.jks"
+          trap 'rm -f "$ANDROID_KEYSTORE_FILE"' EXIT
+          printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 -d > "$ANDROID_KEYSTORE_FILE"
+
+          ./gradlew assembleRelease bundleRelease --console=plain -Dorg.gradle.java.home="$JAVA_HOME"
+
+          # Fail if the APK didn't get signed
+          APKSIGNER="$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)/apksigner"
+          "$APKSIGNER" verify app/build/outputs/apk/release/app-release.apk
+
+          mkdir -p "$GITHUB_WORKSPACE/android-release"
+          cp app/build/outputs/apk/release/app-release.apk "$GITHUB_WORKSPACE/android-release/tartubus-$ANDROID_VERSION_NAME.apk"
+          cp app/build/outputs/bundle/release/app-release.aab "$GITHUB_WORKSPACE/android-release/tartubus-$ANDROID_VERSION_NAME.aab"
+
+      - name: Upload release APK and AAB
+        if: env.RELEASE == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: tartubus-android
+          path: android-release/
+          if-no-files-found: error
+
+      - name: Check Play credentials
+        if: env.UPLOAD_TO_PLAY == 'true'
+        env:
+          PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+        run: |
+          if [ -z "$PLAY_SERVICE_ACCOUNT_JSON" ]; then echo "::error::PLAY_SERVICE_ACCOUNT_JSON secret is missing"; exit 1; fi
+
+      # Pinned to a commit: this action receives a credential that can publish the app
+      - name: Upload AAB to Google Play (internal testing)
+        if: env.UPLOAD_TO_PLAY == 'true'
+        uses: r0adkll/upload-google-play@e738b9dd8f2476ea806d921b64aacd24f34515a5 # v1.1.5
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+          packageName: ee.tartu.bussid
+          releaseFiles: android-release/*.aab
+          track: internal
+          status: completed

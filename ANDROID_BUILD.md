@@ -125,6 +125,38 @@ cd ..
 npm run android:sync
 ```
 
+## CI builds and releases (GitHub Actions)
+
+`.github/workflows/android.yml` builds the app in CI:
+
+| When | What it builds |
+|------|----------------|
+| Pull request touching the app or `android/` | Debug APK (artifact `tartubus-android-debug`, kept 14 days) |
+| Actions → **Android** → Run workflow | Debug APK, or with "release" ticked a signed APK + AAB; "upload_to_play" also sends the AAB to Play's internal testing track |
+| Pushing a `v*` tag (via `build-releases.yml`) | Signed `tartubus-<version>.apk` and `.aab` on the draft GitHub Release, and the AAB uploaded to Play's **internal testing** track |
+
+The version comes from the tag: `v1.5.6` → `versionName 1.5.6`, `versionCode 10506` (major × 10000 + minor × 100 + patch). Google Play needs a higher `versionCode` for every upload, so each tag can be uploaded once. Local builds keep the defaults in `android/app/build.gradle` and stay unsigned.
+
+### One-time setup: secrets
+
+Release builds need these repository secrets (Settings → Secrets and variables → Actions). Set them with the GitHub CLI so the values never appear on screen:
+
+```bash
+base64 -w0 path/to/upload-keystore.jks | gh secret set ANDROID_KEYSTORE_BASE64 -R Ekats/Tartubus
+gh secret set ANDROID_KEYSTORE_PASSWORD -R Ekats/Tartubus   # prompts for the value
+gh secret set ANDROID_KEY_ALIAS -R Ekats/Tartubus
+gh secret set ANDROID_KEY_PASSWORD -R Ekats/Tartubus
+gh secret set PLAY_SERVICE_ACCOUNT_JSON -R Ekats/Tartubus < path/to/service-account.json
+```
+
+On Windows PowerShell, the first line is:
+`[Convert]::ToBase64String([IO.File]::ReadAllBytes("C:\path\to\upload-keystore.jks")) | gh secret set ANDROID_KEYSTORE_BASE64 -R Ekats/Tartubus`
+
+- **Keystore**: the upload key the app is signed with for Google Play (the same one used for earlier uploads). If it is lost and the app uses Play App Signing, request an upload key reset in Play Console → Test and release → Setup → App signing.
+- **`PLAY_SERVICE_ACCOUNT_JSON`** (only for the Play upload): in Google Cloud Console create a service account and a JSON key for it, enable the "Google Play Android Developer API" for that project, then in Play Console → Users and permissions invite the service account's email with the "Release to testing tracks" permission for this app.
+
+The Play upload goes to the internal testing track only; promoting a build to production stays a manual step in Play Console.
+
 ## Publishing to Google Play
 
 **Note:** You mentioned Google won't verify your ID yet. When ready:

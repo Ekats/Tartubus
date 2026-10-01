@@ -48,54 +48,13 @@ jobs:
           name: tartubus-web
           path: tartubus-web.zip
 
-  build-android-apk:
-    runs-on: ubuntu-24.04
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-
-      - name: Setup Java
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: '21'
-
-      - name: Install dependencies
-        run: npm install
-
-      - name: Build web app (use committed routes.min.json)
-        shell: bash
-        run: |
-          # Vite inlines these at build time; without them every API request fails with 401
-          test -n "$VITE_DIGITRANSIT_API_KEY" || { echo "::error::VITE_DIGITRANSIT_API_KEY secret is missing"; exit 1; }
-          npm run build:skip-routes
-        env:
-          VITE_DIGITRANSIT_API_KEY: ${{ secrets.VITE_DIGITRANSIT_API_KEY }}
-          VITE_EMAILJS_SERVICE_ID: ${{ secrets.VITE_EMAILJS_SERVICE_ID }}
-          VITE_EMAILJS_TEMPLATE_ID: ${{ secrets.VITE_EMAILJS_TEMPLATE_ID }}
-          VITE_EMAILJS_PUBLIC_KEY: ${{ secrets.VITE_EMAILJS_PUBLIC_KEY }}
-
-      - name: Sync to Capacitor
-        run: npx cap sync android
-
-      - name: Make gradlew executable
-        working-directory: android
-        run: chmod +x gradlew
-
-      - name: Build APK
-        working-directory: android
-        run: ./gradlew assembleRelease -Dorg.gradle.java.home=$JAVA_HOME
-
-      - name: Upload APK artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: tartubus-android-apk
-          path: android/app/build/outputs/apk/release/app-release-unsigned.apk
+  # Signed APK + AAB (see android.yml); on a tag the AAB also goes to Google Play's internal track
+  build-android:
+    uses: ./.github/workflows/android.yml
+    with:
+      release: true
+      upload_to_play: ${{ startsWith(github.ref, 'refs/tags/') }}
+    secrets: inherit
 
   build-windows:
     runs-on: windows-latest
@@ -251,7 +210,7 @@ jobs:
           path: tartubus-macos.zip
 
   create-release:
-    needs: [build-web, build-android-apk, build-windows, build-linux, build-macos]
+    needs: [build-web, build-android, build-windows, build-linux, build-macos]
     runs-on: ubuntu-24.04
     # Publish whatever built: one broken platform shouldn't block the release
     if: ${{ !cancelled() && startsWith(github.ref, 'refs/tags/') }}
@@ -264,7 +223,8 @@ jobs:
         with:
           files: |
             tartubus-web/tartubus-web.zip
-            tartubus-android-apk/app-release-unsigned.apk
+            tartubus-android/*.apk
+            tartubus-android/*.aab
             tartubus-windows/tartubus-windows.zip
             tartubus-linux/tartubus-linux.tar.gz
             tartubus-macos/tartubus-macos.zip
@@ -273,7 +233,7 @@ jobs:
 
             ### Downloads
             - **Web App**: Extract `tartubus-web.zip` and serve with any web server
-            - **Android APK**: Install `app-release-unsigned.apk` (unsigned, for testing)
+            - **Android**: Install the signed `.apk` directly, or get the app from [Google Play](https://play.google.com/store/apps/details?id=ee.tartu.bussid) (the `.aab` is the Play upload file)
             - **Windows**: Extract `tartubus-windows.zip` and run `Tartubus.exe`
             - **Linux**: Extract `tartubus-linux.tar.gz` and run `Tartubus`
             - **macOS**: Extract `tartubus-macos.zip` and run `Tartubus.app`
