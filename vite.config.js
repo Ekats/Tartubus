@@ -6,6 +6,11 @@ import path from 'node:path'
 // Generate a build hash based on current timestamp
 const BUILD_HASH = Date.now().toString(36);
 
+// Version shown in Settings: the release tag's version in CI (set by android.yml),
+// otherwise the version in package.json
+const APP_VERSION = process.env.ANDROID_VERSION_NAME ||
+  JSON.parse(fs.readFileSync(new URL('./package.json', import.meta.url), 'utf8')).version;
+
 // Stamp the build hash into the copied service worker so every deploy ships a
 // byte-different worker (browsers only install a new worker when its bytes change)
 function stampServiceWorker() {
@@ -34,6 +39,7 @@ export default defineConfig({
   base: './', // Use relative paths for Capacitor compatibility
   define: {
     __BUILD_HASH__: JSON.stringify(BUILD_HASH),
+    __APP_VERSION__: JSON.stringify(APP_VERSION),
   },
   build: {
     outDir: 'dist',
