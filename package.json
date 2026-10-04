@@ -18,10 +18,10 @@
     "lint:i18n": "node scripts/checkLocales.js"
   },
   "dependencies": {
-    "@capacitor/android": "^7.4.4",
-    "@capacitor/app": "^7.1.0",
-    "@capacitor/cli": "^7.4.4",
-    "@capacitor/core": "^7.4.4",
+    "@capacitor/android": "^8.5.2",
+    "@capacitor/app": "^8.1.1",
+    "@capacitor/cli": "^8.5.2",
+    "@capacitor/core": "^8.5.2",
     "@emailjs/browser": "^4.4.1",
     "date-fns": "^4.1.0",
     "dotenv": "^17.2.3",

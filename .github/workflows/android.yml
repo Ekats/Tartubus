@@ -56,7 +56,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22' # Capacitor 8's CLI needs Node 22+
           cache: 'npm'
 
       - name: Setup Java
@@ -168,5 +168,5 @@ jobs:
           serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
           packageName: ee.tartu.bussid
           releaseFiles: android-release/*.aab
-          track: internal
+          tracks: internal
           status: completed
