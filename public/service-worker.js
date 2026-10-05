@@ -19,8 +19,29 @@ const urlsToCache = [
   `${BASE_PATH}icon-512.png`,
 ];
 
+// Inside the Android app (Capacitor serves the bundled files from https://localhost)
+// a cache only does harm: after an APK update it keeps showing the previous version's
+// pages. There the worker removes itself: it deletes every cache, unregisters and
+// reloads the open page, which then loads straight from the new APK.
+const IS_NATIVE_APP = self.location.protocol === 'https:' &&
+  self.location.hostname === 'localhost' && !self.location.port;
+
+if (IS_NATIVE_APP) {
+  self.addEventListener('install', () => self.skipWaiting());
+  self.addEventListener('activate', (event) => {
+    event.waitUntil((async () => {
+      const cacheNames = await caches.keys();
+      await Promise.all(cacheNames.map(name => caches.delete(name)));
+      const clients = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+      await self.registration.unregister();
+      await Promise.all(clients.map(client => client.navigate(client.url).catch(() => null)));
+    })());
+  });
+}
+
 // Install event - cache essential files
 self.addEventListener('install', (event) => {
+  if (IS_NATIVE_APP) return;
   console.log('Service Worker installing with base path:', BASE_PATH);
   event.waitUntil(
     caches.open(CACHE_NAME)
@@ -106,6 +127,7 @@ async function staleWhileRevalidate(event) {
 
 // Fetch event - pick a caching strategy per request type
 self.addEventListener('fetch', (event) => {
+  if (IS_NATIVE_APP) return; // Let the app's own local server answer
   // Skip caching for:
   // - API requests (always fetch fresh data)
   // - POST requests (can't be cached)
@@ -137,6 +159,7 @@ self.addEventListener('fetch', (event) => {
 
 // Activate event - clean up old caches and tell open pages an update is ready
 self.addEventListener('activate', (event) => {
+  if (IS_NATIVE_APP) return; // Handled above
   const cacheWhitelist = [CACHE_NAME];
   event.waitUntil(
     caches.keys().then((cacheNames) => {

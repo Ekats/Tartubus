@@ -29,7 +29,10 @@
 
     <!-- Register Service Worker -->
     <script>
-      if ('serviceWorker' in navigator) {
+      // Not in the Android app: its files are already on the device, and a cache there
+      // keeps showing the previous version after an update (the worker removes itself there)
+      const isNativeApp = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
+      if ('serviceWorker' in navigator && !isNativeApp) {
         window.addEventListener('load', () => {
           // Construct path relative to current location
           const basePath = window.location.pathname.replace(/\/[^\/]*$/, '/');
