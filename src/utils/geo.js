@@ -37,6 +37,26 @@ export function haversineDistance(lat1, lon1, lat2, lon2) {
 }
 
 /**
+ * Merge stops that are the same physical stop. Stops are matched by their public stop
+ * code (falling back to gtfsId), because the feed renumbers gtfsIds from time to time
+ * and a bundled stop would then appear next to its live copy. Of two copies, the one
+ * with departures wins; otherwise the later one. Order follows first appearance.
+ */
+export function mergeDuplicateStops(stops) {
+  const byKey = new Map();
+  for (const stop of stops) {
+    const key = stop.code || stop.gtfsId;
+    const existing = byKey.get(key);
+    const existingHasDepartures = existing?.stoptimesWithoutPatterns?.length > 0;
+    const stopHasDepartures = stop.stoptimesWithoutPatterns?.length > 0;
+    if (!existing || stopHasDepartures || !existingHasDepartures) {
+      byKey.set(key, stop);
+    }
+  }
+  return [...byKey.values()];
+}
+
+/**
  * Check whether any stop of any pattern of a route lies inside a city zone
  */
 export function isRouteInZone(route, zone) {

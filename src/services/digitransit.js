@@ -1,4 +1,4 @@
-import { CITY_ZONES, isRouteInZone, haversineDistance } from '../utils/geo';
+import { CITY_ZONES, isRouteInZone, haversineDistance, mergeDuplicateStops } from '../utils/geo';
 import { shouldShowDeparture } from '../utils/timeFormatter';
 
 // Use Routing v2 Finland GraphQL API
@@ -164,7 +164,8 @@ export async function getNearbyStops(lat, lon, radius = 500, forceRefresh = fals
         return gtfsId.startsWith('Viro:');
       });
 
-      const result = tartuStops.map(edge => {
+      // The feed lists some stops twice under two gtfsIds (same code, same place); show each once
+      const result = mergeDuplicateStops(tartuStops.map(edge => {
         const stop = edge.node.stop;
         // Client-side safety filter: remove any departures that are clearly in the past
         // (more than 10 minutes before the reference time) to keep departed buses visible
@@ -177,7 +178,7 @@ export async function getNearbyStops(lat, lon, radius = 500, forceRefresh = fals
           stoptimesWithoutPatterns: filteredDepartures,
           distance: edge.node.distance,
         };
-      });
+      }));
 
       // Cache with compressed departure data to save space
       const compressedResult = result.map(stop => ({

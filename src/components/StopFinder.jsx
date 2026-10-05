@@ -7,7 +7,7 @@ import 'leaflet-polylinedecorator';
 import { useGeolocation, setLocationConsent } from '../hooks/useGeolocation';
 import { useFavorites } from '../hooks/useFavorites';
 import { getNearbyStops, getStopsByRoutes, getRouteShortNamesInZone, getNextStopName, planJourney, decodePolyline, getDailyTimetable, getWalkingRoute } from '../services/digitransit';
-import { CITY_ZONES } from '../utils/geo';
+import { CITY_ZONES, mergeDuplicateStops } from '../utils/geo';
 import { getSetting } from '../utils/settings';
 import { reverseGeocode } from '../utils/geocoding';
 import { shouldShowDeparture, isDepartureLate, getDelayInfo } from '../utils/timeFormatter';
@@ -1198,10 +1198,8 @@ function StopFinder({
     ? [...stops, ...routeStops]
     : stops;
 
-  // Deduplicate by gtfsId
-  const uniqueStops = Array.from(
-    new Map(allStopsToShow.map(stop => [stop.gtfsId, stop])).values()
-  );
+  // Deduplicate (by stop code, so a renumbered stop doesn't show twice)
+  const uniqueStops = mergeDuplicateStops(allStopsToShow);
 
   const adjustedStops = adjustStopPositions(uniqueStops, currentZoom);
 
