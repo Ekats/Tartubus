@@ -5,6 +5,36 @@ All notable changes to Tartu Bussid will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.4.1] - 2026-10-05
+
+### Fixed
+- 🐛 **Stops shown twice on the map** - the bundled stop list was from November 2025 and the timetable feed has since renumbered every stop, so each stop appeared once with departures and once without. The stop list is now rebuilt nightly from the route data, and stops with the same stop code are merged
+- 🐛 **Android app kept showing the previous version after an update** - the offline cache served the old pages until the app was opened a second time. The Android app no longer uses that cache; the website still does
+
+### Changed
+- 🌐 **Language list** - Ukrainian and Russian are now under "Show more" in Settings
+- 📦 Stop list covers the supported cities only (2540 stops, 324 KB instead of 18 417 stops, 2.3 MB)
+
+## [3.4.0] - 2026-10-04
+
+Version numbers continue from the Google Play listing (3.3a). Everything since 1.5.4:
+
+### Fixed
+- 🐛 Journey planning with transfers crashed and ignored the chosen time
+- 🐛 Route search returned nothing; a picked route is now shown on the map
+- 🐛 Near Me stopped refreshing after the first update; live delays now refresh about once a minute
+- 🐛 Favorites could be silently deleted when starring from two places
+- 🐛 "Use manual location" was ignored and GPS started anyway; distances were measured from the city centre
+- 🐛 Language, settings and dismissed prompts were lost on cache clears and on the second launch
+- 🐛 Departure times ignored the chosen time and the device's time zone
+- 🐛 Map route filter was empty; missing translations showed raw key names
+- 🐛 Returning web users never received new versions
+
+### Changed
+- 🤖 Android: Capacitor 8, targets Android 16 (API 36); Android 7.0 is now the minimum
+- 🚀 Signed Android builds, GitHub Releases and Google Play internal-track uploads are automated from `v*` tags
+- 🔢 Settings shows the real version and build id
+
 ## [1.5.4] - 2025-11-13
 
 ### Fixed
