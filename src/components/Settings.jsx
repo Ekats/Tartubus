@@ -14,6 +14,8 @@ function Settings() {
   const [routesUpdateError, setRoutesUpdateError] = useState(null);
   const [routesExpanded, setRoutesExpanded] = useState(false);
   const [cacheExpanded, setCacheExpanded] = useState(false);
+  // Ukrainian and Russian sit under "Show more"; start expanded if one of them is selected
+  const [languagesExpanded, setLanguagesExpanded] = useState(['uk', 'ru'].includes(i18n.language));
 
   const radiusOptions = [
     { value: 300, label: `300m - ${t('settings.veryClose')}` },
@@ -147,6 +149,8 @@ function Settings() {
               />
               <span className="ml-3 text-gray-700 dark:text-gray-300">🇬🇧 {t('settings.english')}</span>
             </label>
+            {languagesExpanded && (
+            <>
             <label
               className="flex items-center p-3 border border-gray-200 dark:border-gray-700 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
             >
@@ -173,6 +177,14 @@ function Settings() {
               />
               <span className="ml-3 text-gray-700 dark:text-gray-300">🇷🇺 {t('settings.russian')}</span>
             </label>
+            </>
+            )}
+            <button
+              onClick={() => setLanguagesExpanded(!languagesExpanded)}
+              className="w-full text-sm text-primary dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium py-1"
+            >
+              {languagesExpanded ? `− ${t('nearMe.showLess')}` : `··· ${t('nearMe.showMore')}`}
+            </button>
           </div>
         </div>
 
