@@ -17,6 +17,8 @@ export default function StopCard({
   showMapButton = true,
   variant = 'card', // 'card' | 'overlay'
   customTime = null, // Planned time picked by the user (null = now)
+  onRefresh = null, // Optional: show a refresh button that reloads the departures
+  refreshing = false,
 }) {
   const { t } = useTranslation();
   const { isFavorite, toggleFavorite } = useFavorites();
@@ -107,6 +109,19 @@ export default function StopCard({
 
           {/* Action buttons */}
           <div className="flex items-center gap-2">
+            {onRefresh && (
+              <button
+                onClick={onRefresh}
+                disabled={refreshing}
+                className="rounded-full p-2 text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 transition-colors disabled:opacity-60"
+                title={t('nearMe.refresh')}
+                aria-label={t('nearMe.refresh')}
+              >
+                <svg className={`h-5 w-5 ${refreshing ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+              </button>
+            )}
             {!stop.isSearchResult && (
             <button
               onClick={() => toggleFavorite(stop)}

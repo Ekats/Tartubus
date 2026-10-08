@@ -8,6 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- 🐛 **Near Me live times updated only every ~90 s** instead of about once a minute: the refresh cache counted its age from when the answer arrived, so the 60 s refresh still found it fresh. Live times now update about every 60 s
+- 🐛 **The map's stop card never updated** while it stayed open. It now reloads every 30 s, when the chosen time changes, and from a new refresh button on the card
+- 🐛 **The map refreshed departures around your GPS position** even when you'd panned elsewhere; it now refreshes the area on screen
+- 🔋 **Favorites and the map kept refreshing in the background**; they now pause while the app is hidden (like Near Me) and refresh as soon as you return
+- 🔋 **Favorites reloaded every stop's departures on every 10 m of movement**; moving now only re-sorts the list by distance
 - 🐛 **Routes 1–9 couldn't be searched** - search only started at 2 characters, so a single-digit route number never searched. Route numbers now search from the first digit; addresses still need 2 characters
 
 ### Changed

@@ -6,7 +6,7 @@ import L from 'leaflet';
 import 'leaflet-polylinedecorator';
 import { useGeolocation, setLocationConsent } from '../hooks/useGeolocation';
 import { useFavorites } from '../hooks/useFavorites';
-import { getNearbyStops, getStopsByRoutes, getRouteShortNamesInZone, getNextStopName, planJourney, decodePolyline, getDailyTimetable, getWalkingRoute } from '../services/digitransit';
+import { getNearbyStops, getStopById, getStopsByRoutes, getRouteShortNamesInZone, getNextStopName, planJourney, decodePolyline, getDailyTimetable, getWalkingRoute } from '../services/digitransit';
 import { CITY_ZONES, mergeDuplicateStops } from '../utils/geo';
 import { getSetting } from '../utils/settings';
 import { reverseGeocode } from '../utils/geocoding';
@@ -17,6 +17,7 @@ import 'leaflet/dist/leaflet.css';
 import 'leaflet.markercluster/dist/MarkerCluster.css';
 import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
 import BusIcon from './BusIcon';
+import { useVisibleInterval } from '../hooks/useVisibleInterval';
 
 // Fix for default marker icons in React Leaflet
 delete L.Icon.Default.prototype._getIconUrl;
@@ -602,50 +603,41 @@ function StopFinder({
     };
   }, []);
 
-  // Fetch departure times for stops that don't have them yet (loaded from stops.json)
+  // Load departures for the stop card: when a stop is opened, when the chosen time
+  // changes, and every 30 s while it stays open. Stops from stops.json have no
+  // departures yet, and ones filled in by the map refresh may be minutes old.
+  const [refreshingSelectedStop, setRefreshingSelectedStop] = useState(false);
+  const selectedStopFetchSeqRef = useRef(0);
+
+  const loadSelectedStopDepartures = async () => {
+    const stop = selectedStop;
+    if (!stop || stop.isSearchResult) return; // Search results (virtual stops) have no departures
+
+    const fetchSeq = ++selectedStopFetchSeqRef.current;
+    setRefreshingSelectedStop(true);
+    try {
+      const stopWithDepartures = await getStopById(stop.gtfsId, customTime);
+      if (fetchSeq !== selectedStopFetchSeqRef.current || !stopWithDepartures) return;
+
+      console.log('✅ Loaded', stopWithDepartures.stoptimesWithoutPatterns?.length || 0, 'departures for', stop.name);
+      // Update the selected stop with departure data
+      setSelectedStop(prev => prev && prev.gtfsId === stop.gtfsId ? { ...prev, ...stopWithDepartures } : prev);
+      // Also update the stop on the map
+      setStops(prevStops => prevStops.map(s =>
+        s.gtfsId === stop.gtfsId ? { ...s, ...stopWithDepartures } : s
+      ));
+    } catch (error) {
+      console.error('❌ Error fetching departure data:', error);
+    } finally {
+      if (fetchSeq === selectedStopFetchSeqRef.current) setRefreshingSelectedStop(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchDepartureData = async () => {
-      if (!selectedStop) return;
+    loadSelectedStopDepartures();
+  }, [selectedStop?.gtfsId, customTime]); // eslint-disable-line react-hooks/exhaustive-deps
 
-      // If stop already has departure data, skip
-      if (selectedStop.stoptimesWithoutPatterns && selectedStop.stoptimesWithoutPatterns.length > 0) {
-        console.log('✅ Stop already has departure data');
-        return;
-      }
-
-      // If it's a search result (virtual stop), skip
-      if (selectedStop.isSearchResult) {
-        console.log('📍 Search result - no departures needed');
-        return;
-      }
-
-      console.log('🔄 Fetching departure data for:', selectedStop.name);
-
-      try {
-        // Fetch stop with departure times from API
-        const { getStopById } = await import('../services/digitransit');
-        const stopWithDepartures = await getStopById(selectedStop.gtfsId, customTime);
-
-        if (stopWithDepartures) {
-          console.log('✅ Loaded', stopWithDepartures.stoptimesWithoutPatterns?.length || 0, 'departures for', selectedStop.name);
-          // Update the selected stop with departure data
-          setSelectedStop(prev => prev && prev.gtfsId === selectedStop.gtfsId ? {
-            ...prev,
-            ...stopWithDepartures
-          } : prev);
-
-          // Also update the stop in the stops array so future clicks don't re-fetch
-          setStops(prevStops => prevStops.map(stop =>
-            stop.gtfsId === selectedStop.gtfsId ? { ...stop, ...stopWithDepartures } : stop
-          ));
-        }
-      } catch (error) {
-        console.error('❌ Error fetching departure data:', error);
-      }
-    };
-
-    fetchDepartureData();
-  }, [selectedStop?.gtfsId]); // Only re-run when selected stop changes
+  useVisibleInterval(loadSelectedStopDepartures, 30000, !!selectedStop && !selectedStop.isSearchResult);
 
   // Auto-zoom map to fit the selected journey route
   // Show a route picked in the header search: filter the map to it and zoom to its stops
@@ -926,20 +918,16 @@ function StopFinder({
     }
   }, [location.lat, location.lon, highlightedStop]);
 
-  // Auto-refresh departure times every 30 seconds
-  useEffect(() => {
-    if (!autoRefreshEnabled) return;
-
-    const interval = setInterval(() => {
-      // Refresh stops data silently (without showing loading indicator)
-      // Use refreshOnly=true to merge data instead of replacing stops
-      const currentLat = location.lat || defaultCenter.lat;
-      const currentLon = location.lon || defaultCenter.lon;
-      loadStops(currentLat, currentLon, currentZoom, false, true);
-    }, 30000); // 30 seconds
-
-    return () => clearInterval(interval);
-  }, [autoRefreshEnabled, location.lat, location.lon, currentZoom]);
+  // Auto-refresh departure times every 30 seconds while the app is visible,
+  // around the area the map shows (not the GPS position, which may be elsewhere)
+  useVisibleInterval(() => {
+    const mapCenter = mapRef.current?.getCenter();
+    const currentLat = mapCenter?.lat ?? (location.lat || defaultCenter.lat);
+    const currentLon = mapCenter?.lng ?? (location.lon || defaultCenter.lon);
+    // Refresh stops data silently (without showing loading indicator)
+    // Use refreshOnly=true to merge data instead of replacing stops
+    loadStops(currentLat, currentLon, currentZoom, false, true);
+  }, 30000, autoRefreshEnabled);
 
   // Calculate radius based on zoom level
   const getRadiusForZoom = (zoom) => {
@@ -1031,17 +1019,6 @@ function StopFinder({
       if (!refreshOnly) {
         setLoading(false);
       }
-    }
-  };
-
-  // Manual refresh function
-  const handleRefresh = () => {
-    // Clear nearby stops cache to force fresh data
-    const nearbyRadius = getSetting('nearbyRadius') || 500;
-    if (location.lat && location.lon) {
-      loadStops(location.lat, location.lon, currentZoom);
-    } else {
-      loadStops(center.lat, center.lon, currentZoom);
     }
   };
 
@@ -2559,6 +2536,8 @@ function StopFinder({
               showMapButton={false}
               variant="overlay"
               customTime={customTime}
+              onRefresh={loadSelectedStopDepartures}
+              refreshing={refreshingSelectedStop}
             />
           </div>
         </div>
