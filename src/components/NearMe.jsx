@@ -493,15 +493,14 @@ function NearMe({ geolocationHook, onNavigateToMap, manualLocation: manualLocati
                     })()}
                   </h3>
                   <div className="text-sm">
-                    <span className="text-gray-500 dark:text-gray-400">{t('map.stop')} {stop.code} • </span>
                     <span className="text-green-600 dark:text-green-400 font-medium">{t('nearMe.distance', { distance: Math.round(stop.distance) })}</span>
                     {walkingTimes.has(stop.gtfsId) && (
                       <span className="text-blue-600 dark:text-blue-400 font-medium"> • 🚶 {Math.ceil(walkingTimes.get(stop.gtfsId).duration / 60)} min</span>
                     )}
                   </div>
                 </div>
-                {/* Star in the card's top-right corner, the other actions in a column below it */}
-                <div className="flex flex-col items-center gap-2 shrink-0 -mt-2 -mr-2">
+                {/* Star in the card's top-right corner, the other actions in a row below it */}
+                <div className="flex flex-col items-end gap-1 shrink-0 -mt-2 -mr-2">
                   <button
                     onClick={() => toggleFavorite(stop)}
                     className={`rounded-full p-1.5 transition-colors ${
@@ -515,6 +514,7 @@ function NearMe({ geolocationHook, onNavigateToMap, manualLocation: manualLocati
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
                     </svg>
                   </button>
+                  <div className="flex items-center gap-2">
                   <button
                     onClick={() => handleShowTimetable(stop)}
                     className="bg-green-500 hover:bg-green-600 dark:bg-green-600 dark:hover:bg-green-700 text-white rounded-full p-2 transition-colors"
@@ -534,6 +534,7 @@ function NearMe({ geolocationHook, onNavigateToMap, manualLocation: manualLocati
                       <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
                     </svg>
                   </button>
+                  </div>
                 </div>
               </div>
 
