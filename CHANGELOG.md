@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - 📐 **Near Me heading fits on one line** - "Lähedal olevad peatused" is slightly smaller, and the refresh button is a larger icon without text
+- ⭐ **Near Me stop cards** - the favorite star is larger and sits in the card's top-right corner, with the timetable and map buttons in a column below it
 
 ## [3.4.4] - 2026-10-08
 
