@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 👇 **Pull down to refresh** on Near Me: drag the list down from the top and let go
 
 ### Changed
+- 🚌 **Bigger bus in the Android app icon** - the bus now spans 89 % of the icon instead of 78 %, the largest it can be without a round launcher icon clipping it
 - 📐 **Near Me heading fits on one line** - "Lähedal olevad peatused" is slightly smaller, and the refresh button is a larger icon without text
 - ⭐ **Near Me stop cards** - the favorite star is larger and sits in the card's top-right corner, with the timetable and map buttons in a row below it. The stop ID is no longer shown there
 - 🔎 **Search bar** - the placeholder text is no longer cut off early (the box is wider and only keeps room for the clear button while you type), and the search results span the screen width
