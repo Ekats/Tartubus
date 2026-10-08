@@ -5,6 +5,13 @@ All notable changes to Tartu Bussid will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+- 🚌 **New bus icon everywhere** - the bus emojis and the drawn bus icon in the app, and the website's favicon and install icon, now use the new red bus (`resources/icon.png`)
+- 🔎 **Smaller search text** in the header search bar
+- 🕒 **Timetable** shows one column fewer (5 on phones, 7 on tablets, 9 on wide screens), and the time tiles stretch to fill each row
+
 ## [3.4.3] - 2026-10-07
 
 ### Changed

@@ -852,11 +852,11 @@ function NearMe({ geolocationHook, onNavigateToMap, manualLocation: manualLocati
                           {departures[0]?.trip?.route?.longName || departures[0]?.headsign}
                         </span>
                       </h3>
-                      <div className="grid grid-cols-6 sm:grid-cols-8 md:grid-cols-10 gap-2">
+                      <div className="grid grid-cols-5 sm:grid-cols-7 md:grid-cols-9 gap-2">
                         {departures.map((dep, idx) => (
                           <div
                             key={idx}
-                            className="text-center text-sm font-mono bg-gray-50 dark:bg-blue-900 text-gray-700 dark:text-white py-1 rounded"
+                            className="min-w-0 text-center text-sm font-mono tabular-nums bg-gray-50 dark:bg-blue-900 text-gray-700 dark:text-white py-1 rounded"
                           >
                             {formatClockTime(dep.scheduledArrival)}
                           </div>

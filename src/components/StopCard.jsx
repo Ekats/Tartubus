@@ -306,11 +306,11 @@ export default function StopCard({
                       <h3 className="font-bold text-lg mb-2 text-gray-800 dark:text-gray-100">
                         Route {route}
                       </h3>
-                      <div className="flex flex-wrap gap-2">
+                      <div className="grid grid-cols-5 sm:grid-cols-7 md:grid-cols-9 gap-2">
                         {departures.map((dep, idx) => (
                           <span
                             key={idx}
-                            className="bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-100 px-2 py-1 rounded text-sm"
+                            className="min-w-0 text-center tabular-nums bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-100 py-1 rounded text-sm"
                           >
                             {formatClockTime(dep.scheduledArrival)}
                           </span>

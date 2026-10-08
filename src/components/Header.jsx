@@ -105,7 +105,7 @@ function Header({ isDarkMode, toggleDarkMode, onDestinationSelect, onRouteSelect
               onChange={(e) => setSearchQuery(e.target.value)}
               onFocus={() => searchResults.length > 0 && setShowResults(true)}
               placeholder={t('header.searchAddress') || 'Search address...'}
-              className="w-full px-4 py-2 pr-10 rounded-lg bg-white/10 dark:bg-gray-700 text-white placeholder-white/60 dark:placeholder-gray-400 border border-white/20 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-white/30 dark:focus:ring-blue-500 transition-all"
+              className="w-full px-4 py-2 pr-10 text-sm rounded-lg bg-white/10 dark:bg-gray-700 text-white placeholder-white/60 dark:placeholder-gray-400 border border-white/20 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-white/30 dark:focus:ring-blue-500 transition-all"
             />
             {isSearching && (
               <div className="absolute right-3 top-1/2 -translate-y-1/2">
