@@ -11,6 +11,7 @@ import LocationPermissionInfo from './LocationPermissionInfo';
 import { getLocationConsent, setLocationConsent } from '../hooks/useGeolocation';
 import BusIcon from './BusIcon';
 import { useVisibleInterval } from '../hooks/useVisibleInterval';
+import { usePullToRefresh } from '../hooks/usePullToRefresh';
 
 const NO_LOCATION = { lat: null, lon: null };
 
@@ -322,8 +323,28 @@ function NearMe({ geolocationHook, onNavigateToMap, manualLocation: manualLocati
   const gpsError = locationErrorCode === 1 ? t('nearMe.locationDenied') : locationError;
   const error = (manualLocationProp ? null : gpsError) || stopsError;
 
+  // Pull down at the top of the list to refresh (same as the refresh button).
+  // Only with a location: without one, "find nearby" would start GPS, which a pull must not do
+  const scrollRef = useRef(null);
+  const { pullDistance, willRefresh } = usePullToRefresh(
+    scrollRef, () => handleFindNearby(), !loading && !!activeLocation.lat
+  );
+
   return (
-    <div className="p-4 pb-48 h-full overflow-y-auto dark:bg-gray-900">
+    <div ref={scrollRef} className="p-4 pb-48 h-full overflow-y-auto overscroll-y-contain dark:bg-gray-900">
+      {/* Pull-to-refresh indicator: grows with the pull, arrow flips when a release will refresh */}
+      <div
+        className="flex items-end justify-center overflow-hidden text-primary dark:text-blue-400"
+        style={{ height: pullDistance, transition: pullDistance === 0 ? 'height 150ms ease-out' : 'none' }}
+        aria-hidden="true"
+      >
+        <svg
+          className={`h-6 w-6 mb-2 transition-transform ${willRefresh ? 'rotate-180' : ''}`}
+          fill="none" stroke="currentColor" viewBox="0 0 24 24"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+        </svg>
+      </div>
       {/* Location Permission Info Modal */}
       {showLocationInfo && (
         <LocationPermissionInfo
@@ -420,15 +441,18 @@ function NearMe({ geolocationHook, onNavigateToMap, manualLocation: manualLocati
       {/* Nearby Stops List */}
       {stops.length > 0 && (
         <div className="mt-6 space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100">{t('nearMe.title')}</h2>
+          <div className="flex items-center justify-between gap-2">
+            <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100 whitespace-nowrap truncate min-w-0">{t('nearMe.title')}</h2>
             <button
               onClick={handleFindNearby}
-              className="text-primary dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium flex items-center gap-2"
+              className="shrink-0 rounded-full p-2 text-primary dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 disabled:opacity-60"
               disabled={loading}
+              title={loading ? t('nearMe.refreshing') : t('nearMe.refresh')}
+              aria-label={loading ? t('nearMe.refreshing') : t('nearMe.refresh')}
             >
-              <span className={loading ? 'animate-spin' : ''}>🔄</span>
-              {loading ? t('nearMe.refreshing') : t('nearMe.refresh')}
+              <svg className={`h-8 w-8 ${loading ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
             </button>
           </div>
 
