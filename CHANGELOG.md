@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- 🐛 **Routes 1–9 couldn't be searched** - search only started at 2 characters, so a single-digit route number never searched. Route numbers now search from the first digit; addresses still need 2 characters
+
 ### Changed
 - 🚌 **New bus icon everywhere** - the bus emojis and the drawn bus icon in the app, and the website's favicon and install icon, now use the new red bus (`resources/icon.png`)
 - 🔎 **Smaller search text** in the header search bar

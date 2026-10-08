@@ -31,7 +31,11 @@ function Header({ isDarkMode, toggleDarkMode, onDestinationSelect, onRouteSelect
       clearTimeout(searchTimeoutRef.current);
     }
 
-    if (searchQuery.trim().length < 2) {
+    // Check if query is just a number (route search)
+    const isRouteNumber = /^\d+[a-zA-Z]?$/.test(searchQuery.trim());
+
+    // Addresses need at least 2 characters; route numbers can be a single digit (routes 1-9)
+    if (searchQuery.trim().length < (isRouteNumber ? 1 : 2)) {
       setSearchResults([]);
       setShowResults(false);
       return;
@@ -39,9 +43,6 @@ function Header({ isDarkMode, toggleDarkMode, onDestinationSelect, onRouteSelect
 
     searchTimeoutRef.current = setTimeout(async () => {
       setIsSearching(true);
-
-      // Check if query is just a number (route search)
-      const isRouteNumber = /^\d+[a-zA-Z]?$/.test(searchQuery.trim());
 
       if (isRouteNumber) {
         // Search for bus route in the city zone the map shows (Tartu until the map is opened)
