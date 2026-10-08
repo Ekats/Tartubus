@@ -2,8 +2,9 @@
  * Shared geography helpers
  */
 
-// City zones the app supports. A route belongs to a zone when any of its
-// pattern stops lies within the zone's radius of the zone's centre.
+// City zones the app supports - Tartu only. A route belongs to a zone when any of
+// its pattern stops lies within the zone's radius of the zone's centre; a route or
+// stop in no zone at all is dropped from the bundled data files.
 export const CITY_ZONES = {
   tartu: {
     name: 'Tartu',
@@ -11,13 +12,6 @@ export const CITY_ZONES = {
     radius: 8000, // 8km radius (reduced from 15km)
     feed: 'Viro',
     cityFilter: 'Tartu' // Filter routes by city name
-  },
-  tallinn: {
-    name: 'Tallinn',
-    center: { lat: 59.4370, lon: 24.7536 },
-    radius: 20000, // 20km radius
-    feed: 'Viro',
-    cityFilter: 'Tallinn'
   },
   // Add more cities as needed
 };

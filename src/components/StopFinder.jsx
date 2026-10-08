@@ -7,7 +7,7 @@ import 'leaflet-polylinedecorator';
 import { useGeolocation, setLocationConsent } from '../hooks/useGeolocation';
 import { useFavorites } from '../hooks/useFavorites';
 import { getNearbyStops, getStopById, getStopsByRoutes, getRouteShortNamesInZone, getNextStopName, planJourney, decodePolyline, getDailyTimetable, getWalkingRoute } from '../services/digitransit';
-import { CITY_ZONES, mergeDuplicateStops } from '../utils/geo';
+import { CITY_ZONES, mergeDuplicateStops, haversineDistance } from '../utils/geo';
 import { getSetting } from '../utils/settings';
 import { reverseGeocode } from '../utils/geocoding';
 import { shouldShowDeparture, isDepartureLate, getDelayInfo } from '../utils/timeFormatter';
@@ -924,6 +924,14 @@ function StopFinder({
     const mapCenter = mapRef.current?.getCenter();
     const currentLat = mapCenter?.lat ?? (location.lat || defaultCenter.lat);
     const currentLon = mapCenter?.lng ?? (location.lon || defaultCenter.lon);
+
+    // The refresh asks the API for whatever is around the map centre, so panning
+    // outside the cities the app supports would draw stops it has no business showing
+    const zone = getCurrentCityZone({ lat: currentLat, lon: currentLon });
+    if (haversineDistance(currentLat, currentLon, zone.center.lat, zone.center.lon) > zone.radius) {
+      return;
+    }
+
     // Refresh stops data silently (without showing loading indicator)
     // Use refreshOnly=true to merge data instead of replacing stops
     loadStops(currentLat, currentLon, currentZoom, false, true);

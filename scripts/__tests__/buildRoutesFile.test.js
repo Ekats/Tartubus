@@ -1,34 +1,66 @@
 // @vitest-environment node
 import { describe, it, expect } from 'vitest';
-import { buildRoutesFile, buildStopsFile } from '../fetchRoutes.js';
-import { mergeDuplicateStops } from '../../src/utils/geo.js';
+import { buildRoutesFile, buildStopsFile, routeIdsForZones } from '../fetchRoutes.js';
+import { mergeDuplicateStops, CITY_ZONES } from '../../src/utils/geo.js';
 
 const route = (gtfsId, lat, lon) => ({
   gtfsId, shortName: gtfsId.split(':')[1], patterns: [{ stops: [{ lat, lon }] }],
 });
 const tartu = route('Viro:2', 58.38, 26.72);
-const tallinn = route('Viro:1', 59.43, 24.75);
+const tartuWest = route('Viro:1', 58.37, 26.68);
+const tallinn = route('Viro:4', 59.43, 24.75); // Outside every city zone - the app is Tartu-only
 const parnu = route('Viro:3', 58.385, 24.497); // Outside every city zone
 
 describe('buildRoutesFile', () => {
   it('keeps only routes that serve a city zone, sorted by gtfsId', () => {
-    const file = JSON.parse(buildRoutesFile([tartu, parnu, tallinn]));
+    const file = JSON.parse(buildRoutesFile([tartu, parnu, tartuWest, tallinn]));
     expect(file.routes.map(r => r.gtfsId)).toEqual(['Viro:1', 'Viro:2']);
     expect(file.routeCount).toBe(2);
     expect(file.contentHash).toMatch(/^[0-9a-f]{64}$/);
   });
 
   it('returns null when the routes are unchanged, even in a different order', () => {
-    const first = buildRoutesFile([tartu, tallinn], null, new Date('2026-09-20T03:00:00Z'));
-    expect(buildRoutesFile([tallinn, tartu, parnu], first, new Date('2026-09-21T03:00:00Z'))).toBeNull();
+    const first = buildRoutesFile([tartu, tartuWest], null, new Date('2026-09-20T03:00:00Z'));
+    expect(buildRoutesFile([tartuWest, tartu, parnu, tallinn], first, new Date('2026-09-21T03:00:00Z'))).toBeNull();
   });
 
   it('writes a new file when a route changes', () => {
-    const first = buildRoutesFile([tartu, tallinn]);
+    const first = buildRoutesFile([tartu, tartuWest]);
     const moved = route('Viro:2', 58.37, 26.73);
-    const next = buildRoutesFile([moved, tallinn], first);
+    const next = buildRoutesFile([moved, tartuWest], first);
     expect(next).not.toBeNull();
     expect(JSON.parse(next).contentHash).not.toBe(JSON.parse(first).contentHash);
+  });
+});
+
+describe('routeIdsForZones', () => {
+  const zones = Object.values(CITY_ZONES);
+  const stop = (lat, lon, ...routeIds) => ({ gtfsId: `s:${lat},${lon}`, lat, lon, routes: routeIds.map(gtfsId => ({ gtfsId })) });
+
+  it('ignores a stop inside the bounding box but outside the zone radius', () => {
+    // The box corner is ~11.3 km from the centre of the 8 km Tartu zone
+    const { center, radius } = CITY_ZONES.tartu;
+    const dLat = radius / 111320;
+    const dLon = radius / (111320 * Math.cos(center.lat * Math.PI / 180));
+    const corner = stop(center.lat + dLat, center.lon + dLon, 'Viro:corner');
+
+    expect(routeIdsForZones([corner, stop(center.lat, center.lon, 'Viro:middle')], zones)).toEqual(['Viro:middle']);
+  });
+
+  it('deduplicates and sorts the ids', () => {
+    const { center } = CITY_ZONES.tartu;
+    const stops = [
+      stop(center.lat, center.lon, 'Viro:7', 'Viro:4'),
+      stop(center.lat + 0.001, center.lon, 'Viro:4', 'Viro:12'),
+    ];
+
+    expect(routeIdsForZones(stops, zones)).toEqual(['Viro:12', 'Viro:4', 'Viro:7']);
+  });
+
+  it('returns nothing for no stops, and for stops that serve no route', () => {
+    const { center } = CITY_ZONES.tartu;
+    expect(routeIdsForZones([], zones)).toEqual([]);
+    expect(routeIdsForZones([{ gtfsId: 's:1', lat: center.lat, lon: center.lon }], zones)).toEqual([]);
   });
 });
 

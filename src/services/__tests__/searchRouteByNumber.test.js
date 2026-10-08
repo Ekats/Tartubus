@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { searchRouteByNumber } from '../digitransit';
-import { CITY_ZONES } from '../../utils/geo';
 
 // Real-shaped routes: every Estonian route uses the 'Viro:' feed prefix,
 // and the same route number exists in several cities.
@@ -40,7 +39,9 @@ describe('searchRouteByNumber', () => {
   it('searches another zone when asked', async () => {
     mockRoutesResponse([tartuRoute4, tallinnRoute4]);
 
-    const routes = await searchRouteByNumber('4', CITY_ZONES.tallinn);
+    // Not a zone the app ships - the point is that the zone argument is honoured
+    const elsewhere = { name: 'Elsewhere', center: { lat: 59.4370, lon: 24.7536 }, radius: 20000 };
+    const routes = await searchRouteByNumber('4', elsewhere);
 
     expect(routes.map(r => r.gtfsId)).toEqual(['Viro:253081']);
   });
