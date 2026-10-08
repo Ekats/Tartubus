@@ -10,7 +10,23 @@ permissions:
   contents: write
 
 jobs:
+  # A tag drives the Android/desktop version, package.json drives the website's - they must agree
+  check-version:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Check tag against package.json
+        run: node scripts/checkVersion.js
+
   build-web:
+    needs: check-version
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout code
@@ -50,6 +66,7 @@ jobs:
 
   # Signed APK + AAB (see android.yml); on a tag the AAB also goes to Google Play's internal track
   build-android:
+    needs: check-version
     uses: ./.github/workflows/android.yml
     with:
       release: true
@@ -57,6 +74,7 @@ jobs:
     secrets: inherit
 
   build-windows:
+    needs: check-version
     runs-on: windows-latest
     steps:
       - name: Checkout code
@@ -106,6 +124,7 @@ jobs:
           path: tartubus-windows.zip
 
   build-linux:
+    needs: check-version
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout code
@@ -158,6 +177,7 @@ jobs:
           path: tartubus-linux.tar.gz
 
   build-macos:
+    needs: check-version
     runs-on: macos-latest
     steps:
       - name: Checkout code
@@ -210,10 +230,11 @@ jobs:
           path: tartubus-macos.zip
 
   create-release:
-    needs: [build-web, build-android, build-windows, build-linux, build-macos]
+    needs: [check-version, build-web, build-android, build-windows, build-linux, build-macos]
     runs-on: ubuntu-24.04
-    # Publish whatever built: one broken platform shouldn't block the release
-    if: ${{ !cancelled() && startsWith(github.ref, 'refs/tags/') }}
+    # Publish whatever built: one broken platform shouldn't block the release.
+    # A failed version check must, though - otherwise this publishes an empty draft.
+    if: ${{ !cancelled() && needs.check-version.result == 'success' && startsWith(github.ref, 'refs/tags/') }}
     steps:
       - name: Download all artifacts
         uses: actions/download-artifact@v4

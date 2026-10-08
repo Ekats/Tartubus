@@ -137,6 +137,8 @@ npm run android:sync
 
 The version comes from the tag: `v1.5.6` → `versionName 1.5.6`, `versionCode 10506` (major × 10000 + minor × 100 + patch). Google Play needs a higher `versionCode` for every upload, so each tag can be uploaded once. Local builds keep the defaults in `android/app/build.gradle` and stay unsigned.
 
+To release, bump the version first (`npm version 1.5.6 --no-git-tag-version`, which updates `package.json` and `package-lock.json`), commit it, then push the `v1.5.6` tag. `build-releases.yml` refuses to build or publish anything if the tag and `package.json` disagree — the website's Settings screen reads `package.json`, the Android and desktop builds read the tag. Check it locally with `npm run check:version`.
+
 ### One-time setup: secrets
 
 Release builds need these repository secrets (Settings → Secrets and variables → Actions). Set them with the GitHub CLI so the values never appear on screen:

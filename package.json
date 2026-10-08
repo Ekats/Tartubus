@@ -15,7 +15,8 @@
     "android:build": "npm run build && npx cap sync android && npx cap open android",
     "android:apk": "npm run build && npx cap sync android && cd android && gradlew assembleDebug",
     "test": "vitest run",
-    "lint:i18n": "node scripts/checkLocales.js"
+    "lint:i18n": "node scripts/checkLocales.js",
+    "check:version": "node scripts/checkVersion.js"
   },
   "dependencies": {
     "@capacitor/android": "^8.5.2",
