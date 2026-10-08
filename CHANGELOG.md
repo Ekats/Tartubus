@@ -5,6 +5,18 @@ All notable changes to Tartu Bussid will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.4.6] - 2026-10-08
+
+### Added
+- 👇 **Pull down to refresh on Lemmikud** too - drag the list down from the top and let go, exactly as on Near Me
+
+### Changed
+- 🔄 **Lemmikud has the same refresh button as Near Me** - a plain icon at the end of the heading row instead of a blue button with text
+- 🗑️ **"Kustuta kõik" is gone from Lemmikud** - stops are removed one at a time with the star, so a single tap can no longer wipe the whole list
+
+### Fixed
+- ❌ **Closing a searched destination now really clears it** - after closing the green destination view with its X, switching to another tab and back no longer pops it up again, and the green pin is gone from the map. The same applies to a stop opened from Near Me or Favorites
+
 ## [3.4.5] - 2026-10-08
 
 ### Added
