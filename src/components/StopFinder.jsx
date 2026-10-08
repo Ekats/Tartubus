@@ -16,6 +16,7 @@ import StopCard from './StopCard';
 import 'leaflet/dist/leaflet.css';
 import 'leaflet.markercluster/dist/MarkerCluster.css';
 import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
+import BusIcon from './BusIcon';
 
 // Fix for default marker icons in React Leaflet
 delete L.Icon.Default.prototype._getIconUrl;
@@ -1621,7 +1622,7 @@ function StopFinder({
                       <div className="text-xs font-semibold">
                         <div className="font-bold">{leg.from.stop.name}</div>
                         <div className="text-amber-600">
-                          🚌 {leg.route?.shortName} {t('map.at')} {timeStr}
+                          <BusIcon /> {leg.route?.shortName} {t('map.at')} {timeStr}
                         </div>
                         <div className="text-green-600">
                           📍 {t('map.boardHere')}
@@ -1634,7 +1635,7 @@ function StopFinder({
                     <div className="text-sm">
                       <div className="font-bold">{leg.from.stop.name}</div>
                       <div className="text-amber-600 font-semibold">
-                        🚌 {leg.route?.shortName} {t('map.at')} {timeStr}
+                        <BusIcon /> {leg.route?.shortName} {t('map.at')} {timeStr}
                       </div>
                       <div className="text-green-600 text-xs font-semibold">
                         📍 {t('map.boardHere')}
@@ -1669,7 +1670,7 @@ function StopFinder({
                       <div className="text-sm">
                         <div className="font-bold">{stop.name}</div>
                         <div className="text-amber-600 font-semibold">
-                          🚌 {leg.route?.shortName} ~{timeStr}
+                          <BusIcon /> {leg.route?.shortName} ~{timeStr}
                         </div>
                         <div className="text-gray-500 text-xs">{t('map.estimatedTime')}</div>
                       </div>
@@ -1703,10 +1704,10 @@ function StopFinder({
                       <div className="text-xs font-semibold">
                         <div className="font-bold">{leg.to.stop.name}</div>
                         <div className="text-orange-600">
-                          ⬇️ {t('map.getOff')} 🚌 {leg.route?.shortName} {t('map.at')} {alightTimeStr}
+                          ⬇️ {t('map.getOff')} <BusIcon /> {leg.route?.shortName} {t('map.at')} {alightTimeStr}
                         </div>
                         <div className="text-green-600">
-                          ⬆️ {t('map.board')} 🚌 {nextBusLeg.route?.shortName} {t('map.at')} {boardTimeStr}
+                          ⬆️ {t('map.board')} <BusIcon /> {nextBusLeg.route?.shortName} {t('map.at')} {boardTimeStr}
                         </div>
                       </div>
                     </Tooltip>
@@ -1718,10 +1719,10 @@ function StopFinder({
                           🔄 {t('map.transferPoint')}
                         </div>
                         <div className="text-gray-700 dark:text-gray-300 text-xs">
-                          ⬇️ {t('map.getOff')} 🚌 {leg.route?.shortName} {t('map.at')} {alightTimeStr}
+                          ⬇️ {t('map.getOff')} <BusIcon /> {leg.route?.shortName} {t('map.at')} {alightTimeStr}
                         </div>
                         <div className="text-gray-700 dark:text-gray-300 text-xs">
-                          ⬆️ {t('map.board')} 🚌 {nextBusLeg.route?.shortName} {t('map.at')} {boardTimeStr}
+                          ⬆️ {t('map.board')} <BusIcon /> {nextBusLeg.route?.shortName} {t('map.at')} {boardTimeStr}
                         </div>
                       </div>
                     </Popup>
@@ -1743,7 +1744,7 @@ function StopFinder({
                         <div className="text-xs font-semibold">
                           <div className="font-bold">{leg.to.stop.name}</div>
                           <div className="text-amber-600">
-                            🚌 {leg.route?.shortName} {t('map.arrives')} {alightTimeStr}
+                            <BusIcon /> {leg.route?.shortName} {t('map.arrives')} {alightTimeStr}
                           </div>
                           <div className="text-red-600">
                             📍 {t('map.getOffHere')}
@@ -1756,7 +1757,7 @@ function StopFinder({
                       <div className="text-sm">
                         <div className="font-bold">{leg.to.stop.name}</div>
                         <div className="text-amber-600 font-semibold">
-                          🚌 {leg.route?.shortName} {t('map.arrives')} {alightTimeStr}
+                          <BusIcon /> {leg.route?.shortName} {t('map.arrives')} {alightTimeStr}
                         </div>
                         <div className="text-red-600 text-xs font-semibold">
                           {isLastBusLeg ? `📍 ${t('map.getOffHere')}` : `📍 ${t('map.stop')}`}
@@ -2056,7 +2057,7 @@ function StopFinder({
           onClick={() => setShowRouteFilter(!showRouteFilter)}
           className={`bg-white dark:bg-gray-800 shadow-lg rounded-lg px-4 py-3 font-medium text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex items-center gap-2 justify-center border border-gray-200 dark:border-gray-700 ${selectedRoutes.size > 0 ? 'ring-2 ring-primary dark:ring-blue-400' : ''}`}
         >
-          <span className="text-lg">🚌</span>
+          <BusIcon className="h-5" />
           {t('map.filterRoutes')} {selectedRoutes.size > 0 ? `(${selectedRoutes.size})` : ''}
           <span className="text-xs opacity-60">• {currentCityZone.name}</span>
         </button>

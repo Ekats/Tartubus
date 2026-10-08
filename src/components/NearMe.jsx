@@ -9,6 +9,7 @@ import { getNextStopName, getDailyTimetable, getWalkingRoute } from '../services
 import CountdownTimer from './CountdownTimer';
 import LocationPermissionInfo from './LocationPermissionInfo';
 import { getLocationConsent, setLocationConsent } from '../hooks/useGeolocation';
+import BusIcon from './BusIcon';
 
 const NO_LOCATION = { lat: null, lon: null };
 
@@ -709,7 +710,7 @@ function NearMe({ geolocationHook, onNavigateToMap, manualLocation: manualLocati
       {/* Loading State - only show when no stops yet */}
       {loading && stops.length === 0 && (
         <div className="mt-4 text-center text-gray-600 dark:text-gray-400">
-          <div className="text-4xl mb-2 animate-bounce">🚏</div>
+          <div className="mb-2 animate-bounce"><BusIcon className="h-10" /></div>
           <div>Searching for nearby stops...</div>
         </div>
       )}

@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { forwardGeocode } from '../utils/geocoding';
 import { searchRouteByNumber } from '../services/digitransit';
 import { useTranslation } from 'react-i18next';
+import BusIcon from './BusIcon';
 
 function Header({ isDarkMode, toggleDarkMode, onDestinationSelect, onRouteSelect, routeSearchZone, customTime, onTimePickerOpen }) {
   const { t } = useTranslation();
@@ -93,7 +94,7 @@ function Header({ isDarkMode, toggleDarkMode, onDestinationSelect, onRouteSelect
     <header className="bg-primary dark:bg-gray-800 text-white shadow-lg z-[1100] relative transition-colors">
       <div className="px-4 py-3 flex items-center gap-3">
         {/* Logo */}
-        <span className="text-2xl flex-shrink-0">🚌</span>
+        <BusIcon className="h-6 flex-shrink-0" alt="Tartu Bussid" />
 
         {/* Address Search Bar */}
         <div ref={searchRef} className="flex-1 relative">
@@ -142,10 +143,7 @@ function Header({ isDarkMode, toggleDarkMode, onDestinationSelect, onRouteSelect
                   {result.type === 'route' ? (
                     // Route result
                     <div className="flex items-start gap-2">
-                      <svg className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                        <path d="M8 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM15 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z"/>
-                        <path d="M3 4a1 1 0 00-1 1v10a1 1 0 001 1h1.05a2.5 2.5 0 014.9 0H10a1 1 0 001-1V5a1 1 0 00-1-1H3zM14 7a1 1 0 00-1 1v6.05A2.5 2.5 0 0115.95 16H17a1 1 0 001-1v-5a1 1 0 00-.293-.707l-2-2A1 1 0 0015 7h-1z"/>
-                      </svg>
+                      <BusIcon className="h-5 flex-shrink-0 mt-0.5" />
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-bold text-gray-900 dark:text-gray-100">
                           {t('common.route')} {result.routeNumber}

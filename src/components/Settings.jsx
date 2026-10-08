@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { getSettings, updateSetting } from '../utils/settings';
 import { updateRoutesFromGitHub, getRoutesVersionInfo, clearDownloadedRoutes, clearCachedData } from '../services/digitransit';
 import Feedback from './Feedback';
+import BusIcon from './BusIcon';
 
 function Settings() {
   const { t, i18n } = useTranslation();
@@ -286,7 +287,7 @@ function Settings() {
             className="w-full p-4 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
           >
             <div className="flex items-center gap-2">
-              <span className="text-lg">🚌</span>
+              <BusIcon className="h-5" />
               <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100">
                 {t('settings.routeData') || 'Route Data Update'}
               </h2>
