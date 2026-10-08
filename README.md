@@ -68,7 +68,8 @@ The production files will be in the `dist/` folder, ready to deploy to Vercel, N
 - **Leaflet** - Interactive maps
 - **Tailwind CSS** - Utility-first styling
 - **Digitransit API** - Real-time bus data
-- **OpenStreetMap** - Free, privacy-friendly map tiles
+- **OpenStreetMap** - Free, privacy-friendly map tiles, and Nominatim as the address search fallback
+- **In-ADS** - Estonian Land and Spatial Development Board address search ([inaadress.maaamet.ee](https://inaadress.maaamet.ee/)), key-free
 
 ## Project Structure
 

@@ -64,4 +64,34 @@ describe('Header search', () => {
     expect(forwardGeocode).toHaveBeenCalledWith('ah');
     expect(searchRouteByNumber).not.toHaveBeenCalled();
   });
+
+  it('ignores an earlier address search that answers after a newer one started', async () => {
+    const deferred = () => {
+      let resolve;
+      const promise = new Promise(r => { resolve = r; });
+      return { promise, resolve };
+    };
+    const hit = (name) => [{ lat: 58.37, lon: 26.72, name, display_name: `${name}, Tartu linn` }];
+    const first = deferred();
+    const second = deferred();
+    forwardGeocode.mockReturnValueOnce(first.promise).mockReturnValueOnce(second.promise);
+
+    const rows = () => [...container.querySelectorAll('header .absolute.top-full button p')].map(p => p.textContent);
+    const spinning = () => !!container.querySelector('header svg.animate-spin');
+
+    type('Võru tn 30');
+    await act(async () => { vi.advanceTimersByTime(600); });
+    type('Riia tn 2');
+    await act(async () => { vi.advanceTimersByTime(600); });
+    expect(forwardGeocode).toHaveBeenCalledTimes(2);
+
+    // The first, slower search lands second - it is superseded, so it changes nothing
+    await act(async () => { first.resolve(hit('Võru tn 30')); });
+    expect(rows()).toEqual([]);
+    expect(spinning()).toBe(true);
+
+    await act(async () => { second.resolve(hit('Riia tn 2')); });
+    expect(rows()).toEqual(['Riia tn 2']);
+    expect(spinning()).toBe(false);
+  });
 });

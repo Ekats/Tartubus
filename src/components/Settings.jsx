@@ -260,6 +260,7 @@ function Settings() {
             <p>• {t('settings.privacyFocused')}</p>
             <p>• {t('settings.usesDigitransit')}</p>
             <p>• {t('settings.usesOSM')}</p>
+            <p>• {t('settings.usesInAds')}</p>
             <p>• {t('settings.localSettings')}</p>
           </div>
 

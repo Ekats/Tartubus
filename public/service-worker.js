@@ -136,7 +136,8 @@ self.addEventListener('fetch', (event) => {
       event.request.url.startsWith('chrome-extension://') ||
       event.request.url.includes('digitransit.fi') ||
       event.request.url.includes('openstreetmap.org') ||
-      event.request.url.includes('nominatim.openstreetmap.org')) {
+      event.request.url.includes('nominatim.openstreetmap.org') ||
+      event.request.url.includes('inaadress.maaamet.ee')) {
     return; // Let it go through to network
   }
 

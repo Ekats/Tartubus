@@ -170,6 +170,7 @@
     "privacyFocused": "Privacy-focused - no tracking",
     "usesDigitransit": "Uses Digitransit API for schedules",
     "usesOSM": "OpenStreetMap for maps",
+    "usesInAds": "Address search by the Estonian Land Board (In-ADS)",
     "localSettings": "All settings stored locally on your device",
     "pageCounter": "Simple page visit counter (no personal data collected)",
     "totalVisits": "Total visits:",

@@ -119,7 +119,7 @@ function App() {
     // Create a virtual "stop" at the searched destination
     const destinationStop = {
       gtfsId: `search:${location.lat}:${location.lon}`,
-      name: location.display_name || 'Search Result',
+      name: location.name || location.display_name || 'Search Result',
       lat: location.lat,
       lon: location.lon,
       isSearchResult: true

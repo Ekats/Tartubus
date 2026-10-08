@@ -2213,13 +2213,15 @@ function StopFinder({
         </div>
       )}
 
-      {/* Full-screen stop details overlay */}
+      {/* Full-screen stop details overlay. Stays below the header's z-[1100] so a new
+          search's results dropdown is still visible on top of it */}
       {selectedStop && !locationSelectionMode && (
-        <div className="absolute inset-x-0 top-0 bottom-24 z-[2000] bg-white dark:bg-gray-900 flex flex-col rounded-b-3xl shadow-2xl animate-slide-down">
+        <div className="absolute inset-x-0 top-0 bottom-24 z-[1050] bg-white dark:bg-gray-900 flex flex-col rounded-b-3xl shadow-2xl animate-slide-down">
           {/* Header */}
           <div className={`${selectedStop.isSearchResult ? 'bg-green-600 dark:bg-green-700' : 'bg-blue-600 dark:bg-blue-700'} text-white px-4 py-3 flex items-center justify-between shadow-lg`}>
             <div className="flex-1 min-w-0">
-              <h2 className="font-bold text-lg truncate">{selectedStop.name}</h2>
+              {/* An address is longer than a stop name, so let it wrap to two lines instead of cutting it off */}
+              <h2 className={`font-bold ${selectedStop.isSearchResult ? 'text-base leading-snug line-clamp-2' : 'text-lg truncate'}`}>{selectedStop.name}</h2>
               {selectedStop.isSearchResult ? (
                 <p className="text-sm text-green-100">{t('map.searchDestination') || 'Search destination'}</p>
               ) : (

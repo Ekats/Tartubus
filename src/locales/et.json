@@ -170,6 +170,7 @@
     "privacyFocused": "Privaatsust austav – jälgimist pole",
     "usesDigitransit": "Äpp kasutab Digitransit API-d sõiduplaanide jaoks",
     "usesOSM": "Äpp kasutab OpenStreetMapsi kaarte",
+    "usesInAds": "Aadressiotsing kasutab Maa- ja Ruumiameti In-ADS teenust",
     "localSettings": "Kõik seaded salvestatud sinu seadmesse",
     "pageCounter": "Lihtne lehekülastuste loendur (isikuandmeid ei koguta)",
     "totalVisits": "Kokku külastusi:",

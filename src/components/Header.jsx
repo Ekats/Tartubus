@@ -12,6 +12,7 @@ function Header({ isDarkMode, toggleDarkMode, onDestinationSelect, onRouteSelect
   const [showResults, setShowResults] = useState(false);
   const searchRef = useRef(null);
   const searchTimeoutRef = useRef(null);
+  const searchRequestRef = useRef(0);
 
   // Close search results when clicking outside
   useEffect(() => {
@@ -42,11 +43,16 @@ function Header({ isDarkMode, toggleDarkMode, onDestinationSelect, onRouteSelect
     }
 
     searchTimeoutRef.current = setTimeout(async () => {
+      // An address search can take two round trips (In-ADS, then Nominatim), so a
+      // slower earlier query must not overwrite a newer one's results
+      const requestId = ++searchRequestRef.current;
       setIsSearching(true);
 
       if (isRouteNumber) {
         // Search for bus route in the city zone the map shows (Tartu until the map is opened)
         const routes = await searchRouteByNumber(searchQuery.trim(), routeSearchZone);
+        if (requestId !== searchRequestRef.current) return;
+
         const routeResults = routes.map(route => ({
           type: 'route',
           routeNumber: route.shortName,
@@ -59,6 +65,8 @@ function Header({ isDarkMode, toggleDarkMode, onDestinationSelect, onRouteSelect
       } else {
         // Search for address
         const results = await forwardGeocode(searchQuery);
+        if (requestId !== searchRequestRef.current) return;
+
         const addressResults = results.map(r => ({ ...r, type: 'address' }));
         setSearchResults(addressResults);
         setShowResults(addressResults.length > 0);
@@ -83,6 +91,7 @@ function Header({ isDarkMode, toggleDarkMode, onDestinationSelect, onRouteSelect
       onDestinationSelect({
         lat: result.lat,
         lon: result.lon,
+        name: result.name,
         display_name: result.display_name
       });
     }
@@ -169,7 +178,7 @@ function Header({ isDarkMode, toggleDarkMode, onDestinationSelect, onRouteSelect
                       </svg>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm text-gray-900 dark:text-gray-100 truncate">
-                          {result.display_name}
+                          {result.name || result.display_name}
                         </p>
                       </div>
                     </div>
