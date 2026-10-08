@@ -10,6 +10,7 @@ import CountdownTimer from './CountdownTimer';
 import LocationPermissionInfo from './LocationPermissionInfo';
 import { getLocationConsent, setLocationConsent } from '../hooks/useGeolocation';
 import BusIcon from './BusIcon';
+import { useVisibleInterval } from '../hooks/useVisibleInterval';
 
 const NO_LOCATION = { lat: null, lon: null };
 
@@ -306,50 +307,14 @@ function NearMe({ geolocationHook, onNavigateToMap, manualLocation: manualLocati
     }
   }, [activeLocation.lat, activeLocation.lon, hasSearched, manualLocationProp, customTime]);
 
-  // Auto-refresh departure times every 30 seconds
-  // The interval is created once and reads the latest location/time from a ref,
-  // so re-renders and GPS updates don't tear it down
-  const latestRefreshParamsRef = useRef(null);
-  latestRefreshParamsRef.current = { lat: activeLocation.lat, lon: activeLocation.lon, customTime };
-
-  useEffect(() => {
-    const refresh = () => {
-      const { lat, lon, customTime: time } = latestRefreshParamsRef.current || {};
-      if (!lat || !lon) return;
-      const radius = getSetting('nearbyRadius') || 500;
-      // Refresh without force (use cache if available < 1 min old)
-      fetchNearbyStops(lat, lon, radius, false, time);
-    };
-
-    let interval = null;
-    const start = () => {
-      if (!interval) interval = setInterval(refresh, 30000); // 30 seconds
-    };
-    const stop = () => {
-      if (interval) {
-        clearInterval(interval);
-        interval = null;
-      }
-    };
-
-    // Pause while the app is in the background, refresh as soon as it's visible again
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'hidden') {
-        stop();
-      } else {
-        refresh();
-        start();
-      }
-    };
-
-    if (document.visibilityState !== 'hidden') start();
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-
-    return () => {
-      stop();
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-    };
-  }, [fetchNearbyStops]);
+  // Auto-refresh departure times every 30 seconds while the app is visible
+  useVisibleInterval(() => {
+    const { lat, lon } = activeLocation;
+    if (!lat || !lon) return;
+    const radius = getSetting('nearbyRadius') || 500;
+    // Refresh without force: the cache answers until its data is ~1 minute old
+    fetchNearbyStops(lat, lon, radius, false, customTime);
+  }, 30000);
 
   const loading = locationLoading || stopsLoading;
   // A GPS error (e.g. permission denied) is irrelevant once the user picked a manual location

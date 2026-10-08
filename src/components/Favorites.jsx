@@ -1,9 +1,11 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useFavorites } from '../hooks/useFavorites';
 import { getStopById, getNextStopName, getWalkingRoute } from '../services/digitransit';
 import { shouldShowDeparture, isDepartureLate, formatArrivalTime, formatClockTime, getDelayInfo } from '../utils/timeFormatter';
 import CountdownTimer from './CountdownTimer';
+import { useVisibleInterval } from '../hooks/useVisibleInterval';
+import { haversineDistance } from '../utils/geo';
 
 const NO_LOCATION = { lat: null, lon: null };
 
@@ -16,13 +18,28 @@ function Favorites({ geolocationHook, onNavigateToMap, manualLocation, customTim
   // Use manual location if available, otherwise a real GPS fix - never the default
   // city-centre coordinates (distances and sorting would be measured from there)
   const location = manualLocation || (gpsLocation.hasRealFix ? gpsLocation : NO_LOCATION);
-  const [stopsWithDepartures, setStopsWithDepartures] = useState([]);
+  const [departureStops, setDepartureStops] = useState([]); // Favorites with their departures, as fetched
+  const fetchSeqRef = useRef(0); // Ignore responses from superseded fetches
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [expandedStops, setExpandedStops] = useState(new Map()); // Map of stopId -> expansion level
   const [expandedDepartures, setExpandedDepartures] = useState(new Set()); // Set of "stopId-departureIdx" keys
   const [walkingTimes, setWalkingTimes] = useState(new Map()); // Map of stopId -> {duration, distance}
   const lastWalkingFetchLocationRef = useRef(null); // Track location for walking time fetches
+
+  // Distances and sort order follow the location; departures don't, so moving
+  // around re-sorts the list without refetching every favorite
+  const favoriteIds = favorites.map(favorite => favorite.gtfsId).join(',');
+  const stopsWithDepartures = useMemo(() => {
+    const current = new Set(favoriteIds.split(','));
+    const withDistances = departureStops.filter(stop => current.has(stop.gtfsId)).map(stop => (
+      location.lat && location.lon && stop.lat && stop.lon
+        ? { ...stop, distance: haversineDistance(location.lat, location.lon, stop.lat, stop.lon) }
+        : { ...stop, distance: Infinity } // No location = put at end
+    ));
+    // Sort by distance (closest first)
+    return withDistances.sort((a, b) => a.distance - b.distance);
+  }, [departureStops, favoriteIds, location.lat, location.lon]);
 
   // Fetch walking times for favorite stops (only nearby ones within 500m)
   // Triggers when: (1) stops first load, or (2) location changes >100m
@@ -103,22 +120,11 @@ function Favorites({ geolocationHook, onNavigateToMap, manualLocation, customTim
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [stopsWithDepartures, location.lat, location.lon]);
 
-  // Calculate distance between two coordinates (in meters)
-  const calculateDistance = (lat1, lon1, lat2, lon2) => {
-    const R = 6371000; // Earth's radius in meters
-    const dLat = (lat2 - lat1) * Math.PI / 180;
-    const dLon = (lon2 - lon1) * Math.PI / 180;
-    const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-              Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-              Math.sin(dLon/2) * Math.sin(dLon/2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-    return R * c;
-  };
-
   // Fetch departure times for all favorite stops
   const fetchDepartures = async () => {
     if (favorites.length === 0) return;
 
+    const fetchSeq = ++fetchSeqRef.current;
     setLoading(true);
     setError(null);
 
@@ -151,57 +157,26 @@ function Favorites({ geolocationHook, onNavigateToMap, manualLocation, customTim
         })
       );
 
-      // Calculate distances and sort by closest if location is available
-      const stopsWithDistances = stopsData.map(stop => {
-        if (location.lat && location.lon && stop.lat && stop.lon) {
-          const distance = calculateDistance(location.lat, location.lon, stop.lat, stop.lon);
-          console.log(`Distance to ${stop.name}: ${Math.round(distance)}m`, {
-            userLocation: { lat: location.lat, lon: location.lon },
-            stopLocation: { lat: stop.lat, lon: stop.lon }
-          });
-          return { ...stop, distance };
-        }
-        console.log(`No location data for ${stop.name}`, {
-          hasUserLocation: !!(location.lat && location.lon),
-          hasStopLocation: !!(stop.lat && stop.lon)
-        });
-        return { ...stop, distance: Infinity }; // No location = put at end
-      });
-
-      // Sort by distance (closest first)
-      stopsWithDistances.sort((a, b) => a.distance - b.distance);
-
-      console.log('Sorted favorites by distance:', stopsWithDistances.map(s => ({ name: s.name, distance: Math.round(s.distance) })));
-
-      setStopsWithDepartures(stopsWithDistances);
+      if (fetchSeq !== fetchSeqRef.current) return; // A newer fetch was started
+      setDepartureStops(stopsData);
     } catch (err) {
       console.error('Error fetching favorite stops:', err);
-      setError(err.message);
+      if (fetchSeq === fetchSeqRef.current) setError(err.message);
     } finally {
-      setLoading(false);
+      if (fetchSeq === fetchSeqRef.current) setLoading(false);
     }
   };
 
-  // Fetch departures on mount and when favorites or location changes
+
+  // Fetch departures on mount and when the favorites or the chosen time change
   useEffect(() => {
     fetchDepartures();
-  }, [favorites.length, location.lat, location.lon, customTime]); // Re-fetch when favorites list, location, or custom time changes
+  }, [favoriteIds, customTime]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Auto-refresh departure times every 30 seconds
-  // Wrap fetchDepartures to make it stable
-  const stableFetchDepartures = useCallback(() => {
+  // Auto-refresh departure times every 30 seconds while the app is visible
+  useVisibleInterval(() => {
     fetchDepartures();
-  }, [favorites.length, location.lat, location.lon, customTime]);
-
-  useEffect(() => {
-    if (favorites.length === 0) return;
-
-    const interval = setInterval(() => {
-      stableFetchDepartures();
-    }, 30000); // 30 seconds
-
-    return () => clearInterval(interval);
-  }, [favorites.length, stableFetchDepartures]);
+  }, 30000, favorites.length > 0);
 
   // Handle manual refresh
   const handleRefresh = () => {
