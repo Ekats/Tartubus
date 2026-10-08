@@ -27,8 +27,20 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
 });
 
+// react-leaflet rebuilds a marker whenever its `icon` prop is a different object, so a
+// fresh L.Icon per render means every marker on the map is torn down and recreated.
+// There are only a handful of distinct icons, so they are built once and reused.
+const iconCache = new Map();
+const cachedIcon = (kind, color, isNearby, build) => {
+  const key = `${kind}|${color}|${isNearby}`;
+  if (!iconCache.has(key)) {
+    iconCache.set(key, build());
+  }
+  return iconCache.get(key);
+};
+
 // Custom stop marker icons - modern, clean design
-const createStopIcon = (color, isNearby = false) => {
+const createStopIcon = (color, isNearby = false) => cachedIcon('stop', color, isNearby, () => {
   const size = isNearby ? 32 : 24;
   const dotSize = isNearby ? 10 : 8;
 
@@ -53,10 +65,10 @@ const createStopIcon = (color, isNearby = false) => {
     popupAnchor: [0, -size/2],
     className: '',
   });
-};
+});
 
 // Create favorite stop icon with star
-const createFavoriteStopIcon = (color, isNearby = false) => {
+const createFavoriteStopIcon = (color, isNearby = false) => cachedIcon('favorite', color, isNearby, () => {
   const size = isNearby ? 48 : 36;
 
   return new L.Icon({
@@ -85,7 +97,7 @@ const createFavoriteStopIcon = (color, isNearby = false) => {
     popupAnchor: [0, -size/2],
     className: '',
   });
-};
+});
 
 const stopIcon = createStopIcon('#6B7280'); // Gray for regular stops (not on filtered routes)
 const nearbyStopIcon = createStopIcon('#6B7280'); // Gray for nearby stops when no filter
@@ -347,7 +359,6 @@ function StopFinder({
   const [routeStops, setRouteStops] = useState([]);
   const [routePatterns, setRoutePatterns] = useState([]);
   const [loadingRoutes, setLoadingRoutes] = useState(false);
-  const [lastUpdated, setLastUpdated] = useState(null);
   const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(true);
   const [locationMessage, setLocationMessage] = useState(null);
   const [pendingLocation, setPendingLocation] = useState(null);
@@ -576,7 +587,6 @@ function StopFinder({
       setAllZoneStops(zoneStops); // Store all stops
       setStops(zoneStops); // Initially show all (will be filtered by viewport)
       setCityZoneStopsLoaded(true);
-      setLastUpdated(Date.now());
     } catch (err) {
       console.error('Error loading city zone stops:', err);
       setError(err.message);
@@ -1019,7 +1029,6 @@ function StopFinder({
       }
 
       setNearbyStopIds(nearbyIds);
-      setLastUpdated(Date.now());
     } catch (err) {
       console.error('Error loading stops:', err);
       setError(err.message);
@@ -1270,35 +1279,6 @@ function StopFinder({
     setRoutePatterns([]);
     if (selectedRoute) onRouteChange?.(null);
   };
-
-  // Format time ago
-  const [timeAgo, setTimeAgo] = useState('');
-
-  useEffect(() => {
-    const updateTimeAgo = () => {
-      if (!lastUpdated) {
-        setTimeAgo('');
-        return;
-      }
-      const seconds = Math.floor((Date.now() - lastUpdated) / 1000);
-      if (seconds < 60) {
-        setTimeAgo(`${seconds}s ago`);
-      } else {
-        const minutes = Math.floor(seconds / 60);
-        if (minutes < 60) {
-          setTimeAgo(`${minutes}m ago`);
-        } else {
-          const hours = Math.floor(minutes / 60);
-          setTimeAgo(`${hours}h ago`);
-        }
-      }
-    };
-
-    updateTimeAgo();
-    const interval = setInterval(updateTimeAgo, 1000); // Update every second
-
-    return () => clearInterval(interval);
-  }, [lastUpdated]);
 
   // Fetch address for pending location
   useEffect(() => {

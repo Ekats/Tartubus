@@ -14,6 +14,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 📐 **Near Me heading fits on one line** - "Lähedal olevad peatused" is slightly smaller, and the refresh button is a larger icon without text
 - ⭐ **Near Me stop cards** - the favorite star is larger and sits in the card's top-right corner, with the timetable and map buttons in a row below it. The stop ID is no longer shown there
 - 🔎 **Search bar** - the placeholder text is no longer cut off early (the box is wider and only keeps room for the clear button while you type), and the search results span the screen width
+- 📍 **Shorter address names** - a searched address is shown as "Võru tn 30, Riiamäe, Tartu linn" instead of the full postal address, and a place you searched for by name leads with that name ("Apollo Kino Lõunakeskus, Lääneringtee 39, Ränilinna, Tartu linn"), so two shops at the same address are told apart. In the destination view the address is a little smaller and wraps to two lines instead of being cut off
+- 📦 **The nightly route update only downloads Tartu** - it asks the schedule service for the stops in the city and then just those routes, instead of pulling every route in Estonia and throwing most of it away (~86 MB → ~15 MB per run)
+- 🏙️ **Tartu only** - Tallinn is no longer a supported city. Its stops and routes drop out of the bundled data on the next nightly update, which also makes the download a lot smaller, and panning the map away from Tartu no longer pulls in stops from elsewhere
+- 🔍 **Address search now asks the Estonian Land Board (In-ADS) first** - "Võru tn 30" and "Võru tänav 30" find the house the same as "Võru 30" does, and typing just the start of a street name is enough. OpenStreetMap is still used for what In-ADS doesn't know, like shop names ("Coop") and addresses typed without õ/ä/ö/ü
+
+### Fixed
+- 🐛 **Searching again from an open destination view showed no results** - the results list was drawn behind the destination panel
+- 🐛 **A slow search could overwrite a newer one's results** - only the latest query's results are shown now
+- 🔋 **The map rebuilt every stop marker once a second**, even with nobody touching it, which blocked the phone for about 0.4 s out of every second and drained the battery. A leftover "updated N seconds ago" timer that nothing displayed was driving it; the map now sits still when idle and panning is smooth
 
 ## [3.4.4] - 2026-10-08
 
