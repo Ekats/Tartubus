@@ -93,12 +93,13 @@ function Header({ isDarkMode, toggleDarkMode, onDestinationSelect, onRouteSelect
 
   return (
     <header className="bg-primary dark:bg-gray-800 text-white shadow-lg z-[1100] relative transition-colors">
-      <div className="px-4 py-3 flex items-center gap-3">
+      <div className="px-3 py-3 flex items-center gap-2">
         {/* Logo */}
         <BusIcon className="h-6 flex-shrink-0" alt="Tartu Bussid" />
 
         {/* Address Search Bar */}
-        <div ref={searchRef} className="flex-1 relative">
+        {/* Not positioned itself: the results dropdown is placed against the whole header */}
+        <div ref={searchRef} className="flex-1 min-w-0">
           <div className="relative">
             <input
               type="text"
@@ -106,7 +107,9 @@ function Header({ isDarkMode, toggleDarkMode, onDestinationSelect, onRouteSelect
               onChange={(e) => setSearchQuery(e.target.value)}
               onFocus={() => searchResults.length > 0 && setShowResults(true)}
               placeholder={t('header.searchAddress') || 'Search address...'}
-              className="w-full px-4 py-2 pr-10 text-sm rounded-lg bg-white/10 dark:bg-gray-700 text-white placeholder-white/60 dark:placeholder-gray-400 border border-white/20 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-white/30 dark:focus:ring-blue-500 transition-all"
+              // Room on the right only while the clear button / spinner is there, so the
+              // placeholder isn't cut off 40 px early
+              className={`w-full pl-3 py-2 ${searchQuery ? 'pr-10' : 'pr-3'} text-sm text-ellipsis rounded-lg bg-white/10 dark:bg-gray-700 text-white placeholder-white/60 dark:placeholder-gray-400 border border-white/20 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-white/30 dark:focus:ring-blue-500 transition-all`}
             />
             {isSearching && (
               <div className="absolute right-3 top-1/2 -translate-y-1/2">
@@ -134,7 +137,7 @@ function Header({ isDarkMode, toggleDarkMode, onDestinationSelect, onRouteSelect
 
           {/* Search Results Dropdown */}
           {showResults && searchResults.length > 0 && (
-            <div className="absolute top-full mt-2 w-full bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 max-h-64 overflow-y-auto z-50">
+            <div className="absolute top-full left-2 right-2 mt-1 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 max-h-64 overflow-y-auto z-50">
               {searchResults.map((result, index) => (
                 <button
                   key={index}
