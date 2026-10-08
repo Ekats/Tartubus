@@ -323,6 +323,7 @@ function StopFinder({
   geolocationHook,
   isDarkMode,
   selectedStop: highlightedStop,
+  onStopDismiss,
   locationSelectionMode,
   manualLocation,
   selectedJourney,
@@ -1337,8 +1338,12 @@ function StopFinder({
       openMarkerRef.current.closePopup();
       openMarkerRef.current = null;
     }
-    // Clear selected stop
+    // Clear selected stop. While a journey is drawn the overlay is already closed and the
+    // destination pin belongs to the journey, so don't drop App's selection then.
     setSelectedStop(null);
+    if (!selectedJourney) {
+      onStopDismiss?.();
+    }
     // Close filter menu
     setShowRouteFilter(false);
   };
@@ -2232,7 +2237,11 @@ function StopFinder({
                 </button>
               )}
               <button
-                onClick={() => setSelectedStop(null)}
+                onClick={() => {
+                  setSelectedStop(null);
+                  // Also drop App's selection, or remounting the map tab reopens this overlay
+                  onStopDismiss?.();
+                }}
                 className="p-2 rounded-lg bg-white/20 hover:bg-white/30 transition-colors"
               >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">

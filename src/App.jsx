@@ -166,6 +166,7 @@ function App() {
           geolocationHook={geolocationHook}
           isDarkMode={isDarkMode}
           selectedStop={selectedStop}
+          onStopDismiss={() => setSelectedStop(null)}
           locationSelectionMode={locationSelectionMode}
           manualLocation={manualLocation}
           selectedJourney={selectedJourney}
