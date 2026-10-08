@@ -148,6 +148,9 @@ export async function getNearbyStops(lat, lon, radius = 500, forceRefresh = fals
 
   // Create the request promise
   const requestPromise = (async () => {
+    // The cache age counts from when the data was requested, not when the response
+    // arrived, so a slow response doesn't make the next refresh tick skip a fetch
+    const requestedAt = Date.now();
     try {
       // Use custom time or current time
       const referenceTime = customTime || new Date();
@@ -220,7 +223,7 @@ export async function getNearbyStops(lat, lon, radius = 500, forceRefresh = fals
       if (customTime) {
         // Planned-time data never goes into the "now" cache
       } else if (radius < 2000) {
-        setCachedNearbyStops(lat, lon, radius, compressedResult);
+        setCachedNearbyStops(lat, lon, radius, compressedResult, requestedAt);
       } else {
         console.log(`⚠️ Skipping cache for large radius query (${radius}m) to avoid quota issues`);
       }
@@ -526,7 +529,10 @@ export function decodePolyline(encoded) {
 
 // Cache expiration times
 // Departure times - cache for 2 minutes (fresh enough, provides offline resilience)
-const STOPS_CACHE_DURATION = 60 * 1000; // 1 minute: Near Me's 30 s refresh gets fresh delays about once a minute
+// A little under 1 minute, so every second 30 s refresh tick in Near Me fetches new data
+// (~once a minute). The age counts from when the data was requested; with a full 60 s,
+// timer jitter could leave it a few ms short at the 60 s tick and skip to ~90 s.
+const STOPS_CACHE_DURATION = 55 * 1000;
 // Limit number of cached location queries (keep 10 most recent for good offline UX)
 const MAX_STOPS_CACHE_ENTRIES = 10; // Reduced to prevent quota issues
 
@@ -1063,11 +1069,11 @@ function clearOldCacheEntries() {
 /**
  * Save data to localStorage cache
  */
-function setCachedData(cacheKey, data) {
+function setCachedData(cacheKey, data, timestamp = Date.now()) {
   try {
     const cacheEntry = {
       data,
-      timestamp: Date.now()
+      timestamp
     };
     localStorage.setItem(cacheKey, JSON.stringify(cacheEntry));
   } catch (error) {
@@ -1081,7 +1087,7 @@ function setCachedData(cacheKey, data) {
         try {
           localStorage.setItem(cacheKey, JSON.stringify({
             data,
-            timestamp: Date.now()
+            timestamp
           }));
           console.log('✅ Cache write succeeded after cleanup');
         } catch (retryError) {
@@ -1150,8 +1156,8 @@ function getCachedNearbyStops(lat, lon, radius) {
 /**
  * Save nearby stops data to cache
  */
-function setCachedNearbyStops(lat, lon, radius, data) {
-  setCachedData(nearbyStopsCacheKey(lat, lon, radius), data);
+function setCachedNearbyStops(lat, lon, radius, data, requestedAt) {
+  setCachedData(nearbyStopsCacheKey(lat, lon, radius), data, requestedAt);
 }
 
 /**

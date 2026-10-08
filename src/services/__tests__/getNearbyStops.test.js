@@ -83,3 +83,29 @@ describe('getNearbyStops cache', () => {
     expect(stops[0].stoptimesWithoutPatterns[0].trip.route.shortName).toBe('4');
   });
 });
+
+describe('getNearbyStops refresh timing', () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('is fresh at the 30 s refresh and expired at the 60 s one, even after a slow response', async () => {
+    vi.useFakeTimers();
+    // The response takes 8 s to arrive
+    fetchMock.mockImplementationOnce(() => new Promise(resolve => setTimeout(
+      () => resolve({ ok: true, json: async () => stopsResponse() }), 8000)));
+
+    const first = getNearbyStops(58.3800, 26.7220, 500);
+    await vi.advanceTimersByTimeAsync(8000);
+    await first;
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+
+    await vi.advanceTimersByTimeAsync(22000); // 30 s after the request
+    await getNearbyStops(58.3800, 26.7220, 500);
+    expect(fetchMock).toHaveBeenCalledTimes(1); // served from the cache
+
+    await vi.advanceTimersByTimeAsync(30000); // 60 s after the request
+    await getNearbyStops(58.3800, 26.7220, 500);
+    expect(fetchMock).toHaveBeenCalledTimes(2); // new data
+  });
+});
