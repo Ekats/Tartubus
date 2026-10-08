@@ -5,13 +5,14 @@ import { getStopById, getNextStopName, getWalkingRoute } from '../services/digit
 import { shouldShowDeparture, isDepartureLate, formatArrivalTime, formatClockTime, getDelayInfo } from '../utils/timeFormatter';
 import CountdownTimer from './CountdownTimer';
 import { useVisibleInterval } from '../hooks/useVisibleInterval';
+import { usePullToRefresh } from '../hooks/usePullToRefresh';
 import { haversineDistance } from '../utils/geo';
 
 const NO_LOCATION = { lat: null, lon: null };
 
 function Favorites({ geolocationHook, onNavigateToMap, manualLocation, customTime }) {
   const { t } = useTranslation();
-  const { favorites, removeFavorite, clearAllFavorites } = useFavorites();
+  const { favorites, removeFavorite } = useFavorites();
   // Shared GPS from App.jsx (started there only if the user allowed location)
   const { location: gpsLocation } = geolocationHook;
 
@@ -190,13 +191,6 @@ function Favorites({ geolocationHook, onNavigateToMap, manualLocation, customTim
     }
   };
 
-  // Handle clear all with confirmation
-  const handleClearAll = () => {
-    if (window.confirm(`Remove all ${favorites.length} favorite stops?`)) {
-      clearAllFavorites();
-    }
-  };
-
   const expandStop = (stopId) => {
     setExpandedStops(prev => {
       const newMap = new Map(prev);
@@ -227,6 +221,13 @@ function Favorites({ geolocationHook, onNavigateToMap, manualLocation, customTim
     });
   };
 
+  // Pull down at the top of the list to refresh (same as the refresh button).
+  // Only with something to refresh, and not while a fetch is already running
+  const scrollRef = useRef(null);
+  const { pullDistance, willRefresh } = usePullToRefresh(
+    scrollRef, () => handleRefresh(), !loading && favorites.length > 0
+  );
+
   // Empty state
   if (favorites.length === 0) {
     return (
@@ -243,42 +244,36 @@ function Favorites({ geolocationHook, onNavigateToMap, manualLocation, customTim
   }
 
   return (
-    <div className="h-full overflow-y-auto dark:bg-gray-900 p-4 pb-48">
-      {/* Header with refresh and clear buttons */}
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">
+    <div ref={scrollRef} className="h-full overflow-y-auto overscroll-y-contain dark:bg-gray-900 p-4 pb-48">
+      {/* Pull-to-refresh indicator: grows with the pull, arrow flips when a release will refresh */}
+      <div
+        className="flex items-end justify-center overflow-hidden text-primary dark:text-blue-400"
+        style={{ height: pullDistance, transition: pullDistance === 0 ? 'height 150ms ease-out' : 'none' }}
+        aria-hidden="true"
+      >
+        <svg
+          className={`h-6 w-6 mb-2 transition-transform ${willRefresh ? 'rotate-180' : ''}`}
+          fill="none" stroke="currentColor" viewBox="0 0 24 24"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+        </svg>
+      </div>
+      {/* Header with refresh button */}
+      <div className="flex items-center justify-between gap-2 mb-4">
+        <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 whitespace-nowrap truncate min-w-0">
           ⭐ {t('favorites.title')} ({favorites.length})
         </h2>
-        <div className="flex gap-2">
-          <button
-            onClick={handleRefresh}
-            disabled={loading}
-            className="px-3 py-1.5 text-sm bg-blue-600 dark:bg-blue-500 text-white rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors disabled:opacity-50 flex items-center gap-1"
-          >
-            <svg
-              className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`}
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-              />
-            </svg>
-            {loading ? t('favorites.refreshing') : t('favorites.refresh')}
-          </button>
-          {favorites.length > 1 && (
-            <button
-              onClick={handleClearAll}
-              className="px-3 py-1.5 text-sm bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
-            >
-              {t('favorites.clearAll')}
-            </button>
-          )}
-        </div>
+        <button
+          onClick={handleRefresh}
+          className="shrink-0 rounded-full p-2 text-primary dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 disabled:opacity-60"
+          disabled={loading}
+          title={loading ? t('favorites.refreshing') : t('favorites.refresh')}
+          aria-label={loading ? t('favorites.refreshing') : t('favorites.refresh')}
+        >
+          <svg className={`h-8 w-8 ${loading ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          </svg>
+        </button>
       </div>
 
       {/* Error message */}

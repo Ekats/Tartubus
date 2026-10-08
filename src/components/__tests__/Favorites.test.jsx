@@ -9,7 +9,7 @@ const favorites = [
 ];
 
 vi.mock('../../hooks/useFavorites', () => ({
-  useFavorites: () => ({ favorites, removeFavorite: vi.fn(), clearAllFavorites: vi.fn(), isFavorite: () => true, toggleFavorite: vi.fn() }),
+  useFavorites: () => ({ favorites, removeFavorite: vi.fn(), isFavorite: () => true, toggleFavorite: vi.fn() }),
 }));
 vi.mock('../../services/digitransit', () => ({
   getStopById: vi.fn(async (gtfsId) => ({ ...favorites.find(f => f.gtfsId === gtfsId), stoptimesWithoutPatterns: [] })),

@@ -115,17 +115,11 @@ export function useFavorites() {
     }
   };
 
-  // Clear all favorites
-  const clearAllFavorites = () => {
-    saveFavorites([]);
-  };
-
   return {
     favorites,
     addFavorite,
     removeFavorite,
     isFavorite,
     toggleFavorite,
-    clearAllFavorites,
   };
 }
