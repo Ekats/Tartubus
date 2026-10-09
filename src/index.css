@@ -34,6 +34,73 @@ body {
   bottom: var(--bottom-nav-height);
 }
 
+/* Journey / trip stop boxes: the permanent label (Tooltip) and the on-tap box (Popup) share
+   one look - white (also in dark mode), 80% opaque, sized to the widest line, no line wraps.
+   Only the stop name may truncate, on a very wide box. */
+.journey-stop-box {
+  white-space: nowrap;
+  color: #222;
+}
+.journey-stop-box .journey-stop-name {
+  max-width: 80vw;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+/* The bus icon (186x96) gets its size up front: Tailwind's max-width:100% on images made the box
+   count it as zero wide, so the time ran past the box, and a late-loading image would resize it */
+.journey-stop-box img {
+  width: 1.9375em;
+  height: 1em;
+  max-width: none;
+}
+.leaflet-tooltip.journey-stop-box,
+.journey-stop-box .leaflet-popup-content-wrapper {
+  background: #fff;
+  border: 1px solid #fff;
+  border-radius: 6px;
+  padding: 6px 10px;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.35);
+  color: #222;
+}
+/* The popup keeps Leaflet's × (the one intended difference); the right margin reserves its room */
+.journey-stop-box .leaflet-popup-content {
+  margin: 0 16px 0 0;
+  width: auto !important;
+  font-size: 12px;
+  line-height: 16px;
+}
+/* The popup's pointer is drawn like the tooltip's arrow so both look the same */
+.journey-stop-box .leaflet-popup-tip-container {
+  display: none;
+}
+.journey-stop-box .leaflet-popup-content-wrapper {
+  position: relative;
+  text-align: left;
+}
+.journey-stop-box .leaflet-popup-content-wrapper::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  margin-left: -6px;
+  margin-bottom: -12px;
+  border: 6px solid transparent;
+  border-top-color: #fff;
+  pointer-events: none;
+}
+.leaflet-popup.journey-stop-box {
+  margin-bottom: 6px;
+}
+/* Leaflet sets an inline opacity on popups (for its fade-in), so this needs !important; the
+   Tooltip gets its 0.8 from its opacity prop. On the whole popup, so the pointer matches the box. */
+.leaflet-popup.journey-stop-box {
+  opacity: 0.8 !important;
+}
+/* The boarding stop's label stays on top when neighbouring labels overlap it */
+.leaflet-tooltip.journey-stop-first {
+  z-index: 10;
+}
+
 /* Dark mode map tiles filter - community solution for OSM dark mode */
 .map-tiles-dark {
   filter: brightness(0.6) invert(1) contrast(3) hue-rotate(200deg) saturate(0.3) brightness(0.7);

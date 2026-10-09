@@ -1628,11 +1628,11 @@ function StopFinder({
                   icon={createStopIcon('#FBBF24', true)} // Larger yellow icon
                   zIndexOffset={3000}
                 >
-                  {/* Permanent tooltip for first boarding stop only */}
-                  {isFirstLeg && (
-                    <Tooltip permanent direction="top" className="journey-stop-tooltip">
+                  {/* First boarding stop: permanent label; any other boarding stop: popup on tap */}
+                  {isFirstLeg ? (
+                    <Tooltip permanent direction="top" opacity={0.8} className="journey-stop-box journey-stop-first">
                       <div className="text-xs font-semibold">
-                        <div className="font-bold">{leg.from.stop.name}</div>
+                        <div className="font-bold journey-stop-name">{leg.from.stop.name}</div>
                         <div className="text-amber-600">
                           <BusIcon /> {leg.route?.shortName} {t('map.at')} {timeStr}
                         </div>
@@ -1641,11 +1641,10 @@ function StopFinder({
                         </div>
                       </div>
                     </Tooltip>
-                  )}
-                  {/* Regular popup for all stops */}
-                  <Popup>
-                    <div className="text-sm">
-                      <div className="font-bold">{leg.from.stop.name}</div>
+                  ) : (
+                  <Popup maxWidth={600} className="journey-stop-box">
+                    <div className="text-xs font-semibold">
+                      <div className="font-bold journey-stop-name">{leg.from.stop.name}</div>
                       <div className="text-amber-600 font-semibold">
                         <BusIcon /> {leg.route?.shortName} {t('map.at')} {timeStr}
                       </div>
@@ -1654,6 +1653,7 @@ function StopFinder({
                       </div>
                     </div>
                   </Popup>
+                  )}
                 </Marker>
               );
               renderedStops.add(leg.from.stop.gtfsId);
@@ -1678,9 +1678,9 @@ function StopFinder({
                     icon={createStopIcon('#FBBF24', false)} // Regular size yellow icon
                     zIndexOffset={2900}
                   >
-                    <Popup>
-                      <div className="text-sm">
-                        <div className="font-bold">{stop.name}</div>
+                    <Popup maxWidth={600} className="journey-stop-box">
+                      <div className="text-xs font-semibold">
+                        <div className="font-bold journey-stop-name">{stop.name}</div>
                         <div className="text-amber-600 font-semibold">
                           <BusIcon /> {leg.route?.shortName} ~{timeStr}
                         </div>
@@ -1712,9 +1712,9 @@ function StopFinder({
                     zIndexOffset={3000}
                   >
                     {/* Combined permanent tooltip for transfer points */}
-                    <Tooltip permanent direction="top" className="journey-stop-tooltip">
+                    <Tooltip permanent direction="top" opacity={0.8} className="journey-stop-box">
                       <div className="text-xs font-semibold">
-                        <div className="font-bold">{leg.to.stop.name}</div>
+                        <div className="font-bold journey-stop-name">{leg.to.stop.name}</div>
                         <div className="text-orange-600">
                           ⬇️ {t('map.getOff')} <BusIcon /> {leg.route?.shortName} {t('map.at')} {alightTimeStr}
                         </div>
@@ -1723,21 +1723,6 @@ function StopFinder({
                         </div>
                       </div>
                     </Tooltip>
-                    {/* Regular popup */}
-                    <Popup>
-                      <div className="text-sm">
-                        <div className="font-bold">{leg.to.stop.name}</div>
-                        <div className="text-orange-600 font-semibold text-xs mb-1">
-                          🔄 {t('map.transferPoint')}
-                        </div>
-                        <div className="text-gray-700 dark:text-gray-300 text-xs">
-                          ⬇️ {t('map.getOff')} <BusIcon /> {leg.route?.shortName} {t('map.at')} {alightTimeStr}
-                        </div>
-                        <div className="text-gray-700 dark:text-gray-300 text-xs">
-                          ⬆️ {t('map.board')} <BusIcon /> {nextBusLeg.route?.shortName} {t('map.at')} {boardTimeStr}
-                        </div>
-                      </div>
-                    </Popup>
                   </Marker>
                 );
                 renderedStops.add(leg.to.stop.gtfsId);
@@ -1750,11 +1735,11 @@ function StopFinder({
                     icon={createStopIcon('#FBBF24', true)} // Larger yellow icon
                     zIndexOffset={3000}
                   >
-                    {/* Permanent tooltip for final destination */}
-                    {isLastBusLeg && (
-                      <Tooltip permanent direction="top" className="journey-stop-tooltip">
+                    {/* Final destination: permanent label; other alighting stops: popup on tap */}
+                    {isLastBusLeg ? (
+                      <Tooltip permanent direction="top" opacity={0.8} className="journey-stop-box">
                         <div className="text-xs font-semibold">
-                          <div className="font-bold">{leg.to.stop.name}</div>
+                          <div className="font-bold journey-stop-name">{leg.to.stop.name}</div>
                           <div className="text-amber-600">
                             <BusIcon /> {leg.route?.shortName} {t('map.arrives')} {alightTimeStr}
                           </div>
@@ -1763,19 +1748,19 @@ function StopFinder({
                           </div>
                         </div>
                       </Tooltip>
-                    )}
-                    {/* Regular popup for all stops */}
-                    <Popup>
-                      <div className="text-sm">
-                        <div className="font-bold">{leg.to.stop.name}</div>
+                    ) : (
+                    <Popup maxWidth={600} className="journey-stop-box">
+                      <div className="text-xs font-semibold">
+                        <div className="font-bold journey-stop-name">{leg.to.stop.name}</div>
                         <div className="text-amber-600 font-semibold">
                           <BusIcon /> {leg.route?.shortName} {t('map.arrives')} {alightTimeStr}
                         </div>
                         <div className="text-red-600 text-xs font-semibold">
-                          {isLastBusLeg ? `📍 ${t('map.getOffHere')}` : `📍 ${t('map.stop')}`}
+                          📍 {t('map.stop')}
                         </div>
                       </div>
                     </Popup>
+                    )}
                   </Marker>
                 );
               }
@@ -1791,7 +1776,7 @@ function StopFinder({
           const isEnd = m.kind !== 'mid';
           const body = (
             <>
-              <div className="font-bold">{m.name}</div>
+              <div className="font-bold journey-stop-name">{m.name}</div>
               <div className="text-amber-600 font-semibold">
                 <BusIcon /> {selectedRoute.routeNumber} {t('map.at')} {m.approx && '~'}{m.time}
               </div>
@@ -1806,14 +1791,15 @@ function StopFinder({
               icon={createStopIcon('#FBBF24', isEnd)}
               zIndexOffset={isEnd ? 3000 : 2900}
             >
-              {isEnd && (
-                <Tooltip permanent direction="top" className="journey-stop-tooltip">
+              {isEnd ? (
+                <Tooltip permanent direction="top" opacity={0.8} className={`journey-stop-box${m.kind === 'first' ? ' journey-stop-first' : ''}`}>
                   <div className="text-xs font-semibold">{body}</div>
                 </Tooltip>
+              ) : (
+                <Popup maxWidth={600} className="journey-stop-box">
+                  <div className="text-xs font-semibold">{body}</div>
+                </Popup>
               )}
-              <Popup>
-                <div className="text-sm">{body}</div>
-              </Popup>
             </Marker>
           );
         })}
