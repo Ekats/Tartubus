@@ -149,6 +149,7 @@ function App() {
           geolocationHook={geolocationHook}
           manualLocation={manualLocation}
           customTime={customTime}
+          onShowRoute={handleRouteSelect}
           onNavigateToMap={(stop) => {
             if (stop?.selectLocation) {
               setLocationSelectionMode(true)

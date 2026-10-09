@@ -360,6 +360,7 @@ function StopFinder({
   const [zoneRouteNames, setZoneRouteNames] = useState([]); // Route numbers serving the current city zone
   const [routeStops, setRouteStops] = useState([]);
   const [routePatterns, setRoutePatterns] = useState([]);
+  const pendingRouteFitRef = useRef(null);
   const [loadingRoutes, setLoadingRoutes] = useState(false);
   const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(true);
   const [locationMessage, setLocationMessage] = useState(null);
@@ -654,6 +655,7 @@ function StopFinder({
   // Auto-zoom map to fit the selected journey route
   // Show a route picked in the header search: filter the map to it and zoom to its stops
   useEffect(() => {
+    pendingRouteFitRef.current = null;
     if (!selectedRoute?.routeNumber) return;
 
     setSelectedRoutes(new Set([selectedRoute.routeNumber]));
@@ -661,7 +663,11 @@ function StopFinder({
     const coords = (selectedRoute.patterns || []).flatMap(pattern =>
       (pattern.stops || []).map(stop => [stop.lat, stop.lon])
     );
-    if (coords.length === 0) return;
+    if (coords.length === 0) {
+      // No stop coordinates (e.g. picked from a Near Me departure): fit once the patterns load
+      pendingRouteFitRef.current = selectedRoute.routeNumber;
+      return;
+    }
 
     // Small delay to ensure map is fully initialized after component mount
     const zoomTimeout = setTimeout(() => {
@@ -675,6 +681,23 @@ function StopFinder({
 
     return () => clearTimeout(zoomTimeout);
   }, [selectedRoute]);
+
+  // One-shot fit for a route selected without coordinates: the ref is cleared as soon as
+  // matching patterns arrive, so later pattern changes (30 s refresh, panning) never re-fit.
+  useEffect(() => {
+    const routeNumber = pendingRouteFitRef.current;
+    if (!routeNumber) return;
+    const coords = routePatterns
+      .filter(pattern => pattern.routeShortName === routeNumber)
+      .flatMap(pattern => pattern.coordinates?.length > 0 ? pattern.coordinates : pattern.stops.map(stop => [stop.lat, stop.lon]));
+    if (coords.length === 0 || !mapRef.current) return;
+    pendingRouteFitRef.current = null;
+    try {
+      mapRef.current.fitBounds(L.latLngBounds(coords), { padding: [50, 50], maxZoom: 15 });
+    } catch (error) {
+      console.error('Error fitting route bounds:', error);
+    }
+  }, [routePatterns]);
 
   useEffect(() => {
     if (!selectedJourney) return;

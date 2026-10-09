@@ -15,7 +15,7 @@ import { usePullToRefresh } from '../hooks/usePullToRefresh';
 
 const NO_LOCATION = { lat: null, lon: null };
 
-function NearMe({ geolocationHook, onNavigateToMap, manualLocation: manualLocationProp, onClearManualLocation, customTime }) {
+function NearMe({ geolocationHook, onNavigateToMap, onShowRoute, manualLocation: manualLocationProp, onClearManualLocation, customTime }) {
   const { t } = useTranslation();
   // Use shared geolocation hook from App.jsx instead of creating a new instance
   const { location, error: locationError, errorCode: locationErrorCode, loading: locationLoading, getLocation, startWatching } = geolocationHook;
@@ -175,6 +175,12 @@ function NearMe({ geolocationHook, onNavigateToMap, manualLocation: manualLocati
       newMap.delete(stopId);
       return newMap;
     });
+  };
+
+  // Same payload shape as the header's route search; the map loads the patterns itself
+  const showRoute = (departure) => {
+    const route = departure.trip?.route;
+    onShowRoute?.({ type: 'route', routeNumber: route.shortName, routeName: route.longName, gtfsId: route.gtfsId, patterns: [] });
   };
 
   const toggleDepartureExpanded = (stopId, departureIdx) => {
@@ -573,18 +579,32 @@ function NearMe({ geolocationHook, onNavigateToMap, manualLocation: manualLocati
                         };
                         const isLate = isDepartureLate(departure.scheduledArrival, realtimeData, customTime);
                         const delayInfo = getDelayInfo(departure.scheduledArrival, realtimeData);
+                        const routeShortName = departure.trip?.route?.shortName;
+                        const badgeColor = isLate ? 'bg-gray-400 dark:bg-gray-600' : 'bg-primary dark:bg-blue-600';
 
                         return (
                           <div key={idx} className={`border-t border-gray-100 dark:border-gray-700 ${isLate ? 'opacity-60' : ''}`}>
+                            <div className="flex items-center gap-3">
+                              {routeShortName && onShowRoute ? (
+                                <button
+                                  onClick={() => showRoute(departure)}
+                                  className={`${badgeColor} hover:opacity-80 min-w-[44px] min-h-[44px] px-3 flex items-center justify-center shrink-0 text-white font-bold rounded-md text-sm`}
+                                  aria-label={`${t('nearMe.showRouteOnMap')}: ${routeShortName}`}
+                                  title={t('nearMe.showRouteOnMap')}
+                                >
+                                  {routeShortName}
+                                </button>
+                              ) : (
+                                <div className={`${badgeColor} text-white font-bold px-3 py-1 rounded-md text-sm`}>
+                                  {routeShortName || '?'}
+                                </div>
+                              )}
                             <button
                               onClick={() => remainingStops.length > 0 && toggleDepartureExpanded(stop.gtfsId, idx)}
-                              className={`w-full flex items-center justify-between py-2 text-left ${remainingStops.length > 0 ? 'hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer' : 'cursor-default'}`}
+                              className={`flex-1 min-w-0 flex items-center justify-between py-2 text-left ${remainingStops.length > 0 ? 'hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer' : 'cursor-default'}`}
                               disabled={remainingStops.length === 0}
                             >
                               <div className="flex items-center gap-3 flex-1">
-                                <div className={`${isLate ? 'bg-gray-400 dark:bg-gray-600' : 'bg-primary dark:bg-blue-600'} text-white font-bold px-3 py-1 rounded-md text-sm`}>
-                                  {departure.trip?.route?.shortName || '?'}
-                                </div>
                                 <div className="text-sm flex-1">
                                   <div className={`${isLate ? 'text-gray-500 dark:text-gray-500' : 'text-gray-700 dark:text-gray-300'}`}>
                                     {departure.headsign || departure.trip?.route?.longName || 'Unknown destination'}
@@ -618,9 +638,18 @@ function NearMe({ geolocationHook, onNavigateToMap, manualLocation: manualLocati
                                 )}
                               </div>
                             </button>
+                            </div>
                             {isDepartureExpanded && remainingStops.length > 0 && (
                               <div className="pl-12 pr-2 pb-2 text-xs">
                                 <div className="bg-gray-50 dark:bg-gray-800 rounded p-2 space-y-1">
+                                  {routeShortName && onShowRoute && (
+                                    <button
+                                      onClick={() => showRoute(departure)}
+                                      className="w-full mb-1 py-1.5 text-sm font-medium text-blue-600 dark:text-blue-400 border border-blue-500 dark:border-blue-400 rounded-md hover:bg-blue-50 dark:hover:bg-gray-700 transition-colors"
+                                    >
+                                      🗺 {t('nearMe.showRouteOnMap')}
+                                    </button>
+                                  )}
                                   <div className="font-semibold text-gray-700 dark:text-gray-300 mb-1">{t('nearMe.upcomingStops')}</div>
                                   {remainingStops.map((stopTime, sIdx) => (
                                     <div key={sIdx} className="text-gray-600 dark:text-gray-400 flex items-center justify-between gap-2">

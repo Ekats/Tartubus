@@ -3,10 +3,10 @@ import { createElement, act } from 'react';
 import { createRoot } from 'react-dom/client';
 import '../../i18n';
 
-const mocks = vi.hoisted(() => ({ fetchNearbyStops: vi.fn() }));
+const mocks = vi.hoisted(() => ({ fetchNearbyStops: vi.fn(), stops: [] }));
 
 vi.mock('../../hooks/useNearbyStops', () => ({
-  useNearbyStops: () => ({ stops: [], loading: false, error: null, fetchNearbyStops: mocks.fetchNearbyStops }),
+  useNearbyStops: () => ({ stops: mocks.stops, loading: false, error: null, fetchNearbyStops: mocks.fetchNearbyStops }),
 }));
 vi.mock('../../hooks/useFavorites', () => ({
   useFavorites: () => ({ isFavorite: () => false, toggleFavorite: vi.fn() }),
@@ -73,6 +73,7 @@ function clickButton(container, label) {
 beforeEach(() => {
   localStorage.clear();
   mocks.fetchNearbyStops.mockClear();
+  mocks.stops = [];
   setBrowserPermission('prompt');
 });
 
@@ -164,5 +165,79 @@ describe('NearMe with location permission denied', () => {
     const hook = { ...deniedGeolocationHook(), error: 'Timeout expired', errorCode: 3 };
     const container = await render({ geolocationHook: hook, manualLocation: null });
     expect(container.textContent).toContain('Timeout expired');
+  });
+});
+
+describe('NearMe show route on map', () => {
+  function stopWithDepartures(shortNames) {
+    const midnight = new Date();
+    midnight.setHours(0, 0, 0, 0);
+    const serviceDay = Math.floor(midnight.getTime() / 1000);
+    const nowSec = Math.floor((Date.now() - midnight.getTime()) / 1000);
+    return [{
+      gtfsId: 'tartu:1', name: 'Raekoda', lat: 58.38, lon: 26.72, distance: 100,
+      stoptimesWithoutPatterns: shortNames.map((shortName, i) => ({
+        serviceDay, scheduledArrival: nowSec + 600 + i * 60, realtimeArrival: nowSec + 600 + i * 60,
+        realtime: false, arrivalDelay: 0, headsign: `Dest ${i}`, stopPosition: 0,
+        trip: {
+          route: { shortName, longName: `Long ${i}`, gtfsId: `tartu:R${i}` },
+          stoptimes: [
+            { stop: { gtfsId: 'tartu:1', name: 'Raekoda' }, stopPosition: 0, scheduledArrival: nowSec + 600 },
+            { stop: { gtfsId: 'tartu:2', name: 'Next stop' }, stopPosition: 1, scheduledArrival: nowSec + 700 },
+          ],
+        },
+      })),
+    }];
+  }
+
+  async function renderRows(shortNames, onShowRoute) {
+    mocks.stops = stopWithDepartures(shortNames);
+    const container = await render({
+      geolocationHook: idleGeolocationHook(), manualLocation: { lat: 58.38, lon: 26.72 }, onShowRoute,
+    });
+    await flush();
+    return container;
+  }
+
+  const badge = (container, label) =>
+    [...container.querySelectorAll('button[title="Show route on map"]')].find(b => b.textContent === label);
+
+  it('the badge calls onShowRoute without opening the stop list', async () => {
+    const onShowRoute = vi.fn();
+    const container = await renderRows(['4', '12A'], onShowRoute);
+    act(() => badge(container, '12A').click());
+
+    expect(onShowRoute).toHaveBeenCalledWith({
+      type: 'route', routeNumber: '12A', routeName: 'Long 1', gtfsId: 'tartu:R1', patterns: [],
+    });
+    expect(container.textContent).not.toContain('Upcoming stops');
+  });
+
+  it('the rest of the row opens the stop list and does not call onShowRoute', async () => {
+    const onShowRoute = vi.fn();
+    const container = await renderRows(['4'], onShowRoute);
+    clickButton(container, 'Dest 0');
+
+    expect(container.textContent).toContain('Upcoming stops');
+    expect(onShowRoute).not.toHaveBeenCalled();
+  });
+
+  it('the button in the opened stop list calls onShowRoute', async () => {
+    const onShowRoute = vi.fn();
+    const container = await renderRows(['4'], onShowRoute);
+    clickButton(container, 'Dest 0');
+    clickButton(container, 'Show route on map');
+
+    expect(onShowRoute).toHaveBeenCalledTimes(1);
+    expect(onShowRoute.mock.calls[0][0].routeNumber).toBe('4');
+  });
+
+  it('a departure without a route number has no route button', async () => {
+    const container = await renderRows([undefined], vi.fn());
+    expect(container.textContent).toContain('?');
+    clickButton(container, 'Dest 0');
+    expect(container.textContent).toContain('Upcoming stops');
+    expect(container.textContent).not.toContain('Show route on map');
+    expect(container.querySelector('button[title="Show route on map"]')).toBeNull();
   });
 });
