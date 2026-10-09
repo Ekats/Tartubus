@@ -5,6 +5,17 @@ All notable changes to Tartu Bussid will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.4.8] - 2026-10-09
+
+### Added
+- 📴 **"No connection" label** - when Near Me or Favorites show the last-known departures because a refresh failed, a line at the top says "Võrguühendus puudub – kella 14:52 andmetel" (the time the data was fetched); it disappears when a refresh succeeds
+
+### Changed
+- 🧭 **Slightly taller tab bar** - 46 px instead of 38 px, with a bigger icon and label; everything above it (overlay, map buttons, toasts, list padding) moves with it
+
+### Fixed
+- 📡 **Last-known departures show without internet** - the cached stops and departures were wiped at every app start, so opening the app offline gave an error in Near Me and no departures in Favorites; they are now kept (up to 12 hours; 10 locations and 20 favourite stops at most), and Favorites caches each stop's departures too
+
 ## [3.4.7] - 2026-10-09
 
 ### Added
