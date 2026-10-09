@@ -93,7 +93,7 @@ Implement in this order: **0.1 → 0.2 → 1 → 2 → 3 → 4 → 5 → 6 → 7
 
 ### Environment facts
 
-- Node 20 in CI (`actions/setup-node` with `node-version: '20'`); newer locally is fine.
+- Node 22 in CI (`actions/setup-node` with `node-version: '22'`); newer locally is fine.
 - `node_modules` isn't installed in a fresh clone; run `npm install` first.
 - There's probably **no Digitransit API key** where you run. Live API calls will return 401, so rely on unit tests with fixtures or mocked `fetch`, and say in the report which manual smoke-test steps you couldn't run.
 - GitHub Actions workflows (items 6–8) can't be run locally. Check them with a YAML linter (`npx --yes yaml-lint` or similar), re-read them carefully, and say in the report that they're unverified until they run in CI.

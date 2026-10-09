@@ -58,7 +58,7 @@ Suggested order: **~~0.2~~ → ~~4~~ → ~~9~~ → ~~10~~ → ~~11~~ → ~~12~~ 
 
 ### Environment facts
 
-- Node 20 in CI; newer locally is fine. Run `npm install` first in a fresh clone.
+- Node 22 in CI; newer locally is fine. Run `npm install` first in a fresh clone.
 - There's probably **no Digitransit API key** where you run; live API calls return 401. Use mocked `fetch`. For a real-browser check, run `npx vite preview` and Playwright with `page.route()` on `**/routing/v2/finland/gtfs/v1` to fake responses, and `page.clock` for timers.
 - GitHub Actions can't be run locally. Lint workflows with `actionlint` and say in the report that they're unverified until CI runs them.
 
