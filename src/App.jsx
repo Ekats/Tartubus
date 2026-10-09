@@ -216,7 +216,7 @@ function App() {
       <div className="flex-1 overflow-hidden">
         {renderView()}
       </div>
-      {/* Floating bottom navigation */}
+      {/* Bottom navigation */}
       <BottomNav activeView={activeView} onViewChange={setActiveView} />
 
       {/* Install prompts */}
@@ -225,7 +225,7 @@ function App() {
 
       {/* Exit prompt toast */}
       {showExitPrompt && (
-        <div className="fixed bottom-20 left-1/2 transform -translate-x-1/2 z-50 animate-fade-in-out">
+        <div className="fixed bottom-[calc(var(--bottom-nav-height)+0.5rem)] left-1/2 transform -translate-x-1/2 z-50 animate-fade-in-out">
           <div className="bg-gray-900 dark:bg-gray-800 text-white px-6 py-3 rounded-full shadow-lg border border-gray-700">
             <p className="text-sm font-medium">Press back again to exit</p>
           </div>

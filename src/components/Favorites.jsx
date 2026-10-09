@@ -244,7 +244,7 @@ function Favorites({ geolocationHook, onNavigateToMap, manualLocation, customTim
   }
 
   return (
-    <div ref={scrollRef} className="h-full overflow-y-auto overscroll-y-contain dark:bg-gray-900 p-4 pb-48">
+    <div ref={scrollRef} className="h-full overflow-y-auto overscroll-y-contain dark:bg-gray-900 p-4 pb-[calc(var(--bottom-nav-height)+1rem)]">
       {/* Pull-to-refresh indicator: grows with the pull, arrow flips when a release will refresh */}
       <div
         className="flex items-end justify-center overflow-hidden text-primary dark:text-blue-400"

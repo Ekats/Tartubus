@@ -2100,7 +2100,7 @@ function StopFinder({
       </div>
 
       {/* Bottom right - Location control */}
-      <div className="absolute bottom-24 right-4 z-[1000] flex flex-col items-end gap-2">
+      <div className="absolute bottom-[calc(var(--bottom-nav-height)+1rem)] right-4 z-[1000] flex flex-col items-end gap-2">
         {/* Exit route view button */}
         {selectedJourney && (
           <button
@@ -2210,7 +2210,7 @@ function StopFinder({
       {/* Full-screen stop details overlay. Stays below the header's z-[1100] so a new
           search's results dropdown is still visible on top of it */}
       {selectedStop && !locationSelectionMode && (
-        <div className="absolute inset-x-0 top-0 bottom-24 z-[1050] bg-white dark:bg-gray-900 flex flex-col rounded-b-3xl shadow-2xl animate-slide-down">
+        <div className="absolute inset-x-0 top-0 bottom-[var(--bottom-nav-height)] z-[1050] bg-white dark:bg-gray-900 flex flex-col rounded-b-3xl shadow-2xl animate-slide-down">
           {/* Header */}
           <div className={`${selectedStop.isSearchResult ? 'bg-green-600 dark:bg-green-700' : 'bg-blue-600 dark:bg-blue-700'} text-white px-4 py-3 flex items-center justify-between shadow-lg`}>
             <div className="flex-1 min-w-0">

@@ -11,20 +11,20 @@ function BottomNav({ activeView, onViewChange }) {
   ];
 
   return (
-    <nav className="fixed bottom-1 left-2 right-2 z-[1500] bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-2xl rounded-2xl transition-colors">
-      <div className="flex items-center justify-around">
+    <nav className="fixed bottom-0 left-0 right-0 z-[1500] h-[var(--bottom-nav-height)] pb-[env(safe-area-inset-bottom,0px)] bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 transition-colors">
+      <div className="flex h-full items-stretch justify-around">
         {navItems.map((item) => (
           <button
             key={item.id}
             onClick={() => onViewChange(item.id)}
-            className={`flex-1 flex flex-col items-center py-3 transition-colors rounded-2xl ${
+            className={`flex-1 flex flex-col items-center justify-center py-1 transition-colors ${
               activeView === item.id
                 ? 'text-primary dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30'
                 : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700/50'
             }`}
           >
-            <span className="text-2xl mb-1">{item.icon}</span>
-            <span className="text-xs font-medium">{item.label}</span>
+            <span className="text-base leading-none">{item.icon}</span>
+            <span className="text-[10px] leading-tight font-medium">{item.label}</span>
           </button>
         ))}
       </div>

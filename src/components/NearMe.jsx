@@ -331,7 +331,7 @@ function NearMe({ geolocationHook, onNavigateToMap, manualLocation: manualLocati
   );
 
   return (
-    <div ref={scrollRef} className="p-4 pb-48 h-full overflow-y-auto overscroll-y-contain dark:bg-gray-900">
+    <div ref={scrollRef} className="p-4 pb-[calc(var(--bottom-nav-height)+1rem)] h-full overflow-y-auto overscroll-y-contain dark:bg-gray-900">
       {/* Pull-to-refresh indicator: grows with the pull, arrow flips when a release will refresh */}
       <div
         className="flex items-end justify-center overflow-hidden text-primary dark:text-blue-400"

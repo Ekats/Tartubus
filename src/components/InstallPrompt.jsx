@@ -33,7 +33,7 @@ function InstallPrompt() {
   if (!showPrompt) return null
 
   return (
-    <div className="fixed bottom-20 left-4 right-4 z-50 animate-fade-in">
+    <div className="fixed bottom-[calc(var(--bottom-nav-height)+0.5rem)] left-4 right-4 z-50 animate-fade-in">
       <div className="bg-blue-600 text-white rounded-lg shadow-2xl p-4 border-2 border-blue-500">
         <button
           onClick={handleDismiss}

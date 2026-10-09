@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 🔎 **Address search always tries to show 5 results** - when the Land Board finds fewer, OpenStreetMap fills the list up (skipping places already shown)
 - 🕒 **"How to get here" cards show clock times** - the trip's start – end on top, every walk and bus leg with its own times, and a summary line (bus in N min · total N min · walking distance); stop names are white in dark mode
 - 📏 **Distances in metres are rounded to the nearest 10** - Near Me, Favorites, stop cards and the journey cards
+- 🧭 **Slimmer, edge-to-edge tab bar** - the bottom bar is half as tall, square-cornered and flush with the screen bottom; the map overlay, buttons, toasts and list padding follow its height
 
 ## [3.4.6] - 2026-10-08
 
