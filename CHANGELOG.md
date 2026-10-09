@@ -13,6 +13,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 📏 **Distances in metres are rounded to the nearest 10** - Near Me, Favorites, stop cards and the journey cards
 - 🧭 **Slimmer, edge-to-edge tab bar** - the bottom bar is half as tall, square-cornered and flush with the screen bottom; the map overlay, buttons, toasts and list padding follow its height
 
+### Fixed
+- 🌙 **Dark mode no longer leaves a white strip under the tab bar on Android** - the area behind the navigation buttons / gesture bar takes the tab bar's colour, and the status and navigation icons switch to light/dark to match
+
 ## [3.4.6] - 2026-10-08
 
 ### Added

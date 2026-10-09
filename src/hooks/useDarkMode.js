@@ -1,4 +1,12 @@
 import { useState, useEffect } from 'react';
+import { Capacitor, registerPlugin, SystemBars, SystemBarsStyle } from '@capacitor/core';
+
+// Native plugin (android/.../SystemBarColorPlugin.java) that paints the strips behind the system bars
+const SystemBarColor = registerPlugin('SystemBarColor');
+
+// Same as the bottom tab bar's background (bg-white / dark:bg-gray-800)
+const BAR_COLOR_LIGHT = '#FFFFFF';
+const BAR_COLOR_DARK = '#1F2937';
 
 /**
  * Custom hook to manage dark mode
@@ -20,6 +28,14 @@ export function useDarkMode() {
       document.documentElement.classList.add('dark');
     } else {
       document.documentElement.classList.remove('dark');
+    }
+
+    // Colour the strips behind the status/navigation bars and keep their icons legible
+    if (Capacitor.isNativePlatform()) {
+      // Dark = light icons (for a dark strip). setStyle resets the strip colour, so colour it afterwards
+      SystemBars.setStyle({ style: isDarkMode ? SystemBarsStyle.Dark : SystemBarsStyle.Light })
+        .then(() => SystemBarColor.setColor({ color: isDarkMode ? BAR_COLOR_DARK : BAR_COLOR_LIGHT }))
+        .catch(() => {});
     }
 
     // Save to localStorage
