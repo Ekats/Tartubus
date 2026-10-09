@@ -61,7 +61,7 @@ describe('Header search', () => {
 
     type('ah');
     await act(async () => { vi.advanceTimersByTime(600); });
-    expect(forwardGeocode).toHaveBeenCalledWith('ah');
+    expect(forwardGeocode).toHaveBeenCalledWith('ah', expect.any(Function));
     expect(searchRouteByNumber).not.toHaveBeenCalled();
   });
 
@@ -93,5 +93,73 @@ describe('Header search', () => {
     await act(async () => { second.resolve(hit('Riia tn 2')); });
     expect(rows()).toEqual(['Riia tn 2']);
     expect(spinning()).toBe(false);
+  });
+});
+
+describe('Header search in two steps', () => {
+  const place = (name) => ({ lat: 58.37, lon: 26.72, name, display_name: name });
+  const rows = () => [...container.querySelectorAll('header .absolute.top-full button p')].map(p => p.textContent);
+  const spinning = () => !!container.querySelector('header svg.animate-spin');
+
+  // A search whose In-ADS rows can be shown (partial) and whose fill can be resolved later
+  function pendingSearch() {
+    let resolve;
+    const search = { partial: null, finish: (list) => resolve(list) };
+    forwardGeocode.mockImplementationOnce((query, onPartial) => {
+      search.partial = onPartial;
+      return new Promise(r => { resolve = r; });
+    });
+    return search;
+  }
+
+  async function startSearch(query) {
+    type(query);
+    await act(async () => { vi.advanceTimersByTime(600); });
+  }
+
+  it('shows the partial rows while the fill is pending, then appends the fillers below', async () => {
+    const search = pendingSearch();
+    await startSearch('Riia');
+
+    act(() => search.partial([place('A'), place('B')]));
+    expect(rows()).toEqual(['A', 'B']);
+    expect(spinning()).toBe(true);
+
+    await act(async () => { search.finish([place('A'), place('B'), place('C'), place('D'), place('E')]); });
+    expect(rows()).toEqual(['A', 'B', 'C', 'D', 'E']);
+    expect(spinning()).toBe(false);
+  });
+
+  it('ignores the partial rows of a superseded search', async () => {
+    const first = pendingSearch();
+    await startSearch('Võru tn 30');
+    const second = pendingSearch();
+    await startSearch('Riia tn 2');
+
+    act(() => first.partial([place('Old')]));
+    expect(rows()).toEqual([]);
+
+    act(() => second.partial([place('New')]));
+    expect(rows()).toEqual(['New']);
+  });
+
+  it('stays closed when the fill lands after a partial row was clicked', async () => {
+    const onDestinationSelect = vi.fn();
+    await act(async () => root.render(createElement(Header, {
+      isDarkMode: false, toggleDarkMode: () => {}, onDestinationSelect, onRouteSelect: () => {},
+      customTime: null, onTimePickerOpen: () => {},
+    })));
+    const search = pendingSearch();
+    await startSearch('Riia');
+    act(() => search.partial([place('A')]));
+
+    act(() => { container.querySelector('header .absolute.top-full button').click(); });
+    expect(onDestinationSelect).toHaveBeenCalledWith(expect.objectContaining({ name: 'A' }));
+    expect(rows()).toEqual([]);
+    expect(spinning()).toBe(false);
+
+    await act(async () => { search.finish([place('A'), place('B')]); });
+    expect(rows()).toEqual([]);
+    expect(container.querySelector('header input').value).toBe('');
   });
 });

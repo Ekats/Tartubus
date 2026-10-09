@@ -1,14 +1,21 @@
 /**
  * Geocoding utilities
  * Address search goes to the Estonian Land Board's In-ADS gazetteer, which knows the
- * Estonian address forms ("Võru tn 30", "Võru tänav 30") that Nominatim misses, and
- * falls back to Nominatim (OpenStreetMap) for what In-ADS has no answer for - place
- * names ("Coop") and queries typed without diacritics ("Voru 30"). Reverse geocoding
- * stays on Nominatim. Both are key-free; privacy-friendly, no tracking
+ * Estonian address forms ("Võru tn 30", "Võru tänav 30") that Nominatim misses. When
+ * it finds fewer than 5, Nominatim (OpenStreetMap) fills the list up behind it - it
+ * knows place names ("Coop") and queries typed without diacritics ("Voru 30"). Reverse
+ * geocoding stays on Nominatim. Both are key-free; privacy-friendly, no tracking
  */
+
+import { haversineDistance } from './geo';
 
 const NOMINATIM_BASE_URL = 'https://nominatim.openstreetmap.org';
 const IN_ADS_BASE_URL = 'https://inaadress.maaamet.ee/inaadress/gazetteer';
+
+const MAX_RESULTS = 5;
+
+// The two services word one address differently, so results this close are one place
+const SAME_PLACE_METERS = 50;
 
 // Tartu county - the smallest In-ADS area filter that still covers the parishes
 // around the city (Kambja, Luunja, ...); TARTU_BOUNDS trims the rest of the county
@@ -183,21 +190,35 @@ async function searchInAds(query) {
 /**
  * Forward geocoding - convert address to coordinates
  * @param {string} query - Address or place name to search
+ * @param {Function} [onPartial] - Called with the In-ADS results before Nominatim is asked,
+ *   when there are 1-4 of them; the returned list starts with the same rows
  * @returns {Promise<Array>} Array of search results with {lat, lon, name, display_name}
  */
-export async function forwardGeocode(query) {
+export async function forwardGeocode(query, onPartial) {
   if (!query || query.trim().length < 2) {
     return [];
   }
 
-  const inAdsResults = await searchInAds(query);
-  if (inAdsResults.length > 0) {
-    return inAdsResults;
+  const results = await searchInAds(query);
+  if (results.length >= MAX_RESULTS) {
+    return results;
+  }
+  if (results.length > 0 && onPartial) {
+    onPartial([...results]); // A copy: the fillers are pushed onto `results` below
   }
 
-  // Only when In-ADS has no answer, and only after it: Nominatim's usage policy
-  // allows one request per second, so the two searches never run in parallel
-  return searchNominatim(query);
+  // Only when In-ADS found fewer than 5, and only after it: Nominatim's usage policy
+  // allows one request per second, so the two searches never run in parallel.
+  // Its results fill the list up behind the In-ADS ones, minus places already in it
+  for (const result of await searchNominatim(query)) {
+    if (results.length >= MAX_RESULTS) break;
+    // Same place by position, or the same label (which the user couldn't tell apart)
+    if (!results.some(r => r.name === result.name ||
+        haversineDistance(r.lat, r.lon, result.lat, result.lon) < SAME_PLACE_METERS)) {
+      results.push(result);
+    }
+  }
+  return results;
 }
 
 /**

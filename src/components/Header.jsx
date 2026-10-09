@@ -64,7 +64,12 @@ function Header({ isDarkMode, toggleDarkMode, onDestinationSelect, onRouteSelect
         setShowResults(routeResults.length > 0);
       } else {
         // Search for address
-        const results = await forwardGeocode(searchQuery);
+        // The Land Board's rows show up at once; the spinner stays until the list is complete
+        const results = await forwardGeocode(searchQuery, (partial) => {
+          if (requestId !== searchRequestRef.current) return;
+          setSearchResults(partial.map(r => ({ ...r, type: 'address' })));
+          setShowResults(true);
+        });
         if (requestId !== searchRequestRef.current) return;
 
         const addressResults = results.map(r => ({ ...r, type: 'address' }));
@@ -95,6 +100,9 @@ function Header({ isDarkMode, toggleDarkMode, onDestinationSelect, onRouteSelect
         display_name: result.display_name
       });
     }
+    // A search still filling in must not reopen the dropdown after this
+    searchRequestRef.current++;
+    setIsSearching(false);
     setSearchQuery('');
     setSearchResults([]);
     setShowResults(false);

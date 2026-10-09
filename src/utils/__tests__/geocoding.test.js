@@ -130,10 +130,11 @@ describe('forwardGeocode via In-ADS', () => {
     expect(await forwardGeocode('Riia')).toHaveLength(5);
   });
 
-  it('does not ask Nominatim when In-ADS found something', async () => {
-    mockFetch({ inAdsAddresses: [inAdsRow()], nominatimResults: [nominatimHit()] });
+  it('does not ask Nominatim when In-ADS found 5', async () => {
+    const rows = Array.from({ length: 5 }, (_, i) => inAdsRow({ aadresstekst: `Riia tn ${i + 1}` }));
+    mockFetch({ inAdsAddresses: rows, nominatimResults: [nominatimHit()] });
 
-    await forwardGeocode('Võru tn 30');
+    await forwardGeocode('Riia');
     expect(nominatim).toHaveLength(0);
   });
 });
@@ -162,6 +163,97 @@ describe('forwardGeocode falling back to Nominatim', () => {
     const [result] = await forwardGeocode('Riia 2');
     expect(nominatim).toHaveLength(1);
     expect(result.name).toBe('Riia 2, Tartu');
+  });
+
+  // Nominatim hits spread ~1 km apart, so none counts as the same place as another
+  const farHits = (n) => Array.from({ length: n }, (_, i) => nominatimHit({
+    lat: String(58.3 + i * 0.01),
+    display_name: `Hit ${i}`,
+  }));
+
+  it('fills up to 5 with Nominatim results behind the In-ADS ones', async () => {
+    const rows = [inAdsRow(), inAdsRow({ aadresstekst: 'Riia tn 2', viitepunkt_b: '58.3800' })];
+    mockFetch({ inAdsAddresses: rows, nominatimResults: farHits(5) });
+
+    const results = await forwardGeocode('Riia');
+    expect(results).toHaveLength(5);
+    expect(results.slice(0, 2).map(r => r.name)).toEqual(['Võru tn 30, Riiamäe, Tartu linn', 'Riia tn 2, Riiamäe, Tartu linn']);
+    expect(results.slice(2).map(r => r.display_name)).toEqual(['Hit 0', 'Hit 1', 'Hit 2']);
+  });
+
+  it('drops a Nominatim result within 50 m of an In-ADS one, keeps one farther away', async () => {
+    mockFetch({
+      inAdsAddresses: [inAdsRow()], // 58.372170, 26.722618
+      nominatimResults: [
+        nominatimHit({ lat: '58.37240', display_name: 'Near, ~26 m away' }),
+        nominatimHit({ lat: '58.37300', display_name: 'Far, ~92 m away' }),
+      ],
+    });
+
+    const results = await forwardGeocode('Võru tn 30');
+    expect(results.map(r => r.display_name)).toEqual(['Võru tn 30, Riiamäe, Tartu linn', 'Far, ~92 m away']);
+  });
+
+  it('keeps only one of two Nominatim results at the same spot', async () => {
+    mockFetch({
+      inAdsAddresses: [],
+      nominatimResults: [nominatimHit({ display_name: 'First' }), nominatimHit({ display_name: 'Second' })],
+    });
+
+    const results = await forwardGeocode('Voru 30');
+    expect(results.map(r => r.display_name)).toEqual(['First']);
+  });
+
+  it('keeps only one of two Nominatim results with the same name, however far apart', async () => {
+    const street = { road: 'Võru', city: 'Tartu' };
+    mockFetch({
+      inAdsAddresses: [],
+      nominatimResults: [
+        nominatimHit({ lat: '58.3700', address: street, display_name: 'First' }),
+        nominatimHit({ lat: '58.3800', address: street, display_name: 'Second' }),
+      ],
+    });
+
+    const results = await forwardGeocode('Voru');
+    expect(results.map(r => r.display_name)).toEqual(['First']);
+  });
+
+  it('returns the In-ADS results when Nominatim finds nothing or fails', async () => {
+    const rows = Array.from({ length: 3 }, (_, i) => inAdsRow({ aadresstekst: `Riia tn ${i + 1}` }));
+    mockFetch({ inAdsAddresses: rows, nominatimResults: [] });
+    expect(await forwardGeocode('Riia')).toHaveLength(3);
+
+    globalThis.fetch = vi.fn(async (url) => {
+      if (String(url).includes('inaadress.maaamet.ee')) {
+        return { ok: true, json: async () => ({ addresses: rows }) };
+      }
+      throw new TypeError('Failed to fetch');
+    });
+    expect(await forwardGeocode('Riia')).toHaveLength(3);
+  });
+
+  it('hands the In-ADS rows to onPartial, before Nominatim is asked, when there are 1-4', async () => {
+    const rows = [inAdsRow(), inAdsRow({ aadresstekst: 'Riia tn 2', viitepunkt_b: '58.3800' })];
+    mockFetch({ inAdsAddresses: rows, nominatimResults: farHits(5) });
+    const onPartial = vi.fn(() => nominatim.length);
+
+    const results = await forwardGeocode('Riia', onPartial);
+    expect(onPartial).toHaveBeenCalledTimes(1);
+    expect(onPartial.mock.results[0].value).toBe(0); // no Nominatim request yet
+    expect(onPartial.mock.calls[0][0]).toHaveLength(2); // not the fillers added later
+    expect(onPartial.mock.calls[0][0].map(r => r.name)).toEqual(results.slice(0, 2).map(r => r.name));
+    expect(results).toHaveLength(5);
+  });
+
+  it('does not call onPartial for 0 or 5 In-ADS results', async () => {
+    const onPartial = vi.fn();
+    mockFetch({ inAdsAddresses: [], nominatimResults: farHits(2) });
+    await forwardGeocode('Voru 30', onPartial);
+
+    const rows = Array.from({ length: 5 }, (_, i) => inAdsRow({ aadresstekst: `Riia tn ${i + 1}` }));
+    mockFetch({ inAdsAddresses: rows });
+    await forwardGeocode('Riia', onPartial);
+    expect(onPartial).not.toHaveBeenCalled();
   });
 
   it('returns nothing when neither service finds anything', async () => {
