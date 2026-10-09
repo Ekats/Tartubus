@@ -3,7 +3,7 @@ import { createElement, act } from 'react';
 import { createRoot } from 'react-dom/client';
 
 vi.mock('../../services/digitransit', () => ({
-  getNearbyStops: vi.fn().mockResolvedValue([{ gtfsId: 'Viro:1' }]),
+  getNearbyStopsWithMeta: vi.fn().mockResolvedValue({ stops: [{ gtfsId: 'Viro:1' }], source: 'live', fetchedAt: 1 }),
 }));
 
 import { useNearbyStops } from '../useNearbyStops';

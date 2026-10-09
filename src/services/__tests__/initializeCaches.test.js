@@ -32,27 +32,53 @@ describe('initializeCaches', () => {
     expect(snapshot()).toMatchObject(USER_DATA);
   });
 
-  it('removes cached API data', () => {
+  it('keeps recent departure caches (the offline fallback) and drops old or unreadable ones', () => {
     initializeCaches();
-    localStorage.setItem('stops_58.38_26.72_500', '{}');
-    localStorage.setItem('route_Viro:1', '{}');
+    const entry = ageHours => JSON.stringify({ data: [], timestamp: Date.now() - ageHours * 3600 * 1000 });
+    localStorage.setItem('stops_58.380_26.720_500', entry(1));
+    localStorage.setItem('stopdep_Viro:1', entry(1));
+    localStorage.setItem('stops_58.390_26.720_500', entry(13));
+    localStorage.setItem('stopdep_Viro:2', entry(13));
+    localStorage.setItem('stops_58.400_26.720_500', '{');
     localStorage.setItem('language', 'ru');
 
     initializeCaches();
 
-    expect(localStorage.getItem('stops_58.38_26.72_500')).toBeNull();
-    expect(localStorage.getItem('route_Viro:1')).toBeNull();
+    expect(localStorage.getItem('stops_58.380_26.720_500')).not.toBeNull();
+    expect(localStorage.getItem('stopdep_Viro:1')).not.toBeNull();
+    expect(localStorage.getItem('stops_58.390_26.720_500')).toBeNull();
+    expect(localStorage.getItem('stopdep_Viro:2')).toBeNull();
+    expect(localStorage.getItem('stops_58.400_26.720_500')).toBeNull();
     expect(localStorage.getItem('language')).toBe('ru');
+  });
+
+  it('keeps only the 10 most recent location entries and 20 stop entries', () => {
+    initializeCaches();
+    for (let i = 0; i < 12; i++) {
+      localStorage.setItem(`stops_58.${300 + i}_26.720_500`, JSON.stringify({ data: [], timestamp: Date.now() - i * 1000 }));
+    }
+    for (let i = 0; i < 23; i++) {
+      localStorage.setItem(`stopdep_Viro:${i}`, JSON.stringify({ data: {}, timestamp: Date.now() - i * 1000 }));
+    }
+
+    initializeCaches();
+
+    const count = prefix => Object.keys(localStorage).filter(k => k.startsWith(prefix)).length;
+    expect(count('stops_')).toBe(10);
+    expect(count('stopdep_')).toBe(20);
+    expect(localStorage.getItem('stops_58.300_26.720_500')).not.toBeNull(); // newest kept
+    expect(localStorage.getItem('stops_58.311_26.720_500')).toBeNull(); // oldest evicted
   });
 });
 
 describe('clearCachedData', () => {
-  it('removes only stops_ and route_ entries', () => {
+  it('removes only stops_, stopdep_ and route_ entries', () => {
     Object.entries(USER_DATA).forEach(([k, v]) => localStorage.setItem(k, v));
     localStorage.setItem('stops_1', 'a');
     localStorage.setItem('route_2', 'b');
+    localStorage.setItem('stopdep_Viro:3', 'c');
 
-    expect(clearCachedData()).toBe(2);
+    expect(clearCachedData()).toBe(3);
     expect(snapshot()).toEqual(USER_DATA);
   });
 });

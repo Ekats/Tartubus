@@ -1,11 +1,14 @@
 import { useState, useCallback, useRef } from 'react';
-import { getNearbyStops } from '../services/digitransit';
+import { getNearbyStopsWithMeta } from '../services/digitransit';
 
 /**
- * Custom hook to fetch nearby bus stops
+ * Custom hook to fetch nearby bus stops.
+ * `staleSince`: epoch ms the shown stops were fetched when they are a last-known copy
+ * (the latest refresh failed), otherwise null.
  */
 export function useNearbyStops() {
   const [stops, setStops] = useState([]);
+  const [staleSince, setStaleSince] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -21,9 +24,10 @@ export function useNearbyStops() {
     setError(null);
 
     try {
-      const nearbyStops = await getNearbyStops(lat, lon, radius, forceRefresh, customTime);
+      const { stops: nearbyStops, source, fetchedAt } = await getNearbyStopsWithMeta(lat, lon, radius, forceRefresh, customTime);
       if (requestSeq !== requestSeqRef.current) return; // A newer request was started
       setStops(nearbyStops);
+      setStaleSince(source === 'stale' ? fetchedAt : null);
       setError(null); // Clear any previous errors on success
       setLoading(false);
     } catch (err) {
@@ -45,5 +49,5 @@ export function useNearbyStops() {
     }
   }, []);
 
-  return { stops, loading, error, fetchNearbyStops };
+  return { stops, staleSince, loading, error, fetchNearbyStops };
 }

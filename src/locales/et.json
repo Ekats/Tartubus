@@ -14,6 +14,9 @@
     "favorites": "Lemmikud",
     "settings": "Seaded"
   },
+  "offline": {
+    "staleData": "Võrguühendus puudub – kella {{time}} andmetel"
+  },
   "nearMe": {
     "title": "Lähedal olevad peatused",
     "noLocation": "Asukohta ei leitud",

@@ -4,6 +4,7 @@ import { useFavorites } from '../hooks/useFavorites';
 import { getStopById, getNextStopName, getWalkingRoute } from '../services/digitransit';
 import { shouldShowDeparture, isDepartureLate, formatArrivalTime, formatClockTime, getDelayInfo, roundMeters } from '../utils/timeFormatter';
 import CountdownTimer from './CountdownTimer';
+import StaleNotice from './StaleNotice';
 import { useVisibleInterval } from '../hooks/useVisibleInterval';
 import { usePullToRefresh } from '../hooks/usePullToRefresh';
 import { haversineDistance } from '../utils/geo';
@@ -20,6 +21,7 @@ function Favorites({ geolocationHook, onNavigateToMap, manualLocation, customTim
   // city-centre coordinates (distances and sorting would be measured from there)
   const location = manualLocation || (gpsLocation.hasRealFix ? gpsLocation : NO_LOCATION);
   const [departureStops, setDepartureStops] = useState([]); // Favorites with their departures, as fetched
+  const departureStopsRef = useRef(departureStops); // Latest departureStops, for the fetch to fall back on
   const fetchSeqRef = useRef(0); // Ignore responses from superseded fetches
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -41,6 +43,12 @@ function Favorites({ geolocationHook, onNavigateToMap, manualLocation, customTim
     // Sort by distance (closest first)
     return withDistances.sort((a, b) => a.distance - b.distance);
   }, [departureStops, favoriteIds, location.lat, location.lon]);
+
+  // When any shown stop is a last-known copy (its refresh failed): since when the oldest one is from
+  const staleSince = useMemo(() => {
+    const times = stopsWithDepartures.filter(stop => stop.source === 'stale').map(stop => stop.fetchedAt);
+    return times.length ? Math.min(...times) : null;
+  }, [stopsWithDepartures]);
 
   // Fetch walking times for favorite stops (only nearby ones within 500m)
   // Triggers when: (1) stops first load, or (2) location changes >100m
@@ -139,6 +147,11 @@ function Favorites({ geolocationHook, onNavigateToMap, manualLocation, customTim
 
             if (stopWithDepartures) {
               return stopWithDepartures;
+            }
+            // Fetch failed and nothing cached: keep what this stop showed, flagged as old
+            const previous = departureStopsRef.current.find(stop => stop.gtfsId === favorite.gtfsId);
+            if (previous?.fetchedAt) {
+              return { ...previous, source: 'stale' };
             } else {
               // If stop not found (API error or stop removed), return favorite with empty departures
               console.warn(`Stop ${favorite.gtfsId} (${favorite.name}) not found`);
@@ -159,6 +172,7 @@ function Favorites({ geolocationHook, onNavigateToMap, manualLocation, customTim
       );
 
       if (fetchSeq !== fetchSeqRef.current) return; // A newer fetch was started
+      departureStopsRef.current = stopsData;
       setDepartureStops(stopsData);
     } catch (err) {
       console.error('Error fetching favorite stops:', err);
@@ -275,6 +289,8 @@ function Favorites({ geolocationHook, onNavigateToMap, manualLocation, customTim
           </svg>
         </button>
       </div>
+
+      <StaleNotice since={staleSince} />
 
       {/* Error message */}
       {error && (

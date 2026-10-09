@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
-let getNearbyStops;
+let getNearbyStops, getNearbyStopsWithMeta, getStopById, initializeCaches;
 
 // One Tartu stop with one departure of route 4, ten minutes from now
 function stopsResponse() {
@@ -38,7 +38,7 @@ beforeEach(async () => {
   fetchMock = vi.fn().mockImplementation(async () => ({ ok: true, json: async () => stopsResponse() }));
   vi.stubGlobal('fetch', fetchMock);
   vi.resetModules(); // fresh in-flight request map per test
-  ({ getNearbyStops } = await import('../digitransit'));
+  ({ getNearbyStops, getNearbyStopsWithMeta, getStopById, initializeCaches } = await import('../digitransit'));
 });
 
 afterEach(() => {
@@ -81,6 +81,103 @@ describe('getNearbyStops cache', () => {
     const stops = await getNearbyStops(58.38, 26.72, 500, true); // forced refresh fails
 
     expect(stops[0].stoptimesWithoutPatterns[0].trip.route.shortName).toBe('4');
+  });
+});
+
+describe('getNearbyStopsWithMeta last-known fallback', () => {
+  it('returns live data flagged live with the request time', async () => {
+    const before = Date.now();
+    const result = await getNearbyStopsWithMeta(58.38, 26.72, 500);
+
+    expect(result.source).toBe('live');
+    expect(result.fetchedAt).toBeGreaterThanOrEqual(before);
+  });
+
+  it('still has the last-known stops after the app restarts without a connection', async () => {
+    initializeCaches(); // first launch (one-time migration)
+    const online = await getNearbyStopsWithMeta(58.38, 26.72, 500);
+    initializeCaches(); // the app is closed and opened again
+    fetchMock.mockRejectedValue(new TypeError('Failed to fetch'));
+
+    const offline = await getNearbyStopsWithMeta(58.38, 26.72, 500, true);
+
+    expect(offline.source).toBe('stale');
+    expect(offline.fetchedAt).toBe(online.fetchedAt);
+    expect(offline.stops.map(s => s.name)).toEqual(['Raekoja plats']);
+  });
+
+  it('throws as before when the network fails and nothing is cached', async () => {
+    fetchMock.mockRejectedValue(new TypeError('Failed to fetch'));
+
+    await expect(getNearbyStopsWithMeta(58.38, 26.72, 500)).rejects.toThrow('Failed to fetch');
+  });
+
+  it('does not show a copy older than 12 hours', async () => {
+    await getNearbyStopsWithMeta(58.38, 26.72, 500);
+    const key = Object.keys(localStorage).find(k => k.startsWith('stops_'));
+    const entry = JSON.parse(localStorage.getItem(key));
+    localStorage.setItem(key, JSON.stringify({ ...entry, timestamp: Date.now() - 13 * 3600 * 1000 }));
+    fetchMock.mockRejectedValue(new TypeError('Failed to fetch'));
+
+    await expect(getNearbyStopsWithMeta(58.38, 26.72, 500, true)).rejects.toThrow('Failed to fetch');
+  });
+
+  it('is live again as soon as a fetch succeeds', async () => {
+    await getNearbyStopsWithMeta(58.38, 26.72, 500);
+    fetchMock.mockRejectedValueOnce(new TypeError('Failed to fetch'));
+    expect((await getNearbyStopsWithMeta(58.38, 26.72, 500, true)).source).toBe('stale');
+
+    expect((await getNearbyStopsWithMeta(58.38, 26.72, 500, true)).source).toBe('live');
+  });
+
+  it('keeps the plain getNearbyStops returning just the stops', async () => {
+    expect(Array.isArray(await getNearbyStops(58.38, 26.72, 500))).toBe(true);
+  });
+});
+
+describe('getStopById last-known fallback (Favorites)', () => {
+  const stopResponse = () => ({ data: { stop: stopsResponse().data.stopsByRadius.edges[0].node.stop } });
+
+  beforeEach(() => {
+    fetchMock.mockImplementation(async () => ({ ok: true, json: async () => stopResponse() }));
+  });
+
+  it('returns the last-known departures flagged stale when the network fails, also after a restart', async () => {
+    initializeCaches(); // first launch (one-time migration)
+    const online = await getStopById('Viro:1');
+    expect(online.source).toBe('live');
+    initializeCaches(); // the app is closed and opened again
+    fetchMock.mockRejectedValue(new TypeError('Failed to fetch'));
+
+    const offline = await getStopById('Viro:1');
+
+    expect(offline.source).toBe('stale');
+    expect(offline.fetchedAt).toBe(online.fetchedAt);
+    expect(offline.stoptimesWithoutPatterns[0].trip.route.shortName).toBe('4');
+  });
+
+  it('returns null as before when the network fails and nothing is cached', async () => {
+    fetchMock.mockRejectedValue(new TypeError('Failed to fetch'));
+
+    expect(await getStopById('Viro:1')).toBeNull();
+  });
+
+  it('is live again after a successful fetch', async () => {
+    await getStopById('Viro:1');
+    fetchMock.mockRejectedValueOnce(new TypeError('Failed to fetch'));
+    expect((await getStopById('Viro:1')).source).toBe('stale');
+
+    expect((await getStopById('Viro:1')).source).toBe('live');
+  });
+
+  it('never caches or falls back for a planned-time query', async () => {
+    const tomorrow = new Date(Date.now() + 24 * 3600 * 1000);
+    await getStopById('Viro:1', tomorrow);
+    expect(Object.keys(localStorage).some(k => k.startsWith('stopdep_'))).toBe(false);
+
+    await getStopById('Viro:1'); // fills the cache
+    fetchMock.mockRejectedValue(new TypeError('Failed to fetch'));
+    expect(await getStopById('Viro:1', tomorrow)).toBeNull();
   });
 });
 

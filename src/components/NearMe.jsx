@@ -11,6 +11,7 @@ import CountdownTimer from './CountdownTimer';
 import LocationPermissionInfo from './LocationPermissionInfo';
 import { getLocationConsent, setLocationConsent } from '../hooks/useGeolocation';
 import BusIcon from './BusIcon';
+import StaleNotice from './StaleNotice';
 import { useVisibleInterval } from '../hooks/useVisibleInterval';
 import { usePullToRefresh } from '../hooks/usePullToRefresh';
 
@@ -20,7 +21,7 @@ function NearMe({ geolocationHook, onNavigateToMap, onShowRoute, manualLocation:
   const { t } = useTranslation();
   // Use shared geolocation hook from App.jsx instead of creating a new instance
   const { location, error: locationError, errorCode: locationErrorCode, loading: locationLoading, getLocation, startWatching } = geolocationHook;
-  const { stops, loading: stopsLoading, error: stopsError, fetchNearbyStops } = useNearbyStops();
+  const { stops, staleSince, loading: stopsLoading, error: stopsError, fetchNearbyStops } = useNearbyStops();
   const { isFavorite, toggleFavorite } = useFavorites();
   const [hasSearched, setHasSearched] = useState(true); // Start as true for auto-trigger
   const [address, setAddress] = useState(t('nearMe.requestingLocation'));
@@ -433,6 +434,8 @@ function NearMe({ geolocationHook, onNavigateToMap, onShowRoute, manualLocation:
           </span>
         </button>
       )}
+
+      {stops.length > 0 && <StaleNotice since={staleSince} />}
 
       {/* Error Message */}
       {error && (

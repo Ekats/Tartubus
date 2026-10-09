@@ -70,6 +70,16 @@ async function query(graphqlQuery, variables = {}, timeout = 20000) {
  * @param {Date|null} customTime - Custom time for schedule queries (null = use current time)
  */
 export async function getNearbyStops(lat, lon, radius = 500, forceRefresh = false, customTime = null) {
+  return (await getNearbyStopsWithMeta(lat, lon, radius, forceRefresh, customTime)).stops;
+}
+
+/**
+ * Same as getNearbyStops, but says where the stops came from.
+ * @returns {Promise<{stops: Array, source: 'live'|'stale', fetchedAt: number}>}
+ *   source 'live': from a successful fetch (or the <1 min cache of one); 'stale': the network
+ *   failed and the last-known copy is shown; fetchedAt: epoch ms the data was requested.
+ */
+export async function getNearbyStopsWithMeta(lat, lon, radius = 500, forceRefresh = false, customTime = null) {
   // Calculate cache key once
   const cacheKey = nearbyStopsCacheKey(lat, lon, radius);
   // The cache only holds "now" data: planned-time queries never read or write it,
@@ -82,7 +92,11 @@ export async function getNearbyStops(lat, lon, radius = 500, forceRefresh = fals
   } else if (!customTime) {
     const cachedStops = getCachedNearbyStops(lat, lon, radius);
     if (cachedStops) {
-      return expandCachedStops(cachedStops, lat, lon);
+      return {
+        stops: expandCachedStops(cachedStops, lat, lon),
+        source: 'live',
+        fetchedAt: readCacheEntry(cacheKey)?.timestamp ?? Date.now(),
+      };
     }
   }
 
@@ -185,41 +199,7 @@ export async function getNearbyStops(lat, lon, radius = 500, forceRefresh = fals
       }));
 
       // Cache with compressed departure data to save space
-      const compressedResult = result.map(stop => ({
-        gtfsId: stop.gtfsId,
-        name: stop.name,
-        code: stop.code,
-        lat: stop.lat,
-        lon: stop.lon,
-        distance: stop.distance,
-        // Store only essential departure info (much smaller than full trip data)
-        stoptimesWithoutPatterns: stop.stoptimesWithoutPatterns?.map(st => ({
-          serviceDay: st.serviceDay,
-          scheduledArrival: st.scheduledArrival,
-          scheduledDeparture: st.scheduledDeparture,
-          realtimeArrival: st.realtimeArrival,
-          realtimeDeparture: st.realtimeDeparture,
-          arrivalDelay: st.arrivalDelay,
-          departureDelay: st.departureDelay,
-          realtime: st.realtime,
-          headsign: st.headsign,
-          stopPosition: st.stopPosition,
-          routeShortName: st.trip?.route?.shortName,
-          routeLongName: st.trip?.route?.longName,
-          routeGtfsId: st.trip?.route?.gtfsId,
-          // Store ALL stoptimes from current stop onwards (needed for expandable list)
-          // We need to include the current stop so findIndex can locate it
-          allStoptimes: st.trip?.stoptimes
-            ?.filter(s => s.stopPosition >= st.stopPosition)
-            ?.map(s => ({
-              gtfsId: s.stop?.gtfsId,
-              code: s.stop?.code,
-              name: s.stop?.name,
-              position: s.stopPosition,
-              scheduledArrival: s.scheduledArrival
-            })) || []
-        })) || []
-      }));
+      const compressedResult = result.map(compressStop);
 
       // Only cache small radius queries (< 2km) to avoid quota issues
       // Map view with 8km radius loads 500+ stops which is too large
@@ -234,7 +214,7 @@ export async function getNearbyStops(lat, lon, radius = 500, forceRefresh = fals
       // Remove from in-flight tracking
       inFlightRequests.delete(requestKey);
 
-      return result;
+      return { stops: result, source: 'live', fetchedAt: requestedAt };
 
     } catch (error) {
       // Remove from in-flight tracking
@@ -245,10 +225,10 @@ export async function getNearbyStops(lat, lon, radius = 500, forceRefresh = fals
       // If we have stale cache, return it instead of failing
       if (staleCache) {
         console.warn('⚠️ Using stale cache data due to network error', {
-          staleStopsCount: staleCache.length,
+          staleStopsCount: staleCache.data.length,
           error: error.message
         });
-        return expandCachedStops(staleCache, lat, lon);
+        return { stops: expandCachedStops(staleCache.data, lat, lon), source: 'stale', fetchedAt: staleCache.fetchedAt };
       }
 
       console.error('❌ No stale cache available, throwing error');
@@ -400,6 +380,7 @@ export async function getStopById(gtfsId, customTime = null) {
   try {
     // Use custom time or current time
     const referenceTime = customTime || new Date();
+    const requestedAt = Date.now();
     // Get time minus 10 minutes in Unix timestamp (seconds, UTC)
     // This allows us to fetch departed buses from the last 10 minutes
     const startTime = Math.floor(referenceTime.getTime() / 1000) - (10 * 60); // 10 minutes ago
@@ -412,14 +393,26 @@ export async function getStopById(gtfsId, customTime = null) {
       shouldShowDeparture(departure.scheduledArrival, { serviceDay: departure.serviceDay }, referenceTime)
     ) || [];
 
-    return {
+    const stop = {
       ...data.stop,
       stoptimesWithoutPatterns: filteredDepartures
     };
+    // Like the nearby-stops cache, only "now" data is kept as the last-known copy
+    if (!customTime) setCachedData(stopDeparturesCacheKey(gtfsId), compressStop(stop), requestedAt);
+    return { ...stop, source: 'live', fetchedAt: requestedAt };
   } catch (error) {
     console.error(`Error fetching stop ${gtfsId}:`, error);
+    // Network failure: show the last-known departures of this stop, flagged as stale
+    const entry = customTime ? null : readCacheEntry(stopDeparturesCacheKey(gtfsId));
+    if (entry?.data && Date.now() - entry.timestamp <= STALE_MAX_AGE) {
+      return { ...expandCachedStop(entry.data), source: 'stale', fetchedAt: entry.timestamp };
+    }
     return null;
   }
+}
+
+function stopDeparturesCacheKey(gtfsId) {
+  return `${STOP_DEPARTURES_PREFIX}${gtfsId}`;
 }
 
 /**
@@ -538,6 +531,12 @@ export function decodePolyline(encoded) {
 const STOPS_CACHE_DURATION = 55 * 1000;
 // Limit number of cached location queries (keep 10 most recent for good offline UX)
 const MAX_STOPS_CACHE_ENTRIES = 10; // Reduced to prevent quota issues
+// Per-stop departures of the favourite stops (one entry per stop), for Favorites offline
+const STOP_DEPARTURES_PREFIX = 'stopdep_';
+const MAX_STOP_DEPARTURES_ENTRIES = 20;
+// Cached departures are kept this long as a last-known fallback when the network fails
+// (they are only shown then; a fresh fetch is always tried first)
+const STALE_MAX_AGE = 12 * 60 * 60 * 1000;
 
 // In-memory cache for all routes (loaded from bundled JSON file)
 let allRoutesCache = null;
@@ -865,7 +864,7 @@ export function clearCachedData() {
   const keysToRemove = [];
   for (let i = 0; i < localStorage.length; i++) {
     const key = localStorage.key(i);
-    if (key && (key.startsWith('stops_') || key.startsWith('route_'))) {
+    if (key && (key.startsWith('stops_') || key.startsWith('route_') || key.startsWith(STOP_DEPARTURES_PREFIX))) {
       keysToRemove.push(key);
     }
   }
@@ -929,17 +928,8 @@ export function initializeCaches() {
       }
     }
 
-    // Always clean temporary cache on startup
-    console.log('🧹 Clearing temporary cache (stops & routes)...');
-
-    // Remove cache entries - routes are now bundled, stops are time-sensitive
-    const removedCount = clearCachedData();
-
-    if (removedCount > 0) {
-      console.log(`🗑️ Cleared ${removedCount} temporary cache entries`);
-    }
-
-    // Also clean up any old/expired entries
+    // Departure caches survive a restart: they are the last-known data shown when the
+    // app starts without a connection. Only entries too old to be useful are dropped.
     clearOldCacheEntries();
   } catch (error) {
     console.error('Error during cache initialization:', error);
@@ -982,26 +972,35 @@ function getCachedData(cacheKey, cacheDuration, cacheType = 'route') {
  * Get stale cache data (expired but still in localStorage) as fallback
  */
 function getStaleCache(cacheKey) {
+  const entry = readCacheEntry(cacheKey);
+  if (!entry) {
+    console.log(`📦 No stale cache found for ${cacheKey}`);
+    return null;
+  }
+  const age = Date.now() - entry.timestamp;
+  if (age > STALE_MAX_AGE) {
+    console.log(`📦 Cache for ${cacheKey} is too old to show (${Math.round(age / 3600000)}h)`);
+    return null;
+  }
+  if (!entry.data || !Array.isArray(entry.data)) {
+    console.warn(`📦 Stale cache exists but data is invalid:`, typeof entry.data);
+    return null;
+  }
+  console.log(`📦 Found stale cache (age: ${Math.round(age / 60000)}m, ${entry.data.length} stops) - will use as fallback if needed`);
+  return { data: entry.data, fetchedAt: entry.timestamp };
+}
+
+/**
+ * Raw cache entry {data, timestamp} from localStorage, or null if missing or unreadable
+ */
+function readCacheEntry(cacheKey) {
   try {
     const cached = localStorage.getItem(cacheKey);
-    if (!cached) {
-      console.log(`📦 No stale cache found for ${cacheKey}`);
-      return null;
-    }
-
+    if (!cached) return null;
     const { data, timestamp } = JSON.parse(cached);
-    const age = Date.now() - timestamp;
-    const ageMinutes = Math.round(age / 60000);
-
-    if (data && Array.isArray(data)) {
-      console.log(`📦 Found stale cache (age: ${ageMinutes}m, ${data.length} stops) - will use as fallback if needed`);
-      return data;
-    } else {
-      console.warn(`📦 Stale cache exists but data is invalid:`, typeof data);
-      return null;
-    }
+    return typeof timestamp === 'number' ? { data, timestamp } : null;
   } catch (error) {
-    console.warn(`📦 Error reading stale cache:`, error);
+    console.warn(`📦 Error reading cache ${cacheKey}:`, error);
     return null;
   }
 }
@@ -1009,48 +1008,37 @@ function getStaleCache(cacheKey) {
 /**
  * Clear old cache entries to free up space
  */
-function clearOldCacheEntries() {
+function clearOldCacheEntries(evictOldest = false) {
   try {
     const now = Date.now();
     const keysToRemove = [];
-    const stopsCacheEntries = [];
+    // Departure caches: location queries (stops_) and per-stop (stopdep_), each with its own LRU limit
+    const groups = [
+      { prefix: 'stops_', max: MAX_STOPS_CACHE_ENTRIES, entries: [] },
+      { prefix: STOP_DEPARTURES_PREFIX, max: MAX_STOP_DEPARTURES_ENTRIES, entries: [] },
+    ];
 
-    // Find all expired cache entries and collect stops entries
+    // Find all expired cache entries and collect valid ones per group
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i);
+      const group = key && groups.find(g => key.startsWith(g.prefix));
+      if (!group) continue;
 
-      // Only process our cache keys (route_ and stops_ prefixed)
-      if (key && key.startsWith('stops_')) {
-        try {
-          const cached = localStorage.getItem(key);
-          if (cached) {
-            const { timestamp } = JSON.parse(cached);
-            const age = now - timestamp;
-
-            // Remove if older than cache duration
-            if (age > STOPS_CACHE_DURATION) {
-              keysToRemove.push(key);
-            } else {
-              // Track valid stops cache entries for LRU eviction
-              stopsCacheEntries.push({ key, timestamp });
-            }
-          }
-        } catch (e) {
-          // If we can't parse it, remove it
-          keysToRemove.push(key);
-        }
+      const entry = readCacheEntry(key);
+      // Remove if unreadable or too old to be shown even as a fallback
+      if (!entry || now - entry.timestamp > STALE_MAX_AGE) {
+        keysToRemove.push(key);
+      } else {
+        group.entries.push({ key, timestamp: entry.timestamp });
       }
     }
 
-    // LRU: If we have too many stops cache entries, remove oldest ones
-    if (stopsCacheEntries.length > MAX_STOPS_CACHE_ENTRIES) {
-      // Sort by timestamp (oldest first)
-      stopsCacheEntries.sort((a, b) => a.timestamp - b.timestamp);
-
-      // Remove oldest entries beyond the limit
-      const toRemove = stopsCacheEntries.length - MAX_STOPS_CACHE_ENTRIES;
+    // LRU: If we have too many entries, remove oldest ones (one more when out of space)
+    for (const group of groups) {
+      group.entries.sort((a, b) => a.timestamp - b.timestamp); // oldest first
+      const toRemove = Math.max(group.entries.length - group.max, evictOldest && group.entries.length ? 1 : 0);
       for (let i = 0; i < toRemove; i++) {
-        keysToRemove.push(stopsCacheEntries[i].key);
+        keysToRemove.push(group.entries[i].key);
       }
     }
 
@@ -1083,7 +1071,7 @@ function setCachedData(cacheKey, data, timestamp = Date.now()) {
     // If quota exceeded, try cleaning old cache and retry once
     if (error.name === 'QuotaExceededError') {
       console.warn('⚠️ Storage quota exceeded, cleaning old cache...');
-      const cleaned = clearOldCacheEntries();
+      const cleaned = clearOldCacheEntries(true);
 
       if (cleaned > 0) {
         // Try again after cleaning
@@ -1115,13 +1103,58 @@ function nearbyStopsCacheKey(lat, lon, radius) {
 }
 
 /**
+ * Shrink a stop with its departures to the cached format: only the essential
+ * departure info (much smaller than the full trip data)
+ */
+function compressStop(stop) {
+  return {
+    gtfsId: stop.gtfsId,
+    name: stop.name,
+    code: stop.code,
+    lat: stop.lat,
+    lon: stop.lon,
+    distance: stop.distance,
+    stoptimesWithoutPatterns: stop.stoptimesWithoutPatterns?.map(st => ({
+      serviceDay: st.serviceDay,
+      scheduledArrival: st.scheduledArrival,
+      scheduledDeparture: st.scheduledDeparture,
+      realtimeArrival: st.realtimeArrival,
+      realtimeDeparture: st.realtimeDeparture,
+      arrivalDelay: st.arrivalDelay,
+      departureDelay: st.departureDelay,
+      realtime: st.realtime,
+      headsign: st.headsign,
+      stopPosition: st.stopPosition,
+      routeShortName: st.trip?.route?.shortName,
+      routeLongName: st.trip?.route?.longName,
+      routeGtfsId: st.trip?.route?.gtfsId,
+      // Store ALL stoptimes from current stop onwards (needed for expandable list)
+      // We need to include the current stop so findIndex can locate it
+      allStoptimes: st.trip?.stoptimes
+        ?.filter(s => s.stopPosition >= st.stopPosition)
+        ?.map(s => ({
+          gtfsId: s.stop?.gtfsId,
+          code: s.stop?.code,
+          name: s.stop?.name,
+          position: s.stopPosition,
+          scheduledArrival: s.scheduledArrival
+        })) || []
+    })) || []
+  };
+}
+
+/**
  * Rebuild full stop objects from the compressed cache format, with distances
  * measured from the caller's point (the cached ones are from the original query point)
  */
 function expandCachedStops(stops, lat, lon) {
-  return stops.map(stop => ({
+  return stops.map(stop => expandCachedStop(stop, lat, lon));
+}
+
+function expandCachedStop(stop, lat, lon) {
+  return {
     ...stop,
-    distance: Math.round(haversineDistance(lat, lon, stop.lat, stop.lon)),
+    distance: lat == null ? stop.distance : Math.round(haversineDistance(lat, lon, stop.lat, stop.lon)),
     stoptimesWithoutPatterns: stop.stoptimesWithoutPatterns?.map(st => ({
       serviceDay: st.serviceDay,
       scheduledArrival: st.scheduledArrival,
@@ -1146,7 +1179,7 @@ function expandCachedStops(stops, lat, lon) {
         })) || []
       }
     })) || []
-  }));
+  };
 }
 
 /**
