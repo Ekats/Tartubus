@@ -8,6 +8,7 @@ import { useGeolocation, setLocationConsent } from '../hooks/useGeolocation';
 import { useFavorites } from '../hooks/useFavorites';
 import { getNearbyStops, getStopById, getStopsByRoutes, getRouteShortNamesInZone, getNextStopName, planJourney, decodePolyline, getDailyTimetable, getWalkingRoute } from '../services/digitransit';
 import { CITY_ZONES, mergeDuplicateStops, haversineDistance } from '../utils/geo';
+import { buildTripView } from '../utils/tripRoute';
 import { getSetting } from '../utils/settings';
 import { reverseGeocode } from '../utils/geocoding';
 import { differenceInMinutes } from 'date-fns';
@@ -361,6 +362,17 @@ function StopFinder({
   const [routeStops, setRouteStops] = useState([]);
   const [routePatterns, setRoutePatterns] = useState([]);
   const pendingRouteFitRef = useRef(null);
+  // Trip mode: a Near Me bus is shown (its stops with times) instead of the normal stop markers.
+  // Keyed off the route picked from Near Me AND the filter still holding exactly that route, so
+  // App clearing selectedRoute (Android back) or any filter change ends it; without patterns
+  // (route not in the bundled data) buildTripView gives null and the normal markers stay.
+  const [tripActive, setTripActive] = useState(false);
+  const tripView = useMemo(
+    () => tripActive && selectedRoute?.trip && selectedRoutes.size === 1 && selectedRoutes.has(selectedRoute.routeNumber)
+      ? buildTripView(selectedRoute.trip, routePatterns, selectedRoute.routeNumber)
+      : null,
+    [tripActive, selectedRoute, selectedRoutes, routePatterns]
+  );
   const [loadingRoutes, setLoadingRoutes] = useState(false);
   const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(true);
   const [locationMessage, setLocationMessage] = useState(null);
@@ -656,6 +668,7 @@ function StopFinder({
   // Show a route picked in the header search: filter the map to it and zoom to its stops
   useEffect(() => {
     pendingRouteFitRef.current = null;
+    setTripActive(!!selectedRoute?.trip);
     if (!selectedRoute?.routeNumber) return;
 
     setSelectedRoutes(new Set([selectedRoute.routeNumber]));
@@ -687,9 +700,12 @@ function StopFinder({
   useEffect(() => {
     const routeNumber = pendingRouteFitRef.current;
     if (!routeNumber) return;
-    const coords = routePatterns
-      .filter(pattern => pattern.routeShortName === routeNumber)
-      .flatMap(pattern => pattern.coordinates?.length > 0 ? pattern.coordinates : pattern.stops.map(stop => [stop.lat, stop.lon]));
+    // Trip mode fits to the placed trip stops (the line may run far beyond them)
+    const coords = tripView
+      ? tripView.markers.map(m => [m.lat, m.lon])
+      : routePatterns
+        .filter(pattern => pattern.routeShortName === routeNumber)
+        .flatMap(pattern => pattern.coordinates?.length > 0 ? pattern.coordinates : pattern.stops.map(stop => [stop.lat, stop.lon]));
     if (coords.length === 0 || !mapRef.current) return;
     pendingRouteFitRef.current = null;
     try {
@@ -1292,6 +1308,7 @@ function StopFinder({
       newRoutes.add(route);
     }
     setSelectedRoutes(newRoutes);
+    setTripActive(false);
     // Keep the route picked in search in sync with the filter
     if (selectedRoute && !newRoutes.has(selectedRoute.routeNumber)) {
       onRouteChange?.(null);
@@ -1302,6 +1319,7 @@ function StopFinder({
     setSelectedRoutes(new Set());
     setRouteStops([]);
     setRoutePatterns([]);
+    setTripActive(false);
     if (selectedRoute) onRouteChange?.(null);
   };
 
@@ -1519,7 +1537,7 @@ function StopFinder({
         )}
 
         {/* Route lines with direction arrows */}
-        {routePatterns.map((pattern, idx) => {
+        {(tripView ? tripView.patterns : routePatterns).map((pattern, idx) => {
           // Use the coordinates from geometry (which follow roads)
           const positions = pattern.coordinates && pattern.coordinates.length > 0
             ? pattern.coordinates
@@ -1767,8 +1785,41 @@ function StopFinder({
           return stopMarkers;
         })()}
 
-        {/* Stop markers with clustering - hide when viewing a journey route */}
-        {!selectedJourney && (
+        {/* Stops of the Near Me bus whose route was tapped: first and last stop with a permanent
+            time tooltip, the ones in between with a popup on tap */}
+        {!selectedJourney && tripView && tripView.markers.map((m, i) => {
+          const isEnd = m.kind !== 'mid';
+          const body = (
+            <>
+              <div className="font-bold">{m.name}</div>
+              <div className="text-amber-600 font-semibold">
+                <BusIcon /> {selectedRoute.routeNumber} {t('map.at')} {m.approx && '~'}{m.time}
+              </div>
+              {m.approx && <div className="text-gray-500 text-xs">{t('map.estimatedTime')}</div>}
+              {m.kind === 'first' && <div className="text-green-600 text-xs font-semibold">📍 {t('map.boardHere')}</div>}
+            </>
+          );
+          return (
+            <Marker
+              key={`trip-stop-${i}`}
+              position={[m.lat, m.lon]}
+              icon={createStopIcon('#FBBF24', isEnd)}
+              zIndexOffset={isEnd ? 3000 : 2900}
+            >
+              {isEnd && (
+                <Tooltip permanent direction="top" className="journey-stop-tooltip">
+                  <div className="text-xs font-semibold">{body}</div>
+                </Tooltip>
+              )}
+              <Popup>
+                <div className="text-sm">{body}</div>
+              </Popup>
+            </Marker>
+          );
+        })}
+
+        {/* Stop markers with clustering - hide when viewing a journey route or a Near Me trip */}
+        {!selectedJourney && !tripView && (
           <MarkerClusterGroup
             chunkedLoading
             maxClusterRadius={60}
@@ -2114,7 +2165,7 @@ function StopFinder({
         )}
 
         {/* Stop count - only show if filtered */}
-        {!loading && stops.length > 0 && selectedRoutes.size > 0 && (
+        {!loading && !tripView && stops.length > 0 && selectedRoutes.size > 0 && (
           <div className="bg-white dark:bg-gray-800 shadow-lg rounded-lg px-4 py-2 text-xs text-gray-600 dark:text-gray-300 text-center border border-gray-200 dark:border-gray-700">
             {t('map.showingStops', { shown: filteredStops.length, total: stops.length })}
             {` (${t('map.filtered')})`}

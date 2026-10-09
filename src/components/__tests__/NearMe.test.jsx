@@ -178,12 +178,14 @@ describe('NearMe show route on map', () => {
       gtfsId: 'tartu:1', name: 'Raekoda', lat: 58.38, lon: 26.72, distance: 100,
       stoptimesWithoutPatterns: shortNames.map((shortName, i) => ({
         serviceDay, scheduledArrival: nowSec + 600 + i * 60, realtimeArrival: nowSec + 600 + i * 60,
-        realtime: false, arrivalDelay: 0, headsign: `Dest ${i}`, stopPosition: 0,
+        realtime: false, arrivalDelay: 0, headsign: `Dest ${i}`, stopPosition: 1,
         trip: {
           route: { shortName, longName: `Long ${i}`, gtfsId: `tartu:R${i}` },
           stoptimes: [
-            { stop: { gtfsId: 'tartu:1', name: 'Raekoda' }, stopPosition: 0, scheduledArrival: nowSec + 600 },
-            { stop: { gtfsId: 'tartu:2', name: 'Next stop' }, stopPosition: 1, scheduledArrival: nowSec + 700 },
+            { stop: { gtfsId: 'tartu:0', name: 'Passed stop' }, stopPosition: 0, scheduledArrival: nowSec + 500 },
+            { stop: { gtfsId: 'tartu:1', name: 'Raekoda' }, stopPosition: 1, scheduledArrival: 36000 + 600 },
+            { stop: { gtfsId: 'tartu:2', name: 'Next stop' }, stopPosition: 2, scheduledArrival: 36000 + 700 },
+            { stop: { gtfsId: 'tartu:3', name: 'Terminus', code: 'T3' }, stopPosition: 3, scheduledArrival: 36000 + 900 },
           ],
         },
       })),
@@ -207,10 +209,23 @@ describe('NearMe show route on map', () => {
     const container = await renderRows(['4', '12A'], onShowRoute);
     act(() => badge(container, '12A').click());
 
-    expect(onShowRoute).toHaveBeenCalledWith({
+    expect(onShowRoute).toHaveBeenCalledWith(expect.objectContaining({
       type: 'route', routeNumber: '12A', routeName: 'Long 1', gtfsId: 'tartu:R1', patterns: [],
-    });
+    }));
     expect(container.textContent).not.toContain('Upcoming stops');
+  });
+
+  it('passes the tapped trip: boarding stop first, terminus last, no passed stops', async () => {
+    const onShowRoute = vi.fn();
+    const container = await renderRows(['4'], onShowRoute);
+    act(() => badge(container, '4').click());
+
+    const { trip } = onShowRoute.mock.calls[0][0];
+    expect(trip.boardStopId).toBe('tartu:1');
+    expect(trip.stops.map(s => s.gtfsId)).toEqual(['tartu:1', 'tartu:2', 'tartu:3']);
+    expect(trip.stops.map(s => s.time)).toEqual(['10:10', '10:11', '10:15']);
+    expect(trip.stops[0]).toMatchObject({ lat: 58.38, lon: 26.72 });
+    expect(trip.stops[2].code).toBe('T3');
   });
 
   it('the rest of the row opens the stop list and does not call onShowRoute', async () => {

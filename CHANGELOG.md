@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [3.4.7] - 2026-10-09
 
 ### Added
-- 🗺 **Show a departure's route on the map** - on Near Me, tap the route-number badge (now a bigger button) or "Näita marsruuti kaardil" in the opened stop list to see that line on the map
+- 🗺 **Show a departure's route on the map** - on Near Me, tap the route-number badge (now a bigger button) or "Näita marsruuti kaardil" in the opened stop list to see that line on the map - the bus's own direction is drawn, with its boarding and last stop times shown and the stops in between a tap away
 
 ### Changed
 - 🔎 **Address search always tries to show 5 results** - when the Land Board finds fewer, OpenStreetMap fills the list up (skipping places already shown)

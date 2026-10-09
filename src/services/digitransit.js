@@ -131,6 +131,7 @@ export async function getNearbyStops(lat, lon, radius = 500, forceRefresh = fals
                     stop {
                       gtfsId
                       name
+                      code
                     }
                     stopPosition
                     scheduledArrival
@@ -211,6 +212,8 @@ export async function getNearbyStops(lat, lon, radius = 500, forceRefresh = fals
           allStoptimes: st.trip?.stoptimes
             ?.filter(s => s.stopPosition >= st.stopPosition)
             ?.map(s => ({
+              gtfsId: s.stop?.gtfsId,
+              code: s.stop?.code,
               name: s.stop?.name,
               position: s.stopPosition,
               scheduledArrival: s.scheduledArrival
@@ -1137,7 +1140,7 @@ function expandCachedStops(stops, lat, lon) {
           gtfsId: st.routeGtfsId
         },
         stoptimes: st.allStoptimes?.map(ns => ({
-          stop: { gtfsId: null, name: ns.name },
+          stop: { gtfsId: ns.gtfsId ?? null, code: ns.code, name: ns.name },
           stopPosition: ns.position,
           scheduledArrival: ns.scheduledArrival
         })) || []

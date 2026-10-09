@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useNearbyStops } from '../hooks/useNearbyStops';
 import { useFavorites } from '../hooks/useFavorites';
 import { formatDistance, roundMeters, shouldShowDeparture, isDepartureLate, formatArrivalTime, formatClockTime, getDelayInfo } from '../utils/timeFormatter';
+import { buildDepartureTrip } from '../utils/tripRoute';
 import { getSetting } from '../utils/settings';
 import { reverseGeocode } from '../utils/geocoding';
 import { getNextStopName, getDailyTimetable, getWalkingRoute } from '../services/digitransit';
@@ -178,9 +179,11 @@ function NearMe({ geolocationHook, onNavigateToMap, onShowRoute, manualLocation:
   };
 
   // Same payload shape as the header's route search; the map loads the patterns itself
-  const showRoute = (departure) => {
+  // `trip` is the tapped bus: the map marks its stops from this one to the terminus
+  const showRoute = (departure, stop) => {
     const route = departure.trip?.route;
-    onShowRoute?.({ type: 'route', routeNumber: route.shortName, routeName: route.longName, gtfsId: route.gtfsId, patterns: [] });
+    const trip = buildDepartureTrip(departure, stop);
+    onShowRoute?.({ type: 'route', routeNumber: route.shortName, routeName: route.longName, gtfsId: route.gtfsId, patterns: [], ...(trip && { trip }) });
   };
 
   const toggleDepartureExpanded = (stopId, departureIdx) => {
@@ -587,7 +590,7 @@ function NearMe({ geolocationHook, onNavigateToMap, onShowRoute, manualLocation:
                             <div className="flex items-center gap-3">
                               {routeShortName && onShowRoute ? (
                                 <button
-                                  onClick={() => showRoute(departure)}
+                                  onClick={() => showRoute(departure, stop)}
                                   className={`${badgeColor} hover:opacity-80 min-w-[44px] min-h-[44px] px-3 flex items-center justify-center shrink-0 text-white font-bold rounded-md text-sm`}
                                   aria-label={`${t('nearMe.showRouteOnMap')}: ${routeShortName}`}
                                   title={t('nearMe.showRouteOnMap')}
@@ -644,7 +647,7 @@ function NearMe({ geolocationHook, onNavigateToMap, onShowRoute, manualLocation:
                                 <div className="bg-gray-50 dark:bg-gray-800 rounded p-2 space-y-1">
                                   {routeShortName && onShowRoute && (
                                     <button
-                                      onClick={() => showRoute(departure)}
+                                      onClick={() => showRoute(departure, stop)}
                                       className="w-full mb-1 py-1.5 text-sm font-medium text-blue-600 dark:text-blue-400 border border-blue-500 dark:border-blue-400 rounded-md hover:bg-blue-50 dark:hover:bg-gray-700 transition-colors"
                                     >
                                       🗺 {t('nearMe.showRouteOnMap')}
