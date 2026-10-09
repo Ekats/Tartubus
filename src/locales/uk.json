@@ -75,6 +75,8 @@
     "apply": "Застосувати",
     "routeToStop": "Отримати маршрут до цієї зупинки",
     "howToGetHere": "Як сюди дістатися",
+    "busIn": "Автобус через {{minutes}} хв",
+    "totalMinutes": "Загалом {{minutes}} хв",
     "transfer": "пересадка",
     "transfers": "пересадок",
     "walkTo": "Йти до",

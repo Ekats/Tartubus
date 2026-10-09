@@ -75,6 +75,8 @@
     "apply": "Rakenda",
     "routeToStop": "Saa juhised sellesse peatusse",
     "howToGetHere": "Kuidas siia saada",
+    "busIn": "Buss {{minutes}} min pärast",
+    "totalMinutes": "Kokku {{minutes}} min",
     "transfer": "ümberistumine",
     "transfers": "ümberistumist",
     "walkTo": "Kõnni",

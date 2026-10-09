@@ -10,7 +10,8 @@ import { getNearbyStops, getStopById, getStopsByRoutes, getRouteShortNamesInZone
 import { CITY_ZONES, mergeDuplicateStops, haversineDistance } from '../utils/geo';
 import { getSetting } from '../utils/settings';
 import { reverseGeocode } from '../utils/geocoding';
-import { shouldShowDeparture, isDepartureLate, getDelayInfo } from '../utils/timeFormatter';
+import { differenceInMinutes } from 'date-fns';
+import { shouldShowDeparture, isDepartureLate, getDelayInfo, formatClockFromDate, roundMeters } from '../utils/timeFormatter';
 import CountdownTimer from './CountdownTimer';
 import StopCard from './StopCard';
 import 'leaflet/dist/leaflet.css';
@@ -2280,6 +2281,10 @@ function StopFinder({
                     const walkLegs = plan.legs.filter(leg => leg.mode === 'WALK');
                     const totalWalkDistance = walkLegs.reduce((sum, leg) => sum + (leg.distance || 0), 0);
                     const goesToDifferentStop = !plan.isMainStop;
+                    const firstBusLeg = transitLegs[0];
+                    const busInMinutes = firstBusLeg
+                      ? Math.max(0, differenceInMinutes(new Date(firstBusLeg.startTime), customTime || new Date()))
+                      : null;
 
                     return (
                       <button
@@ -2295,8 +2300,8 @@ function StopFinder({
                       >
                         <div className="flex items-center justify-between mb-2">
                           <div className="flex items-center gap-2 flex-wrap">
-                            <span className="text-lg font-bold text-gray-800 dark:text-gray-200">
-                              {totalDuration} {t('nearMe.minutes') || 'min'}
+                            <span className="text-sm font-semibold text-gray-800 dark:text-gray-200">
+                              {formatClockFromDate(plan.start)} – {formatClockFromDate(plan.end)}
                             </span>
                             {transitLegs.length > 1 && (
                               <span className="bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 px-2 py-0.5 rounded-full text-xs font-semibold">
@@ -2309,9 +2314,6 @@ function StopFinder({
                               </span>
                             )}
                           </div>
-                          <div className="text-xs text-gray-500 dark:text-gray-400">
-                            🚶 {Math.round(totalWalkDistance)}m
-                          </div>
                         </div>
                         {goesToDifferentStop && (
                           <div className="text-xs text-blue-600 dark:text-blue-400 mb-2">
@@ -2323,12 +2325,17 @@ function StopFinder({
                           {plan.legs.map((leg, legIdx) => (
                             <div key={legIdx} className="flex items-start gap-2">
                               {leg.mode === 'WALK' ? (
-                                <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400">
+                                <div className="flex items-start gap-2 text-xs text-gray-600 dark:text-gray-400">
                                   <span>🚶</span>
-                                  <span>
-                                    {t('map.walkTo') || 'Walk'} {leg.to.stop?.name || (leg.to.name === 'Destination' ? t('map.destination') : leg.to.name)}
-                                    ({Math.round(leg.distance)}m, ~{Math.ceil(leg.duration / 60)} min)
-                                  </span>
+                                  <div>
+                                    <div>
+                                      {t('map.walkTo') || 'Walk'} <span className="text-gray-700 dark:text-white">{leg.to.stop?.name || (leg.to.name === 'Destination' ? t('map.destination') : leg.to.name)}</span>
+                                      {' '}({roundMeters(leg.distance)} m, ~{Math.ceil(leg.duration / 60)} min)
+                                    </div>
+                                    <div className="text-gray-500 dark:text-gray-400">
+                                      {formatClockFromDate(leg.startTime)} – {formatClockFromDate(leg.endTime)}
+                                    </div>
+                                  </div>
                                 </div>
                               ) : (
                                 <div className="flex-1">
@@ -2337,11 +2344,11 @@ function StopFinder({
                                       {leg.route?.shortName || '?'}
                                     </span>
                                     <div className="flex-1 text-xs">
-                                      <div className="text-gray-700 dark:text-gray-300">
+                                      <div className="text-gray-700 dark:text-white">
                                         {leg.from.stop?.name} → {leg.to.stop?.name}
                                       </div>
                                       <div className="text-gray-500 dark:text-gray-400">
-                                        {Math.ceil(leg.duration / 60)} {t('nearMe.minutes') || 'min'}
+                                        {formatClockFromDate(leg.startTime)} – {formatClockFromDate(leg.endTime)} · {Math.ceil(leg.duration / 60)} {t('nearMe.minutes') || 'min'}
                                       </div>
                                     </div>
                                   </div>
@@ -2349,6 +2356,13 @@ function StopFinder({
                               )}
                             </div>
                           ))}
+                        </div>
+                        <div className="mt-2 pt-2 border-t border-gray-200 dark:border-gray-700 text-xs text-gray-500 dark:text-gray-400 flex flex-wrap gap-x-2">
+                          {busInMinutes !== null && (
+                            <span>{t('map.busIn', { minutes: busInMinutes })}</span>
+                          )}
+                          <span>{busInMinutes !== null && '· '}{t('map.totalMinutes', { minutes: totalDuration })}</span>
+                          <span>· 🚶 {roundMeters(totalWalkDistance)} m</span>
                         </div>
                       </button>
                     );
@@ -2451,7 +2465,7 @@ function StopFinder({
                                 {item.stop.name}
                               </div>
                               <div className="text-xs text-gray-500 dark:text-gray-400">
-                                🚶 {item.walkingDistance}m walk • ~{Math.ceil(item.walkingDistance / 80)} min
+                                🚶 {roundMeters(item.walkingDistance)}m walk • ~{Math.ceil(item.walkingDistance / 80)} min
                               </div>
                             </div>
                           </div>

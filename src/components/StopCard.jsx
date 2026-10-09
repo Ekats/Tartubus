@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useFavorites } from '../hooks/useFavorites';
 import { getNextStopName, getDailyTimetable } from '../services/digitransit';
-import { shouldShowDeparture, isDepartureLate, getDelayInfo, formatClockTime } from '../utils/timeFormatter';
+import { shouldShowDeparture, isDepartureLate, getDelayInfo, formatClockTime, roundMeters } from '../utils/timeFormatter';
 import CountdownTimer from './CountdownTimer';
 
 /**
@@ -97,10 +97,10 @@ export default function StopCard({
                   {' • '}
                   {walkingTime ? (
                     <span className="text-blue-600 dark:text-blue-400">
-                      🚶 {Math.round(walkingTime.distance)}m (~{Math.ceil(walkingTime.duration / 60)} min)
+                      🚶 {roundMeters(walkingTime.distance)}m (~{Math.ceil(walkingTime.duration / 60)} min)
                     </span>
                   ) : (
-                    <span>{Math.round(distance)}m</span>
+                    <span>{roundMeters(distance)}m</span>
                   )}
                 </>
               )}

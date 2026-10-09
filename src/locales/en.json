@@ -75,6 +75,8 @@
     "apply": "Apply",
     "routeToStop": "Get directions to this stop",
     "howToGetHere": "How to get here",
+    "busIn": "Bus in {{minutes}} min",
+    "totalMinutes": "Total {{minutes}} min",
     "transfer": "transfer",
     "transfers": "transfers",
     "walkTo": "Walk to",

@@ -95,11 +95,28 @@ export function formatDuration(seconds) {
 }
 
 /**
- * Format distance in meters to readable format
+ * Clock time ("14:05", Tallinn time) of a Date, epoch milliseconds or ISO string.
+ * Returns '' when the value isn't a valid time.
+ */
+export function formatClockFromDate(value) {
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? '' : TALLINN_CLOCK.format(date);
+}
+
+/**
+ * Distance in meters rounded to the nearest 10 for display (4 -> 0, 5 -> 10)
+ */
+export function roundMeters(meters) {
+  return Math.round(meters / 10) * 10;
+}
+
+/**
+ * Format distance in meters to readable format (meters shown rounded to 10)
  */
 export function formatDistance(meters) {
-  if (meters < 1000) {
-    return `${Math.round(meters)} m`;
+  const rounded = roundMeters(meters);
+  if (rounded < 1000) {
+    return `${rounded} m`;
   }
   return `${(meters / 1000).toFixed(1)} km`;
 }

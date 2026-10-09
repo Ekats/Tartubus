@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNearbyStops } from '../hooks/useNearbyStops';
 import { useFavorites } from '../hooks/useFavorites';
-import { formatDistance, shouldShowDeparture, isDepartureLate, formatArrivalTime, formatClockTime, getDelayInfo } from '../utils/timeFormatter';
+import { formatDistance, roundMeters, shouldShowDeparture, isDepartureLate, formatArrivalTime, formatClockTime, getDelayInfo } from '../utils/timeFormatter';
 import { getSetting } from '../utils/settings';
 import { reverseGeocode } from '../utils/geocoding';
 import { getNextStopName, getDailyTimetable, getWalkingRoute } from '../services/digitransit';
@@ -493,7 +493,7 @@ function NearMe({ geolocationHook, onNavigateToMap, manualLocation: manualLocati
                     })()}
                   </h3>
                   <div className="text-sm">
-                    <span className="text-green-600 dark:text-green-400 font-medium">{t('nearMe.distance', { distance: Math.round(stop.distance) })}</span>
+                    <span className="text-green-600 dark:text-green-400 font-medium">{t('nearMe.distance', { distance: roundMeters(stop.distance) })}</span>
                     {walkingTimes.has(stop.gtfsId) && (
                       <span className="text-blue-600 dark:text-blue-400 font-medium"> • 🚶 {Math.ceil(walkingTimes.get(stop.gtfsId).duration / 60)} min</span>
                     )}

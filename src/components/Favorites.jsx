@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useFavorites } from '../hooks/useFavorites';
 import { getStopById, getNextStopName, getWalkingRoute } from '../services/digitransit';
-import { shouldShowDeparture, isDepartureLate, formatArrivalTime, formatClockTime, getDelayInfo } from '../utils/timeFormatter';
+import { shouldShowDeparture, isDepartureLate, formatArrivalTime, formatClockTime, getDelayInfo, roundMeters } from '../utils/timeFormatter';
 import CountdownTimer from './CountdownTimer';
 import { useVisibleInterval } from '../hooks/useVisibleInterval';
 import { usePullToRefresh } from '../hooks/usePullToRefresh';
@@ -328,7 +328,7 @@ function Favorites({ geolocationHook, onNavigateToMap, manualLocation, customTim
                   {t('favorites.stop')} {stop.code}
                   {stop.distance !== undefined && stop.distance !== Infinity && (
                     <span className={isNearby ? 'text-green-600 dark:text-green-400 font-medium' : ''}>
-                      {' • '}{Math.round(stop.distance)}m {t('favorites.away')}
+                      {' • '}{roundMeters(stop.distance)}m {t('favorites.away')}
                     </span>
                   )}
                   {walkingTimes.has(stop.gtfsId) && (

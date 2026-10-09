@@ -75,6 +75,8 @@
     "apply": "Применить",
     "routeToStop": "Получить маршрут до этой остановки",
     "howToGetHere": "Как сюда добраться",
+    "busIn": "Автобус через {{minutes}} мин",
+    "totalMinutes": "Всего {{minutes}} мин",
     "transfer": "пересадка",
     "transfers": "пересадок",
     "walkTo": "Идти до",
