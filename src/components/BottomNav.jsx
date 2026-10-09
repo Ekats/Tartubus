@@ -23,8 +23,8 @@ function BottomNav({ activeView, onViewChange }) {
                 : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700/50'
             }`}
           >
-            <span className="text-base leading-none">{item.icon}</span>
-            <span className="text-[10px] leading-tight font-medium">{item.label}</span>
+            <span className="text-lg leading-none">{item.icon}</span>
+            <span className="text-[11px] leading-tight font-medium">{item.label}</span>
           </button>
         ))}
       </div>

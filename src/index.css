@@ -13,8 +13,8 @@ body {
 }
 
 :root {
-  /* Bottom tab bar: 2.375rem of content plus any system inset below it */
-  --bottom-nav-height: calc(2.375rem + env(safe-area-inset-bottom, 0px));
+  /* Bottom tab bar: 2.875rem of content plus any system inset below it */
+  --bottom-nav-height: calc(2.875rem + env(safe-area-inset-bottom, 0px));
 }
 
 #root {
