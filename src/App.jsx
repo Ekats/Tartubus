@@ -1,8 +1,7 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, lazy, Suspense } from 'react'
 import { App as CapApp } from '@capacitor/app'
 import Header from './components/Header'
 import NearMe from './components/NearMe'
-import StopFinder from './components/StopFinder'
 import Favorites from './components/Favorites'
 import BottomNav from './components/BottomNav'
 import Settings from './components/Settings'
@@ -13,6 +12,9 @@ import { useDarkMode } from './hooks/useDarkMode'
 import { useGeolocation, getLocationConsent } from './hooks/useGeolocation'
 import { initializeCaches } from './services/digitransit'
 import { CITY_ZONES } from './utils/geo'
+
+// The Map tab brings the map library (MapLibre GL, ~1 MB): loaded when the tab is first opened
+const StopFinder = lazy(() => import('./components/StopFinder'))
 
 function App() {
   const [activeView, setActiveView] = useState('nearme')
@@ -163,7 +165,7 @@ function App() {
           onClearManualLocation={() => setManualLocation(null)}
         />
       case 'map':
-        return <StopFinder
+        return <Suspense fallback={null}><StopFinder
           geolocationHook={geolocationHook}
           isDarkMode={isDarkMode}
           selectedStop={selectedStop}
@@ -185,7 +187,7 @@ function App() {
             setLocationSelectionMode(false)
             setActiveView('nearme')
           }}
-        />
+        /></Suspense>
       case 'favorites':
         return <Favorites
           geolocationHook={geolocationHook}

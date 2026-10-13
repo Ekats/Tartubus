@@ -95,7 +95,8 @@
     "arrives": "прибывает",
     "transferPoint": "Место пересадки",
     "estimatedTime": "Ориентировочное время",
-    "exitRouteView": "Выйти из просмотра маршрута"
+    "exitRouteView": "Выйти из просмотра маршрута",
+    "unavailable": "На этом устройстве карту показать нельзя. Остальное приложение работает как обычно."
   },
   "favorites": {
     "title": "Избранные остановки",
@@ -137,6 +138,14 @@
     "stops": "остановок",
     "language": "Язык",
     "languageDescription": "Выберите язык приложения",
+    "mapStyle": "Стиль карты",
+    "mapStyleDescription": "Выберите внешний вид карты. В тёмном режиме используется тёмная версия стиля.",
+    "mapStyleNatural": "Природный",
+    "mapStyleColorful": "Цветной",
+    "mapStyleMuted": "Приглушённый",
+    "mapStyleGray": "Серый",
+    "mapStyleToner": "Контрастный",
+    "mapStyleSatellite": "Спутник",
     "estonian": "Эстонский",
     "english": "Английский",
     "ukrainian": "Украинский",
@@ -173,7 +182,7 @@
     "aboutApp": "О приложении",
     "privacyFocused": "Ориентировано на приватность - без отслеживания",
     "usesDigitransit": "Использует API Digitransit для расписаний",
-    "usesOSM": "OpenStreetMap для карт",
+    "usesOSM": "Карта: данные OpenStreetMap и ESA WorldCover, встроенные в приложение (стили и тайлы: VersaTiles). Спутниковые снимки при выборе загружаются с tiles.versatiles.org",
     "usesInAds": "Поиск адресов через In-ADS Земельного департамента Эстонии",
     "localSettings": "Все настройки хранятся локально на вашем устройстве",
     "pageCounter": "Простой счетчик посещений (персональные данные не собираются)",

@@ -9,8 +9,8 @@ android {
         targetSdkVersion rootProject.ext.targetSdkVersion
         // CI sets these from the release tag (.github/workflows/android.yml); local builds use the defaults
         // (keep the defaults in step with package.json: code = major*10000 + minor*100 + patch)
-        versionCode((System.getenv("ANDROID_VERSION_CODE") ?: "30409") as Integer)
-        versionName System.getenv("ANDROID_VERSION_NAME") ?: "3.4.9"
+        versionCode((System.getenv("ANDROID_VERSION_CODE") ?: "30500") as Integer)
+        versionName System.getenv("ANDROID_VERSION_NAME") ?: "3.5.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
@@ -31,6 +31,12 @@ android {
         }
     }
     buildTypes {
+        // The debug APK is its own app, "Tartu Bussid debug" (ee.tartu.bussid.debug; the name is in
+        // src/debug/res/values/strings.xml), so it installs next to the Play version on a phone:
+        // a debug build is signed with the debug key and could not replace the release-signed app.
+        debug {
+            applicationIdSuffix ".debug"
+        }
         release {
             if (System.getenv("ANDROID_KEYSTORE_FILE")) {
                 signingConfig signingConfigs.release

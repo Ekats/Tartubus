@@ -9,7 +9,7 @@ export const CITY_ZONES = {
   tartu: {
     name: 'Tartu',
     center: { lat: 58.3776, lon: 26.7290 },
-    radius: 8000, // 8km radius (reduced from 15km)
+    radius: 10000, // 10 km: the city and the ring of villages its lines reach (inside the 30 km map detail box)
     feed: 'Viro',
     cityFilter: 'Tartu' // Filter routes by city name
   },

@@ -1,7 +1,7 @@
 {
   "name": "tartu-bus-tracker",
   "private": true,
-  "version": "3.4.9",
+  "version": "3.5.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -24,18 +24,15 @@
     "@capacitor/cli": "^8.5.2",
     "@capacitor/core": "^8.5.2",
     "@emailjs/browser": "^4.4.1",
+    "@versatiles/style": "6.4.0",
     "date-fns": "^4.1.0",
     "dotenv": "^17.2.3",
     "i18next": "^25.6.0",
-    "leaflet": "^1.9.4",
-    "leaflet-polylinedecorator": "^1.6.0",
-    "leaflet.markercluster": "^1.5.3",
+    "maplibre-gl": "6.11.2",
     "polyline-encoded": "^0.0.9",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "react-i18next": "^16.2.1",
-    "react-leaflet": "^4.2.1",
-    "react-leaflet-cluster": "^3.1.1"
+    "react-i18next": "^16.2.1"
   },
   "devDependencies": {
     "@types/react": "^18.3.12",

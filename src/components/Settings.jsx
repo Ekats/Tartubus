@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { getSettings, updateSetting } from '../utils/settings';
+import { getSettings, updateSetting, MAP_STYLES, MAP_STYLE_EVENT } from '../utils/settings';
 import { updateRoutesFromGitHub, getRoutesVersionInfo, clearDownloadedRoutes, clearCachedData } from '../services/digitransit';
 import Feedback from './Feedback';
 import BusIcon from './BusIcon';
@@ -33,6 +33,16 @@ function Settings() {
     updateSetting('nearbyRadius', newRadius);
 
     // Show saved message
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
+  };
+
+  const handleMapStyleChange = (e) => {
+    const mapStyle = e.target.value;
+    setSettings({ ...settings, mapStyle });
+    updateSetting('mapStyle', mapStyle);
+    window.dispatchEvent(new Event(MAP_STYLE_EVENT));
+
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
   };
@@ -224,6 +234,37 @@ function Settings() {
               <span>Settings saved automatically</span>
             </div>
           )}
+        </div>
+
+        {/* Map style */}
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 border border-gray-200 dark:border-gray-700">
+          <div className="mb-4">
+            <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-1">{t('settings.mapStyle')}</h2>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              {t('settings.mapStyleDescription')}
+            </p>
+          </div>
+
+          <div className="space-y-3">
+            {MAP_STYLES.map((style) => (
+              <label
+                key={style}
+                className="flex items-center p-3 border border-gray-200 dark:border-gray-700 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+              >
+                <input
+                  type="radio"
+                  name="mapStyle"
+                  value={style}
+                  checked={settings.mapStyle === style}
+                  onChange={handleMapStyleChange}
+                  className="w-4 h-4 text-primary focus:ring-primary"
+                />
+                <span className="ml-3 text-gray-700 dark:text-gray-300">
+                  {t(`settings.mapStyle${style[0].toUpperCase()}${style.slice(1)}`)}
+                </span>
+              </label>
+            ))}
+          </div>
         </div>
 
         {/* Feedback Section */}

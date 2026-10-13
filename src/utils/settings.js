@@ -7,7 +7,13 @@ const SETTINGS_KEY = 'tartu-bus-settings';
 const DEFAULT_SETTINGS = {
   nearbyRadius: 500, // meters
   maxStopsOnMap: 100, // maximum number of stops to display on map
+  mapStyle: 'natural', // PROTOTYPE (?proto=maplibre): basemap theme, one of MAP_STYLES
 };
+
+// PROTOTYPE: basemap themes of the MapLibre map; dark mode uses each theme's dark version
+// (satellite has none). An open map hears about a change through MAP_STYLE_EVENT.
+export const MAP_STYLES = ['natural', 'colorful', 'muted', 'gray', 'toner', 'satellite'];
+export const MAP_STYLE_EVENT = 'mapstylechange';
 
 /**
  * Get all settings

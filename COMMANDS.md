@@ -328,7 +328,8 @@ npm run android:open
 
 - **Vite**: https://vitejs.dev/
 - **React**: https://react.dev/
-- **Leaflet**: https://leafletjs.com/
+- **MapLibre GL JS**: https://maplibre.org/maplibre-gl-js/docs/
+- **VersaTiles**: https://docs.versatiles.org/
 - **Tailwind CSS**: https://tailwindcss.com/
 - **i18next**: https://www.i18next.com/
 - **Digitransit API**: https://digitransit.fi/en/developers/

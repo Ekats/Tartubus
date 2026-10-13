@@ -83,7 +83,8 @@ async function networkFirst(request) {
   }
 }
 
-// Cache first. Used for content-hashed build assets, which never change.
+// Cache first. Used for content-hashed build assets, which never change, and for the bundled map
+// data (map/), which only changes with a new build - and a new build is a new cache.
 async function cacheFirst(request) {
   const cache = await caches.open(CACHE_NAME);
   const cached = await cache.match(request);
@@ -150,7 +151,7 @@ self.addEventListener('fetch', (event) => {
 
   if (event.request.mode === 'navigate' || path === BASE_PATH || path.endsWith('/index.html')) {
     event.respondWith(networkFirst(event.request));
-  } else if (path.startsWith(`${BASE_PATH}assets/`)) {
+  } else if (path.startsWith(`${BASE_PATH}assets/`) || path.startsWith(`${BASE_PATH}map/`)) {
     event.respondWith(cacheFirst(event.request));
   } else {
     // Data files (stops.json, routes.min.json), icons, manifest

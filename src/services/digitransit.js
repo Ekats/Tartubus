@@ -202,7 +202,7 @@ export async function getNearbyStopsWithMeta(lat, lon, radius = 500, forceRefres
       const compressedResult = result.map(compressStop);
 
       // Only cache small radius queries (< 2km) to avoid quota issues
-      // Map view with 8km radius loads 500+ stops which is too large
+      // A query the size of the whole zone (10 km) returns 500+ stops, which is too large
       if (customTime) {
         // Planned-time data never goes into the "now" cache
       } else if (radius < 2000) {

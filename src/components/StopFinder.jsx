@@ -1,322 +1,68 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { MapContainer, TileLayer, Marker, Popup, Tooltip, Polyline, useMap, useMapEvents } from 'react-leaflet';
-import MarkerClusterGroup from 'react-leaflet-cluster';
-import L from 'leaflet';
-import 'leaflet-polylinedecorator';
-import { useGeolocation, setLocationConsent } from '../hooks/useGeolocation';
+import { setLocationConsent } from '../hooks/useGeolocation';
 import { useFavorites } from '../hooks/useFavorites';
-import { getNearbyStops, getStopById, getStopsByRoutes, getRouteShortNamesInZone, getNextStopName, planJourney, decodePolyline, getDailyTimetable, getWalkingRoute } from '../services/digitransit';
+import { getNearbyStops, getStopById, getStopsByRoutes, getRouteShortNamesInZone, planJourney, decodePolyline, getWalkingRoute } from '../services/digitransit';
 import { CITY_ZONES, mergeDuplicateStops, haversineDistance } from '../utils/geo';
 import { buildTripView } from '../utils/tripRoute';
 import { getSetting } from '../utils/settings';
 import { reverseGeocode } from '../utils/geocoding';
+import { toAppZoom, toMapZoom, toBounds, boundsOfCoords, APP_START_ZOOM, APP_MAX_ZOOM, APP_FIT_MAX_ZOOM, APP_NO_CLUSTER_ZOOM } from '../utils/mapZoom';
+import { stopPoints, patternLines, journeyCoords } from '../utils/mapFeatures';
+import { freeArea, paddingFor, overflowOf, hasOverflow, grownPadding, anyUnder } from '../utils/mapFit';
 import { differenceInMinutes } from 'date-fns';
-import { shouldShowDeparture, isDepartureLate, getDelayInfo, formatClockFromDate, roundMeters } from '../utils/timeFormatter';
+import { getDelayInfo, formatClockFromDate, roundMeters } from '../utils/timeFormatter';
 import CountdownTimer from './CountdownTimer';
 import StopCard from './StopCard';
-import 'leaflet/dist/leaflet.css';
-import 'leaflet.markercluster/dist/MarkerCluster.css';
-import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
 import BusIcon from './BusIcon';
+import MapView from './map/MapView';
+import MapMarker from './map/MapMarker';
+import MapPopup from './map/MapPopup';
+import StopsLayer from './map/StopsLayer';
+import RouteLinesLayer from './map/RouteLinesLayer';
+import TripLayer from './map/TripLayer';
+import JourneyLayer from './map/JourneyLayer';
 import { useVisibleInterval } from '../hooks/useVisibleInterval';
 
-// Fix for default marker icons in React Leaflet
-delete L.Icon.Default.prototype._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
-  iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
-  shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
-});
+// The pin of the user's location (orange) and of a search destination (green)
+const pinImage = (color) => 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(`
+  <svg width="40" height="50" viewBox="0 0 40 50" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <filter id="pin-shadow">
+        <feDropShadow dx="0" dy="2" stdDeviation="3" flood-opacity="0.4"/>
+      </filter>
+    </defs>
+    <path d="M20 0C11.716 0 5 6.716 5 15c0 8.284 15 35 15 35s15-26.716 15-35C35 6.716 28.284 0 20 0z" fill="${color}" stroke="white" stroke-width="2" filter="url(#pin-shadow)"/>
+    <circle cx="20" cy="15" r="6" fill="white"/>
+  </svg>
+`);
+const LOCATION_PIN = pinImage('#F97316');
+const DESTINATION_PIN = pinImage('#10B981');
+const PIN_HEIGHT = 50;
 
-// react-leaflet rebuilds a marker whenever its `icon` prop is a different object, so a
-// fresh L.Icon per render means every marker on the map is torn down and recreated.
-// There are only a handful of distinct icons, so they are built once and reused.
-const iconCache = new Map();
-const cachedIcon = (kind, color, isNearby, build) => {
-  const key = `${kind}|${color}|${isNearby}`;
-  if (!iconCache.has(key)) {
-    iconCache.set(key, build());
-  }
-  return iconCache.get(key);
-};
-
-// Custom stop marker icons - modern, clean design
-const createStopIcon = (color, isNearby = false) => cachedIcon('stop', color, isNearby, () => {
-  const size = isNearby ? 32 : 24;
-  const dotSize = isNearby ? 10 : 8;
-
-  return new L.Icon({
-    iconUrl: 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(`
-      <svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg">
-        <defs>
-          <filter id="shadow">
-            <feDropShadow dx="0" dy="1" stdDeviation="2" flood-opacity="0.3"/>
-          </filter>
-        </defs>
-        <!-- Outer ring with shadow -->
-        <circle cx="${size/2}" cy="${size/2}" r="${size/2 - 2}" fill="white" filter="url(#shadow)"/>
-        <!-- Colored ring -->
-        <circle cx="${size/2}" cy="${size/2}" r="${size/2 - 3}" fill="none" stroke="${color}" stroke-width="2.5"/>
-        <!-- Center dot -->
-        <circle cx="${size/2}" cy="${size/2}" r="${dotSize/2}" fill="${color}"/>
-      </svg>
-    `),
-    iconSize: [size, size],
-    iconAnchor: [size/2, size/2],
-    popupAnchor: [0, -size/2],
-    className: '',
-  });
-});
-
-// Create favorite stop icon with star
-const createFavoriteStopIcon = (color, isNearby = false) => cachedIcon('favorite', color, isNearby, () => {
-  const size = isNearby ? 48 : 36;
-
-  return new L.Icon({
-    iconUrl: 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(`
-      <svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg">
-        <defs>
-          <filter id="shadow-fav">
-            <feDropShadow dx="0" dy="2" stdDeviation="4" flood-opacity="0.5"/>
-          </filter>
-        </defs>
-        <!-- Golden glow -->
-        <circle cx="${size/2}" cy="${size/2}" r="${size/2 - 1}" fill="#FCD34D" opacity="0.3"/>
-        <!-- White circle background -->
-        <circle cx="${size/2}" cy="${size/2}" r="${size/2 - 2}" fill="white" filter="url(#shadow-fav)"/>
-        <!-- Yellow outline -->
-        <circle cx="${size/2}" cy="${size/2}" r="${size/2 - 3}" fill="none" stroke="#FBBF24" stroke-width="2.5"/>
-        <!-- Star - centered and sized to fill the circle -->
-        <g transform="translate(${size/2}, ${size/2})">
-          <path d="M 0,-${size/3} L ${size/9},-${size/9} L ${size/3},-${size/10} L ${size/7},${size/10} L ${size/6},${size/3} L 0,${size/6} L -${size/6},${size/3} L -${size/7},${size/10} L -${size/3},-${size/10} L -${size/9},-${size/9} Z"
-                fill="#FBBF24" stroke="#F59E0B" stroke-width="2" filter="url(#shadow-fav)"/>
-        </g>
-      </svg>
-    `),
-    iconSize: [size, size],
-    iconAnchor: [size/2, size/2],
-    popupAnchor: [0, -size/2],
-    className: '',
-  });
-});
-
-const stopIcon = createStopIcon('#6B7280'); // Gray for regular stops (not on filtered routes)
-const nearbyStopIcon = createStopIcon('#6B7280'); // Gray for nearby stops when no filter
-const selectedStopIcon = createStopIcon('#EF4444'); // Red for selected stop from Near Me
-
-// Custom location pin icon for user location - orange
-const locationPinIcon = new L.Icon({
-  iconUrl: 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(`
-    <svg width="40" height="50" viewBox="0 0 40 50" xmlns="http://www.w3.org/2000/svg">
-      <defs>
-        <filter id="pin-shadow">
-          <feDropShadow dx="0" dy="2" stdDeviation="3" flood-opacity="0.4"/>
-        </filter>
-      </defs>
-      <path d="M20 0C11.716 0 5 6.716 5 15c0 8.284 15 35 15 35s15-26.716 15-35C35 6.716 28.284 0 20 0z" fill="#F97316" stroke="white" stroke-width="2" filter="url(#pin-shadow)"/>
-      <circle cx="20" cy="15" r="6" fill="white"/>
-    </svg>
-  `),
-  iconSize: [40, 50],
-  iconAnchor: [20, 50],
-  popupAnchor: [0, -50],
-});
-
-// Custom destination pin icon for search results - green
-const destinationPinIcon = new L.Icon({
-  iconUrl: 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(`
-    <svg width="40" height="50" viewBox="0 0 40 50" xmlns="http://www.w3.org/2000/svg">
-      <defs>
-        <filter id="dest-shadow">
-          <feDropShadow dx="0" dy="2" stdDeviation="3" flood-opacity="0.4"/>
-        </filter>
-      </defs>
-      <path d="M20 0C11.716 0 5 6.716 5 15c0 8.284 15 35 15 35s15-26.716 15-35C35 6.716 28.284 0 20 0z" fill="#10B981" stroke="white" stroke-width="2" filter="url(#dest-shadow)"/>
-      <circle cx="20" cy="15" r="6" fill="white"/>
-    </svg>
-  `),
-  iconSize: [40, 50],
-  iconAnchor: [20, 50],
-  popupAnchor: [0, -50],
-});
-
-// Component to update map view when location changes
-function LocationMarker({ position, onLocationUpdate, mapRef, selectedJourney }) {
-  const map = useMap();
-  const hasZoomedRef = useRef(false);
-
-  // Store map reference
-  useEffect(() => {
-    if (mapRef) {
-      mapRef.current = map;
-    }
-  }, [map, mapRef]);
-
-  useEffect(() => {
-    if (position) {
-      // Only zoom to location on first update if there's no selected journey
-      // If there's a journey selected, let the journey zoom effect handle it
-      if (!hasZoomedRef.current && !selectedJourney) {
-        map.setView([position.lat, position.lon], 15);
-        hasZoomedRef.current = true;
-      }
-
-      // Load stops around new location (but don't zoom)
-      if (onLocationUpdate) {
-        onLocationUpdate(position.lat, position.lon);
-      }
-    }
-  }, [position, map, selectedJourney]);
-
-  if (!position) return null;
-
+// A pin standing on its place. A tap opens (or closes) the popup with `children`.
+function Pin({ lat, lon, image, zIndex, onClick, children }) {
+  const [open, setOpen] = useState(false);
   return (
-    <Marker position={[position.lat, position.lon]} icon={locationPinIcon}>
-      <Popup>You are here</Popup>
-    </Marker>
+    <>
+      <MapMarker
+        lat={lat}
+        lon={lon}
+        anchor="bottom"
+        className="map-pin"
+        zIndex={zIndex}
+        onClick={() => {
+          setOpen(wasOpen => !wasOpen);
+          onClick?.();
+        }}
+      >
+        <img src={image} width="40" height={PIN_HEIGHT} alt="" draggable={false} style={{ maxWidth: 'none' }} />
+      </MapMarker>
+      {open && (
+        <MapPopup lat={lat} lon={lon} offset={PIN_HEIGHT} onClose={() => setOpen(false)}>{children}</MapPopup>
+      )}
+    </>
   );
-}
-
-// Component to handle map events (zoom, pan, click)
-function MapEventHandler({ onMapMove, onMapClick }) {
-  const dragStartRef = useRef(null);
-  const isDraggingRef = useRef(false);
-  const map = useMapEvents({
-    moveend: () => {
-      const center = map.getCenter();
-      const zoom = map.getZoom();
-      onMapMove(center.lat, center.lng, zoom);
-    },
-    zoomend: () => {
-      const center = map.getCenter();
-      const zoom = map.getZoom();
-      onMapMove(center.lat, center.lng, zoom);
-    },
-    dragstart: (e) => {
-      // Track when dragging starts
-      // Leaflet's dragstart doesn't always have latlng, use map center as fallback
-      const center = map.getCenter();
-      dragStartRef.current = { lat: center.lat, lng: center.lng };
-      isDraggingRef.current = true;
-    },
-    dragend: () => {
-      // Mark that dragging has ended
-      isDraggingRef.current = false;
-    },
-    click: (e) => {
-      // Only trigger click if we weren't dragging
-      if (isDraggingRef.current) {
-        // Still dragging or just finished dragging, ignore this click
-        return;
-      }
-
-      // Check if we moved significantly during the interaction
-      if (dragStartRef.current) {
-        const latDiff = Math.abs(e.latlng.lat - dragStartRef.current.lat);
-        const lngDiff = Math.abs(e.latlng.lng - dragStartRef.current.lng);
-        // If movement is tiny (< 0.0001 degrees ~11 meters), treat as click
-        if (latDiff < 0.0001 && lngDiff < 0.0001) {
-          if (onMapClick) onMapClick();
-        }
-        dragStartRef.current = null;
-      } else {
-        // No drag happened, definitely a click
-        if (onMapClick) onMapClick();
-      }
-    },
-  });
-  return null;
-}
-
-// Component to handle location selection clicks
-function LocationSelector({ onLocationSelect, disabled }) {
-  const map = useMapEvents({
-    click: (e) => {
-      if (onLocationSelect && !disabled) {
-        onLocationSelect({ lat: e.latlng.lat, lon: e.latlng.lng });
-      }
-    },
-  });
-  return null;
-}
-
-// Component to add arrow decorators to polylines
-function RouteLineWithArrows({ positions, color, headsign, routeName, stopCount }) {
-  const map = useMap();
-  const decoratorRef = useRef(null);
-  const polylineRef = useRef(null);
-  const shadowRef = useRef(null);
-
-  useEffect(() => {
-    if (!map || positions.length === 0) {
-      return;
-    }
-
-    // Create shadow/outline polyline (wider, white/dark)
-    const shadow = L.polyline(positions, {
-      color: '#FFFFFF',
-      weight: 7,
-      opacity: 0.9,
-    }).addTo(map);
-
-    shadowRef.current = shadow;
-
-    // Create main polyline on top
-    const polyline = L.polyline(positions, {
-      color: color,
-      weight: 4,
-      opacity: 0.9,
-    }).addTo(map);
-
-    polylineRef.current = polyline;
-
-    // Add arrow decorators
-    const decorator = L.polylineDecorator(polyline, {
-      patterns: [
-        {
-          offset: '5%',
-          repeat: 100, // pixels between arrows
-          symbol: L.Symbol.arrowHead({
-            pixelSize: 12,
-            polygon: false,
-            pathOptions: {
-              stroke: true,
-              weight: 2,
-              color: color,
-              opacity: 0.8,
-            }
-          })
-        }
-      ]
-    }).addTo(map);
-
-    decoratorRef.current = decorator;
-
-    // Add popup to polyline
-    polyline.bindPopup(`
-      <div class="text-sm">
-        <div class="font-bold" style="color: ${color}">Route ${routeName}</div>
-        <div class="text-gray-700 font-semibold">→ ${headsign}</div>
-        <div class="text-xs text-gray-500 mt-1">${stopCount} stops</div>
-      </div>
-    `);
-
-    // Cleanup
-    return () => {
-      if (decoratorRef.current) {
-        map.removeLayer(decoratorRef.current);
-      }
-      if (polylineRef.current) {
-        map.removeLayer(polylineRef.current);
-      }
-      if (shadowRef.current) {
-        map.removeLayer(shadowRef.current);
-      }
-    };
-  }, [map, positions, color, headsign, routeName, stopCount]);
-
-  return null;
 }
 
 const NO_LOCATION = { lat: null, lon: null };
@@ -373,12 +119,16 @@ function StopFinder({
       : null,
     [tripActive, selectedRoute, selectedRoutes, routePatterns]
   );
+  // The lines on the map: the trip's direction in trip mode, else every pattern of the filtered routes
+  const routeLines = useMemo(
+    () => patternLines(tripView ? tripView.patterns : routePatterns),
+    [tripView, routePatterns]
+  );
   const [loadingRoutes, setLoadingRoutes] = useState(false);
   const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(true);
   const [locationMessage, setLocationMessage] = useState(null);
   const [pendingLocation, setPendingLocation] = useState(null);
   const [pendingLocationAddress, setPendingLocationAddress] = useState(null);
-  const [expandedPopupStops, setExpandedPopupStops] = useState(new Map()); // Map of stopId -> expansion level
   const [nearbyStopsForRouting, setNearbyStopsForRouting] = useState([]); // Stops with departure data for routing
   const [journeyPlans, setJourneyPlans] = useState([]); // Journey plans with transfers
   const [loadingJourney, setLoadingJourney] = useState(false);
@@ -391,62 +141,73 @@ function StopFinder({
   const moveTimeoutRef = useRef(null);
   const lastMovePositionRef = useRef(null);
   const filterMenuRef = useRef(null);
-  const openMarkerRef = useRef(null); // Track currently open marker
+  // What lies over the map, measured when the map is fitted to something
+  const topControlsRef = useRef(null);
+  const mapButtonsRef = useRef(null);
+  const tabBarSpaceRef = useRef(null);
   const hasInitializedViewRef = useRef(false); // Track if we've panned to user location on mount
 
-  // Custom cluster icon function - must be regular function for Leaflet
-  const createClusterCustomIcon = useMemo(() => {
-    return function(cluster) {
-      const count = cluster.getChildCount();
-      let size = 'small';
-      if (count >= 100) size = 'large';
-      else if (count >= 10) size = 'medium';
+  // Programmatic moves of the map, in the app's zoom numbers (see utils/mapZoom.js)
+  const setView = (lat, lon, appZoom) => {
+    mapRef.current?.jumpTo({ center: [lon, lat], zoom: toMapZoom(appZoom) });
+  };
+  // Fit the map to a route, trip or journey, inside the part of the map that nothing lies over: below
+  // the filter button and counter, above the tab bar, clear of the round buttons (see utils/mapFit.js).
+  // The labelled first / last stops carry a box above them whose size is only known once it is drawn
+  // (it holds the stop's name), so after the fit the boxes are measured, and where one sticks out the
+  // fit is repeated with that much more room on that side. The boxes may also be drawn after the fit
+  // (the map's layers come once its style has loaded): the fit is kept in lastFitRef and applied
+  // again when they are (refitToLabels), until the user moves the map.
+  const lastFitRef = useRef(null);
+  const applyFit = () => {
+    const map = mapRef.current;
+    const fit = lastFitRef.current;
+    if (!fit || !map) return;
 
-      // Check if cluster contains any favorite stops
-      const markers = cluster.getAllChildMarkers();
-      const favoriteMarkers = markers.filter(marker => marker.options?.isFavorited === true);
-      const hasFavorite = favoriteMarkers.length > 0;
-
-      // If cluster has favorites, adjust position towards favorite markers
-      if (hasFavorite && favoriteMarkers.length < markers.length) {
-        // Calculate center of favorite markers
-        let favLatSum = 0, favLngSum = 0;
-        favoriteMarkers.forEach(marker => {
-          const latlng = marker.getLatLng();
-          favLatSum += latlng.lat;
-          favLngSum += latlng.lng;
-        });
-        const favCenter = L.latLng(
-          favLatSum / favoriteMarkers.length,
-          favLngSum / favoriteMarkers.length
-        );
-
-        // Get current cluster center
-        const clusterCenter = cluster.getLatLng();
-
-        // Move cluster position 60% towards favorites
-        const adjustedLat = clusterCenter.lat + (favCenter.lat - clusterCenter.lat) * 0.6;
-        const adjustedLng = clusterCenter.lng + (favCenter.lng - clusterCenter.lng) * 0.6;
-
-        // Update cluster position
-        cluster.setLatLng(L.latLng(adjustedLat, adjustedLng));
-      }
-
-      if (hasFavorite) {
-        return L.divIcon({
-          html: `<div style="position: relative; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;"><span style="font-size: 40px; filter: drop-shadow(0 0 3px rgba(255, 255, 255, 1)) drop-shadow(0 0 6px rgba(255, 255, 255, 0.8)) drop-shadow(0 0 10px rgba(255, 255, 255, 0.5));">⭐</span><span style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 14px; font-weight: bold; color: #78350f; text-shadow: 0 0 3px rgba(255, 255, 255, 1);">${count}</span></div>`,
-          className: `marker-cluster-favorite-emoji`,
-          iconSize: L.point(40, 40),
-        });
-      }
-
-      return L.divIcon({
-        html: `<div><span>${count}</span></div>`,
-        className: `marker-cluster marker-cluster-${size}`,
-        iconSize: L.point(40, 40),
-      });
+    const container = map.getContainer().getBoundingClientRect();
+    const within = (el) => {
+      const r = el?.getBoundingClientRect();
+      return r && r.width > 0 ? { left: r.left - container.left, top: r.top - container.top, right: r.right - container.left, bottom: r.bottom - container.top } : null;
     };
-  }, []);
+    const size = { width: container.width, height: container.height };
+    const buttons = within(mapButtonsRef.current);
+    const labelBoxes = () => [...map.getContainer().querySelectorAll('.journey-stop-label')].map(within).filter(Boolean);
+    const options = { maxZoom: toMapZoom(APP_FIT_MAX_ZOOM), animate: false };
+
+    const fitInto = (area) => {
+      let padding = paddingFor(size, area);
+      map.fitBounds(fit.bounds, { ...options, padding });
+      for (let attempt = 0; attempt < 4; attempt++) {
+        const over = overflowOf(area, labelBoxes());
+        if (!hasOverflow(over)) break;
+        padding = grownPadding(padding, over, size);
+        if (!padding) break;
+        map.fitBounds(fit.bounds, { ...options, padding });
+      }
+    };
+
+    const free = {
+      size,
+      // (an open route menu is not something to keep clear of: it closes with the next tap)
+      topControlsBottom: Math.min(within(topControlsRef.current)?.bottom ?? 0, size.height * 0.4),
+      tabBarHeight: tabBarSpaceRef.current?.getBoundingClientRect().height ?? 0,
+    };
+    // First as large as the map allows; room for the buttons in the corner is only given up when
+    // a stop, a piece of the line or a label would otherwise lie under them
+    fitInto(freeArea(free));
+    if (buttons) {
+      const points = fit.coords.map(([lat, lon]) => { const { x, y } = map.project([lon, lat]); return { left: x, right: x, top: y, bottom: y }; });
+      if (anyUnder(buttons, [...points, ...labelBoxes()])) fitInto(freeArea({ ...free, buttons }));
+    }
+  };
+  const fitTo = (coords) => {
+    const bounds = boundsOfCoords(coords);
+    if (!bounds) return;
+    lastFitRef.current = { bounds, coords };
+    applyFit();
+  };
+  const refitToLabels = () => applyFit();
+  const forgetFit = () => { lastFitRef.current = null; };
 
   // Default to Tartu center
   const defaultCenter = { lat: 58.3776, lon: 26.7290 };
@@ -668,6 +429,7 @@ function StopFinder({
   // Show a route picked in the header search: filter the map to it and zoom to its stops
   useEffect(() => {
     pendingRouteFitRef.current = null;
+    forgetFit();
     setTripActive(!!selectedRoute?.trip);
     if (!selectedRoute?.routeNumber) return;
 
@@ -686,7 +448,7 @@ function StopFinder({
     const zoomTimeout = setTimeout(() => {
       if (!mapRef.current) return;
       try {
-        mapRef.current.fitBounds(L.latLngBounds(coords), { padding: [50, 50], maxZoom: 15 });
+        fitTo(coords);
       } catch (error) {
         console.error('Error fitting route bounds:', error);
       }
@@ -709,14 +471,17 @@ function StopFinder({
     if (coords.length === 0 || !mapRef.current) return;
     pendingRouteFitRef.current = null;
     try {
-      mapRef.current.fitBounds(L.latLngBounds(coords), { padding: [50, 50], maxZoom: 15 });
+      fitTo(coords);
     } catch (error) {
       console.error('Error fitting route bounds:', error);
     }
   }, [routePatterns]);
 
   useEffect(() => {
-    if (!selectedJourney) return;
+    if (!selectedJourney) {
+      forgetFit();
+      return;
+    }
 
     console.log('🗺️ Auto-zooming map to fit journey route');
 
@@ -727,31 +492,11 @@ function StopFinder({
         return;
       }
 
-      // Collect all coordinates from the journey legs
-      const allCoords = [];
-
-      selectedJourney.legs.forEach(leg => {
-        // Add start point
-        allCoords.push([leg.from.lat, leg.from.lon]);
-
-        // Decode polyline if available
-        if (leg.geometry) {
-          const decoded = decodePolyline(leg.geometry);
-          allCoords.push(...decoded);
-        }
-
-        // Add end point
-        allCoords.push([leg.to.lat, leg.to.lon]);
-      });
-
-      if (allCoords.length > 0) {
-        try {
-          const bounds = L.latLngBounds(allCoords);
-          mapRef.current.fitBounds(bounds, { padding: [50, 50], maxZoom: 15 });
-          console.log('✅ Map zoomed to journey bounds');
-        } catch (error) {
-          console.error('Error fitting bounds:', error);
-        }
+      try {
+        fitTo(journeyCoords(selectedJourney, decodePolyline));
+        console.log('✅ Map zoomed to journey bounds');
+      } catch (error) {
+        console.error('Error fitting bounds:', error);
       }
     }, 100); // 100ms delay to allow map to initialize
 
@@ -922,13 +667,7 @@ function StopFinder({
       // Initial viewport filter
       setTimeout(() => {
         if (mapRef.current) {
-          const bounds = mapRef.current.getBounds();
-          const initialBounds = {
-            north: bounds.getNorth(),
-            south: bounds.getSouth(),
-            east: bounds.getEast(),
-            west: bounds.getWest(),
-          };
+          const initialBounds = toBounds(mapRef.current.getBounds());
           setVisibleBounds(initialBounds);
           filterStopsByViewport(initialBounds);
         }
@@ -937,6 +676,22 @@ function StopFinder({
   }, [cityZoneStopsLoaded, allZoneStops.length]);
 
   // No need to reload stops when location changes - we have all zone stops loaded
+
+  // The first time the user's location is shown, the map goes there - unless a journey is drawn,
+  // which is fitted by its own effect. (Before the highlighted-stop effect below: a stop opened
+  // from another tab wins over the location.)
+  const hasZoomedToLocationRef = useRef(false);
+  const showsLocationPin = !!location.lat && !locationSelectionMode;
+  useEffect(() => {
+    if (!showsLocationPin) {
+      hasZoomedToLocationRef.current = false;
+      return;
+    }
+    if (!hasZoomedToLocationRef.current && !selectedJourney && mapRef.current) {
+      setView(location.lat, location.lon, 15);
+      hasZoomedToLocationRef.current = true;
+    }
+  }, [location, showsLocationPin, selectedJourney]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Center map on highlighted stop when navigating from Near Me, or on user location when just opening map
   useEffect(() => {
@@ -948,7 +703,7 @@ function StopFinder({
 
       // Center on stop and zoom in (if map is ready)
       if (mapRef.current) {
-        mapRef.current.setView([highlightedStop.lat, highlightedStop.lon], 16);
+        setView(highlightedStop.lat, highlightedStop.lon, 16);
       } else {
         console.log('⏳ Map not ready yet, will center when map loads');
       }
@@ -957,11 +712,13 @@ function StopFinder({
 
   // Pan to user location when map first loads and location becomes available
   useEffect(() => {
-    if (!highlightedStop && !hasInitializedViewRef.current && mapRef.current && location.lat && location.lon) {
+    // (not while a route, trip or journey is shown: the map is fitted to that, and this pan, coming
+    // 100 ms later, would undo the fit whenever the route data was already loaded)
+    if (!highlightedStop && !selectedRoute && !selectedJourney && !hasInitializedViewRef.current && mapRef.current && location.lat && location.lon) {
       // Pan to user location on initial load
       const timeout = setTimeout(() => {
         if (mapRef.current) {
-          mapRef.current.setView([location.lat, location.lon], 15);
+          setView(location.lat, location.lon, 15);
           hasInitializedViewRef.current = true;
         }
       }, 100);
@@ -1144,22 +901,11 @@ function StopFinder({
 
       // Wait 300ms after map stops moving before updating
       boundsUpdateTimeoutRef.current = setTimeout(() => {
-        const bounds = mapRef.current.getBounds();
-        const newBounds = {
-          north: bounds.getNorth(),
-          south: bounds.getSouth(),
-          east: bounds.getEast(),
-          west: bounds.getWest(),
-        };
+        const newBounds = toBounds(mapRef.current.getBounds());
         setVisibleBounds(newBounds);
         filterStopsByViewport(newBounds);
       }, 300);
     }
-  };
-
-  // No longer needed - we have all zone stops loaded
-  const handleLocationUpdate = (lat, lon) => {
-    // Do nothing - stops are already loaded for the entire zone
   };
 
   const handleToggleLocationTracking = () => {
@@ -1174,7 +920,7 @@ function StopFinder({
 
       // Center map on current location if available
       if (location.lat && location.lon && mapRef.current) {
-        mapRef.current.setView([location.lat, location.lon], 15);
+        setView(location.lat, location.lon, 15);
       }
     }
 
@@ -1355,31 +1101,19 @@ function StopFinder({
     setPendingLocationAddress(null);
   };
 
-  // Handlers for popup expansion
-  const expandPopupStop = (stopId) => {
-    setExpandedPopupStops(prev => {
-      const newMap = new Map(prev);
-      const currentLevel = newMap.get(stopId) || 0;
-      newMap.set(stopId, currentLevel + 1);
-      return newMap;
-    });
-  };
-
-  const collapsePopupStop = (stopId) => {
-    setExpandedPopupStops(prev => {
-      const newMap = new Map(prev);
-      newMap.delete(stopId);
-      return newMap;
-    });
+  // A tap on a stop: in location selection mode it picks the stop's place, otherwise it opens the stop
+  const handleStopClick = (stopId) => {
+    const stop = filteredStops.find(s => s.gtfsId === stopId);
+    if (!stop) return;
+    if (locationSelectionMode) {
+      setPendingLocation({ lat: stop.lat, lon: stop.lon });
+    } else {
+      setSelectedStop(stop);
+    }
   };
 
   // Handler for map clicks - close popups and filter
   const handleMapClick = () => {
-    // Close any open popup using the marker ref
-    if (openMarkerRef.current) {
-      openMarkerRef.current.closePopup();
-      openMarkerRef.current = null;
-    }
     // Clear selected stop. While a journey is drawn the overlay is already closed and the
     // destination pin belongs to the journey, so don't drop App's selection then.
     setSelectedStop(null);
@@ -1472,618 +1206,79 @@ function StopFinder({
   return (
     <div className="relative w-full h-full">
       {/* Map */}
-      <MapContainer
-        center={[center.lat, center.lon]}
-        zoom={13}
-        className="w-full h-full"
-        zoomControl={true}
-        maxZoom={18}
-        zoomAnimation={true}
-        zoomAnimationThreshold={4}
-        fadeAnimation={true}
-        markerZoomAnimation={true}
-        preferCanvas={false}
-        wheelPxPerZoomLevel={60}
+      <MapView
+        isDarkMode={isDarkMode}
+        center={center}
+        zoom={toMapZoom(APP_START_ZOOM)}
+        maxZoom={toMapZoom(APP_MAX_ZOOM)}
+        mapRef={mapRef}
+        onMoveEnd={locationSelectionMode ? undefined : (lat, lon, zoom) => handleMapMove(lat, lon, toAppZoom(zoom))}
+        onMapClick={locationSelectionMode ? (pendingLocation ? undefined : handleLocationTap) : handleMapClick}
+        onUserMove={forgetFit}
       >
-        <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          maxZoom={19}
-          maxNativeZoom={18}
-          className={isDarkMode ? 'map-tiles-dark' : ''}
-        />
-
-        {/* Map event handler */}
-        {!locationSelectionMode && <MapEventHandler onMapMove={handleMapMove} onMapClick={handleMapClick} />}
-
-        {/* Location selector - active when in selection mode */}
-        {locationSelectionMode && <LocationSelector onLocationSelect={handleLocationTap} disabled={!!pendingLocation} />}
-
         {/* Pending location marker */}
         {pendingLocation && (
-          <Marker position={[pendingLocation.lat, pendingLocation.lon]} icon={locationPinIcon}>
-            <Popup>
-              <div className="text-sm">
-                <div className="font-semibold mb-1">{t('map.selectedLocation')}</div>
-                <div>{pendingLocationAddress || t('common.loading')}</div>
-              </div>
-            </Popup>
-          </Marker>
+          <Pin lat={pendingLocation.lat} lon={pendingLocation.lon} image={LOCATION_PIN}>
+            <div className="text-sm">
+              <div className="font-semibold mb-1">{t('map.selectedLocation')}</div>
+              <div>{pendingLocationAddress || t('common.loading')}</div>
+            </div>
+          </Pin>
         )}
 
         {/* User location marker */}
-        {location.lat && !locationSelectionMode && <LocationMarker position={location} onLocationUpdate={handleLocationUpdate} mapRef={mapRef} selectedJourney={selectedJourney} />}
+        {location.lat && !locationSelectionMode && (
+          <Pin lat={location.lat} lon={location.lon} image={LOCATION_PIN}>You are here</Pin>
+        )}
 
         {/* Destination marker for search results */}
         {highlightedStop && highlightedStop.isSearchResult && (
-          <Marker
-            position={[highlightedStop.lat, highlightedStop.lon]}
-            icon={destinationPinIcon}
-            zIndexOffset={2000}
-            eventHandlers={{
-              click: (e) => {
-                L.DomEvent.stopPropagation(e);
-                setSelectedStop(highlightedStop);
-              }
-            }}
+          <Pin
+            lat={highlightedStop.lat}
+            lon={highlightedStop.lon}
+            image={DESTINATION_PIN}
+            zIndex={2}
+            onClick={() => setSelectedStop(highlightedStop)}
           >
-            <Popup>
-              <div className="text-sm">
-                <div className="font-semibold mb-1">{t('map.destination') || 'Destination'}</div>
-                <div className="text-gray-600">{highlightedStop.name}</div>
-              </div>
-            </Popup>
-          </Marker>
+            <div className="text-sm">
+              <div className="font-semibold mb-1">{t('map.destination') || 'Destination'}</div>
+              <div className="text-gray-600">{highlightedStop.name}</div>
+            </div>
+          </Pin>
         )}
 
         {/* Route lines with direction arrows */}
-        {(tripView ? tripView.patterns : routePatterns).map((pattern, idx) => {
-          // Use the coordinates from geometry (which follow roads)
-          const positions = pattern.coordinates && pattern.coordinates.length > 0
-            ? pattern.coordinates
-            : pattern.stops.map(stop => [stop.lat, stop.lon]);
+        {routeLines.length > 0 && <RouteLinesLayer lines={routeLines} />}
 
-          // Use different colors for different directions
-          // Direction 0: Blue, Direction 1: Yellow (Ukraine colors 🇺🇦)
-          const colors = ['#0066CC', '#FBBF24', '#10B981', '#F59E0B'];
-          // Handle negative, null, or undefined directionIds
-          const dirId = (pattern.directionId >= 0) ? pattern.directionId : 0;
-          const lineColor = colors[dirId % colors.length];
-
-          return (
-            <RouteLineWithArrows
-              key={`pattern-${idx}`}
-              positions={positions}
-              color={lineColor}
-              headsign={pattern.headsign}
-              routeName={pattern.routeShortName}
-              stopCount={pattern.stops.length}
-            />
-          );
-        })}
-
-        {/* Journey route visualization */}
-        {selectedJourney && selectedJourney.legs && selectedJourney.legs.map((leg, legIdx) => {
-          // Decode the polyline geometry for this leg
-          const positions = leg.geometry ? decodePolyline(leg.geometry) : [];
-
-          if (positions.length === 0) {
-            // Fallback: draw straight line between from/to
-            positions.push([leg.from.lat, leg.from.lon]);
-            positions.push([leg.to.lat, leg.to.lon]);
-          }
-
-          // Different colors for walk vs bus
-          const color = leg.mode === 'WALK' ? '#10B981' : '#3B82F6'; // Green for walk, blue for bus
-          const weight = leg.mode === 'WALK' ? 4 : 6;
-          const dashArray = leg.mode === 'WALK' ? '8, 8' : null; // Dashed for walking
-
-          return (
-            <Polyline
-              key={`journey-leg-${legIdx}`}
-              positions={positions}
-              pathOptions={{
-                color: color,
-                weight: weight,
-                opacity: 0.8,
-                dashArray: dashArray
-              }}
-            />
-          );
-        })}
-
-        {/* Journey stop markers with times - ALL stops along the route */}
-        {selectedJourney && selectedJourney.legs && (() => {
-          const stopMarkers = [];
-          const transitLegs = selectedJourney.legs.filter(leg => leg.mode === 'BUS');
-
-          // Track which stops we've already rendered to avoid duplicates at transfer points
-          const renderedStops = new Set();
-
-          selectedJourney.legs.forEach((leg, legIdx) => {
-            // Only show stops for BUS legs
-            if (leg.mode !== 'BUS') return;
-
-            // Use the leg's actual start/end times from the API
-            const legStartTime = leg.startTime ? new Date(leg.startTime) : new Date(selectedJourney.start);
-            const legEndTime = leg.endTime ? new Date(leg.endTime) : new Date(selectedJourney.end);
-
-            // Determine if this is the first boarding stop
-            const busLegsSoFar = selectedJourney.legs.slice(0, legIdx).filter(l => l.mode === 'BUS').length;
-            const isFirstLeg = busLegsSoFar === 0;
-
-            // Check if the next bus leg starts at the same location (transfer point)
-            const nextBusLeg = selectedJourney.legs.slice(legIdx + 1).find(l => l.mode === 'BUS');
-            const isTransferStop = nextBusLeg &&
-              leg.to.stop?.gtfsId === nextBusLeg.from.stop?.gtfsId;
-
-            // Add "from" stop (boarding stop) only if it's NOT a transfer from previous leg
-            if (leg.from.stop && !renderedStops.has(leg.from.stop.gtfsId)) {
-              const timeStr = legStartTime.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
-
-              stopMarkers.push(
-                <Marker
-                  key={`journey-stop-from-${legIdx}`}
-                  position={[leg.from.lat, leg.from.lon]}
-                  icon={createStopIcon('#FBBF24', true)} // Larger yellow icon
-                  zIndexOffset={3000}
-                >
-                  {/* First boarding stop: permanent label; any other boarding stop: popup on tap */}
-                  {isFirstLeg ? (
-                    <Tooltip permanent direction="top" opacity={0.8} className="journey-stop-box journey-stop-first">
-                      <div className="text-xs font-semibold">
-                        <div className="font-bold journey-stop-name">{leg.from.stop.name}</div>
-                        <div className="text-amber-600">
-                          <BusIcon /> {leg.route?.shortName} {t('map.at')} {timeStr}
-                        </div>
-                        <div className="text-green-600">
-                          📍 {t('map.boardHere')}
-                        </div>
-                      </div>
-                    </Tooltip>
-                  ) : (
-                  <Popup maxWidth={600} className="journey-stop-box">
-                    <div className="text-xs font-semibold">
-                      <div className="font-bold journey-stop-name">{leg.from.stop.name}</div>
-                      <div className="text-amber-600 font-semibold">
-                        <BusIcon /> {leg.route?.shortName} {t('map.at')} {timeStr}
-                      </div>
-                      <div className="text-green-600 text-xs font-semibold">
-                        📍 {t('map.boardHere')}
-                      </div>
-                    </div>
-                  </Popup>
-                  )}
-                </Marker>
-              );
-              renderedStops.add(leg.from.stop.gtfsId);
-            }
-
-            // Add all intermediate stops
-            if (leg.intermediateStops && leg.intermediateStops.length > 0) {
-              // Calculate approximate time for each intermediate stop
-              // Distribute the leg duration evenly across all stops
-              const totalStops = leg.intermediateStops.length + 2; // +2 for from and to stops
-              const timePerStop = (legEndTime - legStartTime) / totalStops;
-
-              leg.intermediateStops.forEach((stop, stopIdx) => {
-                // Estimate arrival time for this intermediate stop
-                const estimatedTime = new Date(legStartTime.getTime() + timePerStop * (stopIdx + 1));
-                const timeStr = estimatedTime.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
-
-                stopMarkers.push(
-                  <Marker
-                    key={`journey-stop-intermediate-${legIdx}-${stopIdx}`}
-                    position={[stop.lat, stop.lon]}
-                    icon={createStopIcon('#FBBF24', false)} // Regular size yellow icon
-                    zIndexOffset={2900}
-                  >
-                    <Popup maxWidth={600} className="journey-stop-box">
-                      <div className="text-xs font-semibold">
-                        <div className="font-bold journey-stop-name">{stop.name}</div>
-                        <div className="text-amber-600 font-semibold">
-                          <BusIcon /> {leg.route?.shortName} ~{timeStr}
-                        </div>
-                        <div className="text-gray-500 text-xs">{t('map.estimatedTime')}</div>
-                      </div>
-                    </Popup>
-                  </Marker>
-                );
-              });
-            }
-
-            // Add "to" stop (alighting stop - larger, highlighted)
-            if (leg.to.stop) {
-              const alightTimeStr = legEndTime.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
-
-              // Check if there are more BUS legs after this one
-              const hasMoreBusLegs = selectedJourney.legs.slice(legIdx + 1).some(l => l.mode === 'BUS');
-              const isLastBusLeg = !hasMoreBusLegs;
-
-              // If this is a transfer point, combine the tooltip info
-              if (isTransferStop && nextBusLeg) {
-                const boardTimeStr = new Date(nextBusLeg.startTime).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
-
-                stopMarkers.push(
-                  <Marker
-                    key={`journey-stop-transfer-${legIdx}`}
-                    position={[leg.to.lat, leg.to.lon]}
-                    icon={createStopIcon('#FBBF24', true)} // Larger yellow icon
-                    zIndexOffset={3000}
-                  >
-                    {/* Combined permanent tooltip for transfer points */}
-                    <Tooltip permanent direction="top" opacity={0.8} className="journey-stop-box">
-                      <div className="text-xs font-semibold">
-                        <div className="font-bold journey-stop-name">{leg.to.stop.name}</div>
-                        <div className="text-orange-600">
-                          ⬇️ {t('map.getOff')} <BusIcon /> {leg.route?.shortName} {t('map.at')} {alightTimeStr}
-                        </div>
-                        <div className="text-green-600">
-                          ⬆️ {t('map.board')} <BusIcon /> {nextBusLeg.route?.shortName} {t('map.at')} {boardTimeStr}
-                        </div>
-                      </div>
-                    </Tooltip>
-                  </Marker>
-                );
-                renderedStops.add(leg.to.stop.gtfsId);
-              } else {
-                // Final destination - show simple tooltip
-                stopMarkers.push(
-                  <Marker
-                    key={`journey-stop-to-${legIdx}`}
-                    position={[leg.to.lat, leg.to.lon]}
-                    icon={createStopIcon('#FBBF24', true)} // Larger yellow icon
-                    zIndexOffset={3000}
-                  >
-                    {/* Final destination: permanent label; other alighting stops: popup on tap */}
-                    {isLastBusLeg ? (
-                      <Tooltip permanent direction="top" opacity={0.8} className="journey-stop-box">
-                        <div className="text-xs font-semibold">
-                          <div className="font-bold journey-stop-name">{leg.to.stop.name}</div>
-                          <div className="text-amber-600">
-                            <BusIcon /> {leg.route?.shortName} {t('map.arrives')} {alightTimeStr}
-                          </div>
-                          <div className="text-red-600">
-                            📍 {t('map.getOffHere')}
-                          </div>
-                        </div>
-                      </Tooltip>
-                    ) : (
-                    <Popup maxWidth={600} className="journey-stop-box">
-                      <div className="text-xs font-semibold">
-                        <div className="font-bold journey-stop-name">{leg.to.stop.name}</div>
-                        <div className="text-amber-600 font-semibold">
-                          <BusIcon /> {leg.route?.shortName} {t('map.arrives')} {alightTimeStr}
-                        </div>
-                        <div className="text-red-600 text-xs font-semibold">
-                          📍 {t('map.stop')}
-                        </div>
-                      </div>
-                    </Popup>
-                    )}
-                  </Marker>
-                );
-              }
-            }
-          });
-
-          return stopMarkers;
-        })()}
+        {/* Journey route: a line per leg and the stops of its bus legs with their times */}
+        {selectedJourney && selectedJourney.legs && <JourneyLayer journey={selectedJourney} onLabelsDrawn={refitToLabels} />}
 
         {/* Stops of the Near Me bus whose route was tapped: first and last stop with a permanent
-            time tooltip, the ones in between with a popup on tap */}
-        {!selectedJourney && tripView && tripView.markers.map((m, i) => {
-          const isEnd = m.kind !== 'mid';
-          const body = (
-            <>
-              <div className="font-bold journey-stop-name">{m.name}</div>
-              <div className="text-amber-600 font-semibold">
-                <BusIcon /> {selectedRoute.routeNumber} {t('map.at')} {m.approx && '~'}{m.time}
-              </div>
-              {m.approx && <div className="text-gray-500 text-xs">{t('map.estimatedTime')}</div>}
-              {m.kind === 'first' && <div className="text-green-600 text-xs font-semibold">📍 {t('map.boardHere')}</div>}
-            </>
-          );
-          return (
-            <Marker
-              key={`trip-stop-${i}`}
-              position={[m.lat, m.lon]}
-              icon={createStopIcon('#FBBF24', isEnd)}
-              zIndexOffset={isEnd ? 3000 : 2900}
-            >
-              {isEnd ? (
-                <Tooltip permanent direction="top" opacity={0.8} className={`journey-stop-box${m.kind === 'first' ? ' journey-stop-first' : ''}`}>
-                  <div className="text-xs font-semibold">{body}</div>
-                </Tooltip>
-              ) : (
-                <Popup maxWidth={600} className="journey-stop-box">
-                  <div className="text-xs font-semibold">{body}</div>
-                </Popup>
-              )}
-            </Marker>
-          );
-        })}
+            time label, the ones in between with a box on tap */}
+        {!selectedJourney && tripView && (
+          <TripLayer markers={tripView.markers} routeNumber={selectedRoute.routeNumber} onLabelsDrawn={refitToLabels} />
+        )}
 
         {/* Stop markers with clustering - hide when viewing a journey route or a Near Me trip */}
         {!selectedJourney && !tripView && (
-          <MarkerClusterGroup
-            chunkedLoading
-            maxClusterRadius={60}
-            spiderfyOnMaxZoom={false}
-            showCoverageOnHover={false}
-            zoomToBoundsOnClick={true}
-            disableClusteringAtZoom={15}
-            iconCreateFunction={createClusterCustomIcon}
-          >
-          {filteredStops
-          .slice()
-          .sort((a, b) => {
-            const aIsFav = isFavorite(a.gtfsId);
-            const bIsFav = isFavorite(b.gtfsId);
-            // Non-favorites first (0), favorites last (1)
-            return (aIsFav ? 1 : 0) - (bIsFav ? 1 : 0);
-          })
-          .map((stop, idx) => {
-          const isNearby = nearbyStopIds.has(stop.gtfsId);
-          const isHighlighted = highlightedStop && stop.gtfsId === highlightedStop.gtfsId;
-          const isFavorited = isFavorite(stop.gtfsId);
-
-          // Determine marker color based on route patterns
-          let iconColor = '#2563EB'; // Default bright blue for non-nearby stops
-
-          // Highlighted stop from Near Me gets red color (highest priority)
-          if (isHighlighted) {
-            iconColor = '#EF4444'; // Red for highlighted stop
-          } else if (stopToPatterns.has(stop.gtfsId)) {
-            const patterns = stopToPatterns.get(stop.gtfsId);
-            // Use the color of the first pattern at this stop
-            // Direction 0: Blue, Direction 1: Yellow (Ukraine colors 🇺🇦)
-            const colors = ['#0066CC', '#FBBF24', '#10B981', '#F59E0B'];
-            const dirId = (patterns[0].directionId >= 0) ? patterns[0].directionId : 0;
-            iconColor = colors[dirId % colors.length];
-          } else if (isNearby) {
-            // Nearby but not on filtered route: green
-            iconColor = '#10B981';
-          }
-
-          // Use golden star icon for favorited stops (bigger and glowing if nearby)
-          const markerIcon = isFavorited ? createFavoriteStopIcon(iconColor, isNearby) : createStopIcon(iconColor, isNearby);
-
-          return (
-            <Marker
-              key={stop.gtfsId}
-              position={[stop.adjustedLat, stop.adjustedLon]}
-              icon={markerIcon}
-              zIndexOffset={isFavorited ? 1000 : 0}
-              eventHandlers={{
-                add: (e) => {
-                  // Set custom data when marker is added to the map
-                  const marker = e.target;
-                  marker.options.stopId = stop.gtfsId;
-                  marker.options.isFavorited = isFavorited;
-                },
-                click: (e) => {
-                  // Prevent event from bubbling to map
-                  L.DomEvent.stopPropagation(e);
-
-                  // If in location selection mode, use the stop's location
-                  if (locationSelectionMode) {
-                    setPendingLocation({ lat: stop.lat, lon: stop.lon });
-                  } else {
-                    // Otherwise, set selected stop to show overlay
-                    setSelectedStop(stop);
-                  }
-                },
-              }}
-            >
-              {false && ( // Disable popup, we'll use overlay instead
-              <Popup maxWidth={300} autoPan={false} closeOnClick={false} onClose={() => {
-                setSelectedStop(null);
-                openMarkerRef.current = null;
-              }}>
-                <div className="p-2">
-                  <div className="flex items-start justify-between gap-2 mb-2">
-                    <div>
-                      <h3 className="font-bold text-lg mb-1">
-                        {stop.name}
-                        {(() => {
-                          // Get the most common next stop from departures
-                          const nextStops = stop.stoptimesWithoutPatterns
-                            ?.map(dep => getNextStopName(dep))
-                            .filter(Boolean);
-
-                          if (nextStops && nextStops.length > 0) {
-                            // Find most common next stop
-                            const counts = {};
-                            nextStops.forEach(name => counts[name] = (counts[name] || 0) + 1);
-                            const mostCommon = Object.keys(counts).reduce((a, b) => counts[a] > counts[b] ? a : b);
-                            return <span className="text-gray-500 font-normal"> → {mostCommon}</span>;
-                          }
-                          return null;
-                        })()}
-                      </h3>
-                      <p className="text-sm text-gray-600">Stop {stop.code}</p>
-                    </div>
-                    <button
-                      onClick={() => toggleFavorite(stop)}
-                      className={`p-2 rounded-lg transition-colors ${
-                        isFavorite(stop.gtfsId)
-                          ? 'text-yellow-500 hover:text-yellow-600'
-                          : 'text-gray-400 hover:text-yellow-500'
-                      }`}
-                      title={isFavorite(stop.gtfsId) ? 'Remove from favorites' : 'Add to favorites'}
-                    >
-                      <svg className="w-6 h-6" fill={isFavorite(stop.gtfsId) ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
-                      </svg>
-                    </button>
-                  </div>
-
-                  {/* Show route directions if filtered */}
-                  {stopToPatterns.has(stop.gtfsId) && (
-                    <div className="mb-3 p-2 bg-blue-50 rounded border border-blue-200">
-                      <p className="font-semibold text-xs text-gray-700 mb-1">Routes at this stop:</p>
-                      {stopToPatterns.get(stop.gtfsId).map((pattern, patternIdx) => {
-                        // Direction 0: Blue, Direction 1: Yellow (Ukraine colors 🇺🇦)
-                        const colors = ['#0066CC', '#FBBF24', '#10B981', '#F59E0B'];
-                        const dirId = (pattern.directionId >= 0) ? pattern.directionId : 0;
-                        const lineColor = colors[dirId % colors.length];
-                        return (
-                          <div key={patternIdx} className="text-xs mb-1 flex items-center gap-1">
-                            <span
-                              className="font-bold px-1.5 py-0.5 rounded text-white"
-                              style={{ backgroundColor: lineColor }}
-                            >
-                              {pattern.routeShortName}
-                            </span>
-                            <span className="text-gray-600">→ {pattern.headsign}</span>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-
-                  {/* Next departures */}
-                  {stop.stoptimesWithoutPatterns && stop.stoptimesWithoutPatterns.length > 0 ? (
-                    <div className="space-y-1">
-                      <p className="font-semibold text-sm">Next buses:</p>
-                      <div className="max-h-64 overflow-y-auto pr-1 space-y-1" style={{ scrollbarWidth: 'thin' }}>
-                        {(() => {
-                          const expansionLevel = expandedPopupStops.get(stop.gtfsId) || 0;
-                          // Filter out departures that are too far in the past
-                          const validDepartures = stop.stoptimesWithoutPatterns.filter(dep =>
-                            shouldShowDeparture(dep.scheduledArrival, {
-                              realtimeArrival: dep.realtimeArrival,
-                              realtime: dep.realtime
-                            })
-                          );
-                          const totalDepartures = validDepartures.length;
-                          let visibleCount = 3;
-                          if (expansionLevel === 1) visibleCount = 8;
-                          if (expansionLevel >= 2) visibleCount = totalDepartures;
-
-                          const departureItems = validDepartures.slice(0, visibleCount).map((departure, idx) => {
-                            const nextStop = getNextStopName(departure);
-                            const realtimeData = {
-                              realtimeArrival: departure.realtimeArrival,
-                              realtime: departure.realtime,
-                              arrivalDelay: departure.arrivalDelay
-                            };
-                            const isLate = isDepartureLate(departure.scheduledArrival, realtimeData);
-                            const delayInfo = getDelayInfo(departure.scheduledArrival, realtimeData);
-                            return (
-                              <div
-                                key={idx}
-                                className={`flex items-center justify-between gap-2 text-sm ${isLate ? 'opacity-60' : ''}`}
-                              >
-                                <div className="flex items-center gap-2 flex-1 min-w-0">
-                                  <span className={`${isLate ? 'bg-gray-400' : 'bg-blue-600'} text-white px-2 py-0.5 rounded font-bold text-xs shrink-0`}>
-                                    {departure.trip?.route?.shortName || '?'}
-                                  </span>
-                                  <div className="flex-1 min-w-0">
-                                    <div className={`text-xs truncate ${isLate ? 'text-gray-500' : 'text-gray-700'}`}>
-                                      {departure.headsign || 'Unknown'}
-                                    </div>
-                                    {nextStop && (
-                                      <div className="text-xs text-gray-500 truncate">
-                                        → {nextStop}
-                                      </div>
-                                    )}
-                                  </div>
-                                </div>
-                                <div className="flex flex-col items-end shrink-0">
-                                  <span className={`font-semibold text-xs ${isLate ? 'text-gray-500' : ''}`}>
-                                    <CountdownTimer
-                                      scheduledArrival={departure.scheduledArrival}
-                                      realtimeData={realtimeData}
-                                    />
-                                  </span>
-                                  {delayInfo && (
-                                    <span className={`text-[10px] ${delayInfo.isLate ? 'text-red-500' : 'text-green-600'}`}>
-                                      {delayInfo.isLate ? `+${delayInfo.minutes}m` : `-${delayInfo.minutes}m`}
-                                    </span>
-                                  )}
-                                </div>
-                              </div>
-                            );
-                          });
-
-                          let expansionButton = null;
-                          if (totalDepartures > 3) {
-                            if (expansionLevel === 0) {
-                              expansionButton = (
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    expandPopupStop(stop.gtfsId);
-                                  }}
-                                  className="w-full text-center text-xs text-blue-600 hover:text-blue-700 py-1 border-t border-gray-200 mt-1"
-                                >
-                                  {`··· ${t('nearMe.showMore')} (${Math.min(5, totalDepartures - 3)})`}
-                                </button>
-                              );
-                            } else if (expansionLevel === 1 && totalDepartures > 8) {
-                              expansionButton = (
-                                <div className="flex gap-1 pt-1 border-t border-gray-200 mt-1">
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      collapsePopupStop(stop.gtfsId);
-                                    }}
-                                    className="flex-1 text-center text-xs text-gray-600 hover:text-gray-700 py-1"
-                                  >
-                                    − {t('nearMe.showLess')}
-                                  </button>
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      expandPopupStop(stop.gtfsId);
-                                    }}
-                                    className="flex-1 text-center text-xs text-blue-600 hover:text-blue-700 py-1"
-                                  >
-                                    {`··· ${t('nearMe.showAll')} (${totalDepartures - 8})`}
-                                  </button>
-                                </div>
-                              );
-                            } else {
-                              expansionButton = (
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    collapsePopupStop(stop.gtfsId);
-                                  }}
-                                  className="w-full text-center text-xs text-gray-600 hover:text-gray-700 py-1 border-t border-gray-200 mt-1"
-                                >
-                                  − {t('nearMe.showLess')}
-                                </button>
-                              );
-                            }
-                          }
-
-                          return (
-                            <>
-                              {departureItems}
-                              {expansionButton}
-                            </>
-                          );
-                        })()}
-                      </div>
-                    </div>
-                  ) : (
-                    <p className="text-sm text-gray-500">No upcoming departures</p>
-                  )}
-                </div>
-              </Popup>
-              )}
-            </Marker>
-          );
-        })}
-          </MarkerClusterGroup>
+          <StopsLayer
+            points={stopPoints(filteredStops, {
+              nearbyStopIds,
+              highlightedId: highlightedStop?.gtfsId,
+              stopToPatterns,
+              isFavorite,
+            })}
+            clusterMaxZoom={toMapZoom(APP_NO_CLUSTER_ZOOM) - 1}
+            onStopClick={handleStopClick}
+          />
         )}
-      </MapContainer>
+      </MapView>
+
+      {/* As tall as the tab bar that lies over the map's bottom edge: tells the fit how much that is */}
+      <div ref={tabBarSpaceRef} className="absolute bottom-0 left-0 w-0 h-[var(--bottom-nav-height)] pointer-events-none" />
 
       {/* Top controls - Route filter */}
-      <div className="absolute top-4 left-4 right-4 z-[1000] flex flex-col gap-2">
+      <div ref={topControlsRef} className="absolute top-4 left-4 right-4 z-[1000] flex flex-col gap-2">
         <button
           onClick={() => setShowRouteFilter(!showRouteFilter)}
           className={`bg-white dark:bg-gray-800 shadow-lg rounded-lg px-4 py-3 font-medium text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex items-center gap-2 justify-center border border-gray-200 dark:border-gray-700 ${selectedRoutes.size > 0 ? 'ring-2 ring-primary dark:ring-blue-400' : ''}`}
@@ -2160,7 +1355,7 @@ function StopFinder({
       </div>
 
       {/* Bottom right - Location control */}
-      <div className="absolute bottom-[calc(var(--bottom-nav-height)+1rem)] right-4 z-[1000] flex flex-col items-end gap-2">
+      <div ref={mapButtonsRef} className="absolute bottom-[calc(var(--bottom-nav-height)+1rem)] right-4 z-[1000] flex flex-col items-end gap-2">
         {/* Exit route view button */}
         {selectedJourney && (
           <button

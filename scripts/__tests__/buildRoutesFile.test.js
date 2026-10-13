@@ -38,7 +38,7 @@ describe('routeIdsForZones', () => {
   const stop = (lat, lon, ...routeIds) => ({ gtfsId: `s:${lat},${lon}`, lat, lon, routes: routeIds.map(gtfsId => ({ gtfsId })) });
 
   it('ignores a stop inside the bounding box but outside the zone radius', () => {
-    // The box corner is ~11.3 km from the centre of the 8 km Tartu zone
+    // The box corner is ~14.1 km from the centre of the 10 km Tartu zone
     const { center, radius } = CITY_ZONES.tartu;
     const dLat = radius / 111320;
     const dLon = radius / (111320 * Math.cos(center.lat * Math.PI / 180));

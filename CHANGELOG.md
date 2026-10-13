@@ -5,6 +5,27 @@ All notable changes to Tartu Bussid will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.5.0] - 2026-10-14
+
+### Changed
+- 🗺 **New map, drawn by the graphics chip** - the map screen moved from Leaflet to MapLibre GL: stops, clusters, route lines and trip stops are drawn by the map itself instead of as hundreds of HTML markers, so zooming and panning stay smooth (about 3 % janky frames instead of 32-36 % on the Android 15 emulator). Zoom is continuous; everything on the map works as before (stop colours, favourites, route filter, trip view, "how to get here", location pin, picking a location)
+- 📦 **The map comes with the app** - the Tartu area in full detail and the rest of Estonia in overview are bundled as vector tiles (VersaTiles, © OpenStreetMap contributors, ESA WorldCover), so the map shows without internet and no map server is contacted. The map can be moved within Estonia
+- 🎨 **Map style in Settings** - five map styles (natural, colourful, muted, grey, high contrast), each with a dark version that follows dark mode, plus satellite images (the one style that needs internet: loaded from tiles.versatiles.org)
+- ℹ️ **Map credits behind an (i)** - the map's credits (OpenStreetMap, ESA WorldCover) open from the (i) button in the map's bottom-left corner
+- 🚫 **No map on devices without WebGL 2** - there the Map tab shows a short notice; the rest of the app works
+- 🧭 **Wider stop area: 10 km around Tartu** - stops up to 10 km from the centre (was 8 km) are on the map and in the bundled data: 677 stops instead of 578, among them Luunja, Vasula, Kärkna, Külitse, Reola and Ilmatsalu kool
+- 🔍 **Routes, trips and journeys are fitted into the free part of the map** - below the filter button, above the tab bar and clear of the round buttons, with the boarding / last stop labels fully on screen (they could run off the edge)
+- 🇪🇪 **Estonian wording updates** - "Sisene" / "Välju" on the map's stop labels, and the offline and location texts
+- 🛠 **Debug builds install next to the Play version** - the debug APK is its own app, "Tartu Bussid debug" (`ee.tartu.bussid.debug`); release builds are unchanged
+
+### Fixed
+- 📴 **No more files loaded from a CDN** - the map stylesheet used to come from unpkg.com, which failed without internet; nothing is loaded from a CDN any more
+- 🧭 **Showing a route, a stop or a journey works without a location fix** - fitting the map to a route and centring on a stop opened from another tab only happened when the app knew your location
+- 🗺 **"Show route on map" a second time no longer jumps back to your location** - with the route data already loaded, the map was fitted to the trip and then moved to your position 100 ms later
+
+### Removed
+- Leaflet and its plugins (react-leaflet, marker cluster, polyline decorator)
+
 ## [3.4.9] - 2026-10-13
 
 ### Fixed

@@ -15,7 +15,7 @@
     "settings": "Seaded"
   },
   "offline": {
-    "staleData": "Võrguühendus puudub – kella {{time}} andmetel"
+    "staleData": "Võrguühendus puudub – kella {{time}} andmetel:"
   },
   "nearMe": {
     "title": "Lähedal olevad peatused",
@@ -34,7 +34,7 @@
     "useGPS": "Kasuta GPS-i",
     "requestLocation": "Küsi asukohta",
     "setLocationTitle": "Määra asukoht",
-    "setLocationDescription": "Vali asukoht kaardil, kus soovid lähedalolevaid peatusi näha.",
+    "setLocationDescription": "Vali asukoht kaardil, millele lähedalolevaid peatusi soovid näha.",
     "pickOnMap": "Vali kaardil",
     "viewOnMap": "Vaata kaardil",
     "minutes": "min",
@@ -87,15 +87,16 @@
     "nearbyStop": "lähipeatus",
     "destination": "sihtkohta",
     "searchDestination": "Otsingu sihtkoht",
-    "boardHere": "Istu peale siin",
-    "getOffHere": "Välju siin",
+    "boardHere": "Sisene",
+    "getOffHere": "Välju",
     "getOff": "Välju",
-    "board": "Istu peale",
+    "board": "Sisene",
     "at": "kell",
     "arrives": "saabub",
     "transferPoint": "Ümberistumiskoht",
     "estimatedTime": "Eeldatav aeg",
-    "exitRouteView": "Välju marsruudi vaatest"
+    "exitRouteView": "Välju marsruudi vaatest",
+    "unavailable": "Selles seadmes ei saa kaarti kuvada. Ülejäänud äpp töötab nagu tavaliselt."
   },
   "favorites": {
     "title": "Lemmikpeatused",
@@ -137,6 +138,14 @@
     "stops": "peatust",
     "language": "Keel",
     "languageDescription": "Vali rakenduse keel",
+    "mapStyle": "Kaardi stiil",
+    "mapStyleDescription": "Vali kaardi välimus. Tumedas režiimis kasutatakse stiili tumedat versiooni.",
+    "mapStyleNatural": "Looduslik",
+    "mapStyleColorful": "Värviline",
+    "mapStyleMuted": "Summutatud",
+    "mapStyleGray": "Hall",
+    "mapStyleToner": "Kontrastne",
+    "mapStyleSatellite": "Satelliit",
     "estonian": "Eesti",
     "english": "Inglise",
     "ukrainian": "Ukraina",
@@ -173,7 +182,7 @@
     "aboutApp": "Rakenduse kohta",
     "privacyFocused": "Privaatsust austav – jälgimist pole",
     "usesDigitransit": "Äpp kasutab Digitransit API-d sõiduplaanide jaoks",
-    "usesOSM": "Äpp kasutab OpenStreetMapsi kaarte",
+    "usesOSM": "Kaart: OpenStreetMapi ja ESA WorldCoveri andmed, mis on äpiga kaasas (stiilid ja kaardiplaadid: VersaTiles). Satelliidipildid laaditakse valimisel aadressilt tiles.versatiles.org",
     "usesInAds": "Aadressiotsing kasutab Maa- ja Ruumiameti In-ADS teenust",
     "localSettings": "Kõik seaded salvestatud sinu seadmesse",
     "pageCounter": "Lihtne lehekülastuste loendur (isikuandmeid ei koguta)",

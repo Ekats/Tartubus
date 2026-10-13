@@ -95,7 +95,8 @@
     "arrives": "arrives",
     "transferPoint": "Transfer Point",
     "estimatedTime": "Estimated time",
-    "exitRouteView": "Exit Route View"
+    "exitRouteView": "Exit Route View",
+    "unavailable": "The map cannot be shown on this device. The rest of the app works as usual."
   },
   "favorites": {
     "title": "Favorite Stops",
@@ -137,6 +138,14 @@
     "stops": "stops",
     "language": "Language",
     "languageDescription": "Select application language",
+    "mapStyle": "Map style",
+    "mapStyleDescription": "Choose the look of the map. Dark mode uses the dark version of the style.",
+    "mapStyleNatural": "Natural",
+    "mapStyleColorful": "Colorful",
+    "mapStyleMuted": "Muted",
+    "mapStyleGray": "Gray",
+    "mapStyleToner": "High contrast",
+    "mapStyleSatellite": "Satellite",
     "estonian": "Estonian",
     "english": "English",
     "ukrainian": "Ukrainian",
@@ -173,7 +182,7 @@
     "aboutApp": "About this app",
     "privacyFocused": "Privacy-focused - no tracking",
     "usesDigitransit": "Uses Digitransit API for schedules",
-    "usesOSM": "OpenStreetMap for maps",
+    "usesOSM": "Map: OpenStreetMap and ESA WorldCover data, bundled with the app (styles and tiles by VersaTiles). Satellite images, when chosen, are loaded from tiles.versatiles.org",
     "usesInAds": "Address search by the Estonian Land Board (In-ADS)",
     "localSettings": "All settings stored locally on your device",
     "pageCounter": "Simple page visit counter (no personal data collected)",
