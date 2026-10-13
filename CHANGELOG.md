@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - 📍 **GPS pauses while the app is hidden** - the location watch stops when the app goes to the background and restarts when it is visible again.
+- 🧭 **Taller tab bar** - 56 px instead of 46 px, with a bigger icon and label; everything above it (overlay, map buttons, toasts, list padding) moves with it
 
 ## [3.4.8] - 2026-10-09
 
