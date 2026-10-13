@@ -111,54 +111,74 @@ export function useGeolocation() {
     );
   };
 
-  // Watch for location changes
+  // Watch for location changes (paused while the app is hidden)
   useEffect(() => {
     if (!navigator.geolocation || !watching) return;
 
-    const watchId = navigator.geolocation.watchPosition(
-      (position) => {
-        const newLat = position.coords.latitude;
-        const newLon = position.coords.longitude;
+    let watchId = null;
+    const handlePosition = (position) => {
+      const newLat = position.coords.latitude;
+      const newLon = position.coords.longitude;
 
-        // Calculate distance from last reported location
-        const distance = calculateDistance(
-          lastReportedLocation.current.lat,
-          lastReportedLocation.current.lon,
-          newLat,
-          newLon
-        );
+      // Calculate distance from last reported location
+      const distance = calculateDistance(
+        lastReportedLocation.current.lat,
+        lastReportedLocation.current.lon,
+        newLat,
+        newLon
+      );
 
-        // Always update on first fix, then only if moved significantly (>10m)
-        if (!hasReceivedFirstFix.current || distance >= MIN_DISTANCE_THRESHOLD) {
-          console.log(`📍 Location changed by ${distance.toFixed(1)}m, updating...`);
-          setLocation({
-            lat: newLat,
-            lon: newLon,
-            accuracy: position.coords.accuracy,
-            hasRealFix: true,
-          });
-          lastReportedLocation.current = { lat: newLat, lon: newLon };
-          hasReceivedFirstFix.current = true;
-        } else {
-          console.log(`📍 GPS drift detected (${distance.toFixed(1)}m), ignoring...`);
-        }
-
-        setError(null);
-        setErrorCode(null);
-      },
-      (err) => {
-        setError(err.message);
-        setErrorCode(err.code);
-      },
-      {
-        enableHighAccuracy: true,
-        timeout: 10000,
-        maximumAge: 30000, // Accept cached position up to 30s old
+      // Always update on first fix, then only if moved significantly (>10m)
+      if (!hasReceivedFirstFix.current || distance >= MIN_DISTANCE_THRESHOLD) {
+        console.log(`📍 Location changed by ${distance.toFixed(1)}m, updating...`);
+        setLocation({
+          lat: newLat,
+          lon: newLon,
+          accuracy: position.coords.accuracy,
+          hasRealFix: true,
+        });
+        lastReportedLocation.current = { lat: newLat, lon: newLon };
+        hasReceivedFirstFix.current = true;
+      } else {
+        console.log(`📍 GPS drift detected (${distance.toFixed(1)}m), ignoring...`);
       }
-    );
+
+      setError(null);
+      setErrorCode(null);
+    };
+
+    const handleError = (err) => {
+      setError(err.message);
+      setErrorCode(err.code);
+    };
+
+    const start = () => {
+      if (watchId === null) {
+        watchId = navigator.geolocation.watchPosition(handlePosition, handleError, {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 30000, // Accept cached position up to 30s old
+        });
+      }
+    };
+    const stop = () => {
+      if (watchId !== null) {
+        navigator.geolocation.clearWatch(watchId);
+        watchId = null;
+      }
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') stop();
+      else start();
+    };
+
+    if (document.visibilityState !== 'hidden') start();
+    document.addEventListener('visibilitychange', handleVisibilityChange);
 
     return () => {
-      navigator.geolocation.clearWatch(watchId);
+      stop();
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, [watching]);
 
