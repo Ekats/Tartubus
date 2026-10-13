@@ -5,6 +5,14 @@ All notable changes to Tartu Bussid will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.4.9] - 2026-10-13
+
+### Fixed
+- 💥 **App closing after a while in the background (Android)** - when Android reclaimed the WebView renderer of the backgrounded app, nothing handled it and the whole app was killed. The app now reloads itself when you return instead of closing.
+
+### Changed
+- 📍 **GPS pauses while the app is hidden** - the location watch stops when the app goes to the background and restarts when it is visible again.
+
 ## [3.4.8] - 2026-10-09
 
 ### Added
