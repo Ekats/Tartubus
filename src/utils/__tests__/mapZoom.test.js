@@ -16,9 +16,9 @@ describe('app zoom <-> map zoom', () => {
     expect(toAppZoom(10.38)).toBe(11);
   });
 
-  it('clustering ends where the app says: clusters up to map zoom 13.x, none from 14', () => {
+  it('clustering ends where the app says: clusters up to map zoom 12.x, none from 13', () => {
     // StopsLayer gets clusterMaxZoom = toMapZoom(APP_NO_CLUSTER_ZOOM) - 1
-    expect(toMapZoom(APP_NO_CLUSTER_ZOOM) - 1).toBe(13);
+    expect(toMapZoom(APP_NO_CLUSTER_ZOOM) - 1).toBe(12);
   });
 });
 

@@ -11,7 +11,7 @@ export const toMapZoom = (appZoom) => appZoom - 1;
 export const APP_START_ZOOM = 13;
 export const APP_MAX_ZOOM = 18;
 export const APP_FIT_MAX_ZOOM = 15; // fit-to-route / fit-to-journey never zooms in further
-export const APP_NO_CLUSTER_ZOOM = 15; // stops are not clustered from here on
+export const APP_NO_CLUSTER_ZOOM = 14; // stops are not clustered from here on
 
 /** A MapLibre LngLatBounds as the plain object the stop logic filters with */
 export const toBounds = (lngLatBounds) => ({

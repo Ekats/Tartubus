@@ -87,7 +87,7 @@ function StopsLayer({ points, clusterMaxZoom, onStopClick }) {
     data,
     sourceOptions: {
       cluster: true,
-      clusterRadius: 60,
+      clusterRadius: 40,
       clusterMaxZoom,
       clusterProperties: { favorites: ['+', ['case', ['get', 'favorite'], 1, 0]] },
     },
