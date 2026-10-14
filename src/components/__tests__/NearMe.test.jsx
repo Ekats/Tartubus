@@ -269,3 +269,56 @@ describe('NearMe show route on map', () => {
     expect(container.querySelector('button[title="Show route on map"]')).toBeNull();
   });
 });
+
+describe('NearMe refresh without a location', () => {
+  const refreshButton = (container) => container.querySelector('button[aria-label="Refresh"]');
+
+  function pullDown(element) {
+    const fire = (type, y) => {
+      const event = new Event(type, { bubbles: true });
+      event.touches = type === 'touchend' ? [] : [{ clientY: y }];
+      act(() => { element.dispatchEvent(event); });
+    };
+    fire('touchstart', 0);
+    fire('touchmove', 200);
+    fire('touchend', 200);
+  }
+
+  async function renderNoLocation() {
+    localStorage.setItem('location_consent', 'declined');
+    const hook = idleGeolocationHook();
+    const container = await render({ geolocationHook: hook, manualLocation: null });
+    await flush();
+    return { hook, container };
+  }
+
+  it('the refresh button asks for GPS', async () => {
+    const { hook, container } = await renderNoLocation();
+    const button = refreshButton(container);
+    expect(button).not.toBeNull();
+    act(() => button.click());
+
+    expect(hook.getLocation).toHaveBeenCalled();
+    expect(hook.startWatching).toHaveBeenCalled();
+  });
+
+  it('a pull asks for GPS', async () => {
+    const { hook, container } = await renderNoLocation();
+    pullDown(container.firstChild);
+
+    expect(hook.getLocation).toHaveBeenCalled();
+    expect(hook.startWatching).toHaveBeenCalled();
+  });
+
+  it('shows the heading once when there are stops', async () => {
+    mocks.stops = [{ gtfsId: 'tartu:1', name: 'Raekoda', lat: 58.38, lon: 26.72, distance: 100, stoptimesWithoutPatterns: [] }];
+    const container = await render({
+      geolocationHook: idleGeolocationHook(), manualLocation: { lat: 58.38, lon: 26.72 },
+    });
+    await flush();
+
+    const headings = [...container.querySelectorAll('h2')].filter(h => h.textContent === 'Nearby Stops');
+    expect(headings.length).toBe(1);
+    expect(container.querySelectorAll('button[aria-label="Refresh"]').length).toBe(1);
+  });
+});

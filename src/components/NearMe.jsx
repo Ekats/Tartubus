@@ -345,11 +345,30 @@ function NearMe({ geolocationHook, onNavigateToMap, onShowRoute, manualLocation:
   };
 
   // Pull down at the top of the list to refresh (same as the refresh button).
-  // Only with a location: without one, "find nearby" would start GPS, which a pull must not do
+  // Without a location a pull is an explicit request too (like Retry): it may set consent and start GPS
   const scrollRef = useRef(null);
   const { pullDistance, willRefresh } = usePullToRefresh(
-    scrollRef, () => handleFindNearby(), !loading && !!activeLocation.lat
+    scrollRef, () => handleFindNearby(), !loading
   );
+
+  // Title + refresh button; shown above the stop list, or on its own when there are no stops
+  const headingRow = (
+    <div className="flex items-center justify-between gap-2">
+      <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100 whitespace-nowrap truncate min-w-0">{t('nearMe.title')}</h2>
+      <button
+        onClick={handleFindNearby}
+        className="shrink-0 rounded-full p-2 text-primary dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 disabled:opacity-60"
+        disabled={loading}
+        title={loading ? t('nearMe.refreshing') : t('nearMe.refresh')}
+        aria-label={loading ? t('nearMe.refreshing') : t('nearMe.refresh')}
+      >
+        <svg className={`h-8 w-8 ${loading ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+        </svg>
+      </button>
+    </div>
+  );
+  const noLocation = !activeLocation.lat && !activeLocation.lon;
 
   return (
     <div ref={scrollRef} className="p-4 pb-[calc(var(--bottom-nav-height)+1rem)] h-full overflow-y-auto overscroll-y-contain dark:bg-gray-900">
@@ -417,8 +436,11 @@ function NearMe({ geolocationHook, onNavigateToMap, onShowRoute, manualLocation:
         </div>
       )}
 
+      {/* No location and no stops: the heading row with the refresh button comes first */}
+      {noLocation && stops.length === 0 && <div className="mb-4">{headingRow}</div>}
+
       {/* Set Location button when no location available */}
-      {!activeLocation.lat && !activeLocation.lon && !loading && (
+      {noLocation && !loading && (
         <div className="mb-4">
           <button
             onClick={handleSetManualLocation}
@@ -469,23 +491,13 @@ function NearMe({ geolocationHook, onNavigateToMap, onShowRoute, manualLocation:
         </div>
       )}
 
+      {/* Location but no stops (yet): the heading row on its own */}
+      {!noLocation && stops.length === 0 && <div className="mt-6">{headingRow}</div>}
+
       {/* Nearby Stops List */}
       {stops.length > 0 && (
         <div className="mt-6 space-y-4">
-          <div className="flex items-center justify-between gap-2">
-            <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100 whitespace-nowrap truncate min-w-0">{t('nearMe.title')}</h2>
-            <button
-              onClick={handleFindNearby}
-              className="shrink-0 rounded-full p-2 text-primary dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 disabled:opacity-60"
-              disabled={loading}
-              title={loading ? t('nearMe.refreshing') : t('nearMe.refresh')}
-              aria-label={loading ? t('nearMe.refreshing') : t('nearMe.refresh')}
-            >
-              <svg className={`h-8 w-8 ${loading ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-              </svg>
-            </button>
-          </div>
+          {headingRow}
 
           {[...stops].sort((a, b) => {
             // Favorites first

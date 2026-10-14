@@ -5,6 +5,11 @@ All notable changes to Tartu Bussid will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.5.3] - 2026-10-15
+
+### Fixed
+- 🔄 **Refresh on the empty "Near Me" page** - with no location (GPS denied or never answered) the page showed only "Set location" with no way to try again. The "Nearby Stops" heading with its refresh button is now always shown, and pulling the page down refreshes it too; either one asks for your location again
+
 ## [3.5.2] - 2026-10-14
 
 ### Changed
