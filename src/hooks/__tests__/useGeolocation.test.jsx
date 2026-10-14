@@ -146,3 +146,36 @@ describe('useGeolocation one-shot request', () => {
     expect(getCurrentPosition()).not.toHaveBeenCalled();
   });
 });
+
+describe('useGeolocation errors after a fix', () => {
+  const position = { coords: { latitude: 58.38, longitude: 26.73, accuracy: 10 } };
+  const watchSuccess = () => act(() => watchPosition.mock.calls.at(-1)[0](position));
+  const watchFail = (err) => act(() => watchPosition.mock.calls.at(-1)[1](err));
+
+  it('ignores a watch timeout once a real fix exists', () => {
+    render();
+    act(() => api.startWatching());
+    watchSuccess();
+    watchFail({ code: 3, message: 'Timeout expired' });
+    expect(api.error).toBeNull();
+    expect(api.location.hasRealFix).toBe(true);
+  });
+
+  it('still reports a denied permission after a fix', () => {
+    render();
+    act(() => api.startWatching());
+    watchSuccess();
+    watchFail({ code: 1, message: 'User denied Geolocation' });
+    expect(api.errorCode).toBe(1);
+  });
+
+  it('a watch timeout before any fix is reported, and stopping tracking clears it', () => {
+    render();
+    act(() => api.startWatching());
+    watchFail({ code: 3, message: 'Timeout expired' });
+    expect(api.errorCode).toBe(3);
+    act(() => api.stopWatching());
+    expect(api.error).toBeNull();
+    expect(api.errorCode).toBeNull();
+  });
+});

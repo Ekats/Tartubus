@@ -70,6 +70,11 @@ export function useGeolocation() {
   const pendingRetryRef = useRef(false);
   const getLocationRef = useRef(null);
 
+  // A timeout or "position unavailable" after a real fix: the last fix is still usable, so it is not
+  // an error to show (a stationary device's watch times out, and nothing would clear the error once
+  // tracking is turned off). A denied permission always is.
+  const isTransientWithFix = (err) => hasReceivedFirstFix.current && err.code !== 1;
+
   const getLocation = () => {
     if (!navigator.geolocation) {
       setError('Geolocation is not supported by your browser');
@@ -125,6 +130,7 @@ export function useGeolocation() {
           }
           return;
         }
+        if (isTransientWithFix(err)) return;
         setError(err.message);
         setErrorCode(err.code);
       },
@@ -173,6 +179,7 @@ export function useGeolocation() {
     };
 
     const handleError = (err) => {
+      if (isTransientWithFix(err)) return;
       setError(err.message);
       setErrorCode(err.code);
     };
@@ -226,7 +233,12 @@ export function useGeolocation() {
   }, []);
 
   const startWatching = () => setWatching(true);
-  const stopWatching = () => setWatching(false);
+  // Turned off on purpose: an error from the watch is no longer news, and no later fix would clear it
+  const stopWatching = () => {
+    setWatching(false);
+    setError(null);
+    setErrorCode(null);
+  };
 
   return { location, error, errorCode, loading, getLocation, startWatching, stopWatching, watching };
 }
