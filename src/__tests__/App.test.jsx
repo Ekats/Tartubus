@@ -14,7 +14,7 @@ vi.mock('@capacitor/app', () => ({
     minimizeApp: (...args) => mocks.minimizeApp(...args),
   },
 }));
-vi.mock('../services/digitransit', () => ({ initializeCaches: vi.fn() }));
+vi.mock('../services/digitransit', () => ({ initializeCaches: vi.fn(), getRouteShortNamesInZone: async () => ['5', '7'] }));
 vi.mock('../hooks/useKeyboardInset', () => ({ useKeyboardInset: () => false }));
 vi.mock('../components/Header', () => ({
   default: ({ onRouteFilterToggle, routeFilterOpen, routeFilterCount }) => onRouteFilterToggle
@@ -25,27 +25,31 @@ vi.mock('../components/SearchBar', () => ({ default: () => null }));
 vi.mock('../components/InstallPrompt', () => ({ default: () => null }));
 vi.mock('../components/AndroidAppPrompt', () => ({ default: () => null }));
 vi.mock('../components/DateTimePicker', () => ({ default: () => null }));
+const routes = (selectedRoutes) => [...selectedRoutes].join(',') || 'all';
 vi.mock('../components/Favorites', () => ({
-  default: ({ onShowRoute }) => createElement('div', null, 'FAVORITES',
+  default: ({ onShowRoute, selectedRoutes }) => createElement('div', null, `FAVORITES routes=${routes(selectedRoutes)}`,
     createElement('button', { id: 'fav-show-route', onClick: () => onShowRoute({ routeNumber: '9' }) })),
 }));
 vi.mock('../components/Settings', () => ({ default: () => createElement('div', null, 'SETTINGS') }));
 vi.mock('../components/BottomNav', () => ({
   default: ({ onViewChange }) => createElement('div', null,
+    createElement('button', { id: 'to-nearme', onClick: () => onViewChange('nearme') }),
     createElement('button', { id: 'to-map', onClick: () => onViewChange('map') }),
-    createElement('button', { id: 'to-favorites', onClick: () => onViewChange('favorites') })),
+    createElement('button', { id: 'to-favorites', onClick: () => onViewChange('favorites') }),
+    createElement('button', { id: 'to-settings', onClick: () => onViewChange('settings') })),
 }));
 vi.mock('../components/NearMe', () => ({
-  default: ({ onShowRoute }) => createElement('div', null, 'NEARME',
-    createElement('button', { id: 'show-route', onClick: () => onShowRoute({ routeNumber: '5' }) })),
+  default: ({ onShowRoute, selectedRoutes, onClearRouteFilter }) => createElement('div', null, `NEARME routes=${routes(selectedRoutes)}`,
+    createElement('button', { id: 'show-route', onClick: () => onShowRoute({ routeNumber: '5' }) }),
+    createElement('button', { id: 'nearme-clear', onClick: onClearRouteFilter })),
 }));
 vi.mock('../components/StopFinder', () => ({
-  default: ({ backHandlerRef, selectedJourney, selectedRoute, onJourneyChange, routeFilterOpen, onRouteFilterCountChange }) => {
+  default: ({ backHandlerRef, selectedJourney, selectedRoute, onJourneyChange, routeFilterOpen, selectedRoutes, onSelectedRoutesChange }) => {
     backHandlerRef.current = () => mocks.mapBack();
     return createElement('div', null,
-      `MAP journey=${selectedJourney ? 'yes' : 'no'} route=${selectedRoute?.routeNumber ?? 'none'} menu=${!!routeFilterOpen}`,
+      `MAP journey=${selectedJourney ? 'yes' : 'no'} route=${selectedRoute?.routeNumber ?? 'none'} menu=${!!routeFilterOpen} routes=${routes(selectedRoutes)}`,
       createElement('button', { id: 'show-journey', onClick: () => onJourneyChange({ legs: [] }) }),
-      createElement('button', { id: 'pick-two', onClick: () => onRouteFilterCountChange(2) }));
+      createElement('button', { id: 'pick-two', onClick: () => onSelectedRoutesChange(new Set(['5', '7'])) }));
   },
 }));
 
@@ -136,34 +140,91 @@ describe('App back button', () => {
   });
 });
 
-describe('App header route filter button', () => {
+describe('App route filter (one for the whole app)', () => {
   const has = (id) => !!container.querySelector(`#${id}`);
+  const menu = () => container.querySelector('[data-testid="route-filter-menu"]');
+  const menuRoute = async (name) => {
+    const button = [...menu().querySelectorAll('button')].find(b => b.textContent === name);
+    await act(async () => button.click());
+    await flush();
+  };
 
-  it('is only in the header on the map tab', async () => {
-    expect(has('filter-toggle')).toBe(false); // Near Me
-    await click('to-favorites');
-    expect(has('filter-toggle')).toBe(false);
-    await click('to-map');
-    expect(has('filter-toggle')).toBe(true);
+  it('has its header button and its menu on every tab', async () => {
+    for (const tab of ['to-nearme', 'to-map', 'to-favorites', 'to-settings']) {
+      await click(tab);
+      expect(has('filter-toggle')).toBe(true);
+      await click('filter-toggle');
+      expect(menu()).not.toBeNull();
+      await click('filter-toggle');
+      expect(menu()).toBeNull();
+    }
   });
 
-  it('opens and closes the map\'s filter menu and shows how many routes are picked', async () => {
+  it('opens and closes the menu and shows how many routes are picked', async () => {
     await click('to-map');
     await click('filter-toggle');
     expect(text()).toContain('menu=true');
     expect(text()).toContain('filter open=true count=0');
+    await menuRoute('7');
+    expect(text()).toContain('count=1');
+    expect(text()).toContain('routes=7');
     await click('pick-two');
     expect(text()).toContain('count=2');
     await click('filter-toggle');
     expect(text()).toContain('menu=false');
   });
 
-  it('the menu is closed again when the map is left and reopened', async () => {
+  it('a filter set on the map filters Near Me and Favorites, and leaving the map keeps the menu open', async () => {
     await click('to-map');
     await click('filter-toggle');
+    await menuRoute('7');
+    await click('to-nearme');
+    expect(text()).toContain('NEARME routes=7');
+    expect(menu()).not.toBeNull();
     await click('to-favorites');
-    await click('to-map');
-    expect(text()).toContain('menu=false');
+    expect(text()).toContain('FAVORITES routes=7');
+  });
+
+  it('Near Me\'s clear action clears it', async () => {
+    await click('filter-toggle');
+    await menuRoute('5');
+    expect(text()).toContain('NEARME routes=5');
+    await click('nearme-clear');
+    expect(text()).toContain('NEARME routes=all');
+    expect(text()).toContain('count=0');
+  });
+
+  it('back on Near Me closes the menu, then clears the filter, then goes on as usual', async () => {
+    await click('filter-toggle');
+    await menuRoute('7');
+    await back();
+    expect(menu()).toBeNull();
+    expect(text()).toContain('NEARME routes=7');
+    await back();
+    expect(text()).toContain('NEARME routes=all');
+    expect(text()).not.toContain('Press back again');
+    await back();
+    expect(text()).toContain('Press back again');
+  });
+
+  it('back on Favorites clears the filter before going to Near Me', async () => {
+    await click('to-favorites');
+    await click('filter-toggle');
+    await menuRoute('7');
+    await click('filter-toggle');
+    await back();
+    expect(text()).toContain('FAVORITES routes=all');
+    await back();
+    expect(text()).toContain('NEARME');
+  });
+
+  it('a route shown from Near Me stays only while the filter is just that route', async () => {
+    await click('show-route');
+    await click('filter-toggle');
+    await menuRoute('5');
+    expect(text()).toContain('route=5 menu=true routes=5');
+    await menuRoute('7');
+    expect(text()).toContain('route=none menu=true routes=5,7');
   });
 });
 

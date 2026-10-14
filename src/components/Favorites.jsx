@@ -10,10 +10,12 @@ import StaleNotice from './StaleNotice';
 import { useVisibleInterval } from '../hooks/useVisibleInterval';
 import { usePullToRefresh } from '../hooks/usePullToRefresh';
 import { haversineDistance } from '../utils/geo';
+import { filterStopDepartures } from '../utils/routeFilter';
 
 const NO_LOCATION = { lat: null, lon: null };
+const NO_ROUTES = new Set();
 
-function Favorites({ geolocationHook, onNavigateToMap, onShowRoute, manualLocation, customTime }) {
+function Favorites({ geolocationHook, onNavigateToMap, onShowRoute, manualLocation, customTime, selectedRoutes = NO_ROUTES }) {
   const { t } = useTranslation();
   const { favorites, removeFavorite } = useFavorites();
   // Shared GPS from App.jsx (started there only if the user allowed location)
@@ -309,7 +311,8 @@ function Favorites({ geolocationHook, onNavigateToMap, onShowRoute, manualLocati
 
       {/* Favorite stops list */}
       <div className="space-y-4">
-        {stopsWithDepartures.map((stop) => {
+        {/* The app's route filter: every favourite stays, with only the picked routes' departures */}
+        {stopsWithDepartures.map(stop => filterStopDepartures(stop, selectedRoutes)).map((stop) => {
           // Check if stop is nearby (within 500m)
           const isNearby = stop.distance !== undefined && stop.distance !== Infinity && stop.distance <= 500;
 

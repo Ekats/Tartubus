@@ -45,6 +45,8 @@
     "showMore": "Näita veel",
     "showLess": "Näita vähem",
     "showAll": "Näita kõiki",
+    "routeFilter": "Filter: {{routes}}",
+    "noFilteredStops": "Nende liinide väljumisi läheduses pole",
     "moreStops": "veel {{count}} peatust",
     "cancel": "Tühista",
     "viewTimetable": "Vaata sõiduplaani",

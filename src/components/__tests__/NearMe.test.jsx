@@ -268,6 +268,56 @@ describe('NearMe show route on map', () => {
     expect(container.textContent).not.toContain('Show route on map');
     expect(container.querySelector('button[title="Show route on map"]')).toBeNull();
   });
+
+  describe('with the app\'s route filter', () => {
+    async function renderFiltered(stops, selectedRoutes, onClearRouteFilter = vi.fn()) {
+      mocks.stops = stops;
+      const container = await render({
+        geolocationHook: idleGeolocationHook(), manualLocation: { lat: 58.38, lon: 26.72 },
+        selectedRoutes, onClearRouteFilter, onShowRoute: vi.fn(),
+      });
+      await flush();
+      return container;
+    }
+    const badges = (container) =>
+      [...container.querySelectorAll('button[title="Show route on map"]')].map(b => b.textContent);
+
+    it('shows only the picked routes\' departures, with a filter line', async () => {
+      const container = await renderFiltered(stopWithDepartures(['4', '12A', '4', '7']), new Set(['4', '7']));
+      expect(badges(container)).toEqual(['4', '4', '7']);
+      expect(container.querySelector('[data-testid="nearme-route-filter"]').textContent).toBe('Filter: 4, 7');
+    });
+
+    it('the "show more" count follows the filtered list', async () => {
+      const container = await renderFiltered(stopWithDepartures(['4', '4', '4', '4', '7', '7', '7']), new Set(['4']));
+      expect(badges(container)).toEqual(['4', '4', '4']);
+      expect(container.textContent).toContain('Show more (1)');
+    });
+
+    it('hides stops with none of the picked routes', async () => {
+      const other = { ...stopWithDepartures(['9'])[0], gtfsId: 'tartu:9', name: 'Kaubamaja' };
+      const container = await renderFiltered([...stopWithDepartures(['4']), other], new Set(['4']));
+      expect(container.textContent).toContain('Raekoda');
+      expect(container.textContent).not.toContain('Kaubamaja');
+
+      act(() => root.unmount());
+      const none = await renderFiltered([other], new Set(['4']));
+      expect(none.textContent).toContain('No departures of these lines nearby');
+    });
+
+    it('the × clears the filter', async () => {
+      const onClear = vi.fn();
+      const container = await renderFiltered(stopWithDepartures(['4']), new Set(['4']), onClear);
+      act(() => container.querySelector('[data-testid="nearme-route-filter"] button').click());
+      expect(onClear).toHaveBeenCalledTimes(1);
+    });
+
+    it('without a filter shows everything and no filter line', async () => {
+      const container = await renderFiltered(stopWithDepartures(['4', '9']), new Set());
+      expect(badges(container)).toEqual(['4', '9']);
+      expect(container.querySelector('[data-testid="nearme-route-filter"]')).toBeNull();
+    });
+  });
 });
 
 describe('NearMe refresh without a location', () => {

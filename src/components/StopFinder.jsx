@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { setLocationConsent } from '../hooks/useGeolocation';
 import { useFavorites } from '../hooks/useFavorites';
-import { getNearbyStops, getStopById, getStopsByRoutes, getRouteShortNamesInZone, planJourney, decodePolyline, getWalkingRoute } from '../services/digitransit';
+import { getNearbyStops, getStopById, getStopsByRoutes, planJourney, decodePolyline, getWalkingRoute } from '../services/digitransit';
 import { CITY_ZONES, mergeDuplicateStops, haversineDistance } from '../utils/geo';
 import { buildTripView } from '../utils/tripRoute';
 import { getSetting } from '../utils/settings';
@@ -67,6 +67,7 @@ function Pin({ lat, lon, image, zIndex, onClick, children }) {
 }
 
 const NO_LOCATION = { lat: null, lon: null };
+const NO_ROUTES = new Set();
 
 // The stops nearest a searched place, with departures: the 3 nearest within 500 m, or within 2 km
 // when there are none (a place outside town)
@@ -92,7 +93,8 @@ function StopFinder({
   backHandlerRef,
   routeFilterOpen,
   onRouteFilterOpenChange,
-  onRouteFilterCountChange,
+  selectedRoutes = NO_ROUTES,
+  onSelectedRoutesChange,
   onLocationSelected,
   onCancelLocationSelection
 }) {
@@ -115,11 +117,10 @@ function StopFinder({
   const [selectedStop, setSelectedStop] = useState(null);
   const [error, setError] = useState(null);
   const [currentZoom, setCurrentZoom] = useState(13);
-  const [selectedRoutes, setSelectedRoutes] = useState(new Set());
-  // The route filter menu opens from the header's filter button (App holds the open flag)
+  // The route filter is app-wide: App holds it and the menu (opened from the header's filter button)
+  const setSelectedRoutes = (routes) => onSelectedRoutesChange?.(routes);
   const showRouteFilter = !!routeFilterOpen;
   const setShowRouteFilter = (open) => onRouteFilterOpenChange?.(open);
-  const [zoneRouteNames, setZoneRouteNames] = useState([]); // Route numbers serving the current city zone
   const [routeStops, setRouteStops] = useState([]);
   const [routePatterns, setRoutePatterns] = useState([]);
   const pendingRouteFitRef = useRef(null);
@@ -155,7 +156,6 @@ function StopFinder({
   const mapRef = useRef(null);
   const moveTimeoutRef = useRef(null);
   const lastMovePositionRef = useRef(null);
-  const filterMenuRef = useRef(null);
   // What lies over the map, measured when the map is fitted to something
   const topControlsRef = useRef(null);
   const mapButtonsRef = useRef(null);
@@ -522,12 +522,6 @@ function StopFinder({
   useEffect(() => () => {
     if (backHandlerRef) backHandlerRef.current = null;
   }, [backHandlerRef]);
-
-  // The header's filter button shows how many routes are picked
-  useEffect(() => {
-    onRouteFilterCountChange?.(selectedRoutes.size);
-  }, [selectedRoutes.size]); // eslint-disable-line react-hooks/exhaustive-deps
-  useEffect(() => () => onRouteFilterCountChange?.(0), []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Auto-zoom map to fit the selected journey route
   // Show a route picked in the header search: filter the map to it and zoom to its stops
@@ -1087,29 +1081,6 @@ function StopFinder({
 
   const adjustedStops = adjustStopPositions(uniqueStops, currentZoom);
 
-  // Routes for the filter: every route serving the current city zone (from the bundled
-  // route data), plus any seen in loaded departures
-  const allRoutes = new Set(zoneRouteNames);
-  stops.forEach(stop => {
-    if (stop.stoptimesWithoutPatterns) {
-      stop.stoptimesWithoutPatterns.forEach(departure => {
-        const routeName = departure.trip?.route?.shortName;
-        if (routeName) {
-          allRoutes.add(routeName);
-        }
-      });
-    }
-  });
-  const sortedRoutes = Array.from(allRoutes).sort((a, b) => {
-    // Sort numerically if both are numbers, otherwise alphabetically
-    const aNum = parseInt(a);
-    const bNum = parseInt(b);
-    if (!isNaN(aNum) && !isNaN(bNum)) {
-      return aNum - bNum;
-    }
-    return a.localeCompare(b);
-  });
-
   // Create a map of stop IDs to their route patterns (for showing direction info)
   const stopToPatterns = new Map();
   routePatterns.forEach(pattern => {
@@ -1147,21 +1118,6 @@ function StopFinder({
 
   // Show all stops - no limit needed since we're only loading the zone
   // (Typically 100-200 stops for Tartu, very manageable)
-
-  const toggleRoute = (route) => {
-    const newRoutes = new Set(selectedRoutes);
-    if (newRoutes.has(route)) {
-      newRoutes.delete(route);
-    } else {
-      newRoutes.add(route);
-    }
-    setSelectedRoutes(newRoutes);
-    setTripActive(false);
-    // Keep the route picked in search in sync with the filter
-    if (selectedRoute && !newRoutes.has(selectedRoute.routeNumber)) {
-      onRouteChange?.(null);
-    }
-  };
 
   const clearFilters = () => {
     setSelectedRoutes(new Set());
@@ -1289,17 +1245,6 @@ function StopFinder({
     loadRouteStops();
   }, [selectedRoutes, currentCityZone]);
 
-  // Fill the route filter from the bundled route data when it's opened
-  // (loaded lazily: the route file is large)
-  useEffect(() => {
-    if (!showRouteFilter) return;
-    let cancelled = false;
-    getRouteShortNamesInZone(currentCityZone)
-      .then(names => { if (!cancelled) setZoneRouteNames(names); })
-      .catch(err => console.error('Error loading routes for filter:', err));
-    return () => { cancelled = true; };
-  }, [showRouteFilter, currentCityZone]);
-
   // Helper function to calculate distance from city center
   const getDistanceFromCity = (lat1, lon1, lat2, lon2) => {
     const R = 6371000; // Earth's radius in meters
@@ -1407,40 +1352,8 @@ function StopFinder({
       {/* As tall as the tab bar that lies over the map's bottom edge: tells the fit how much that is */}
       <div ref={tabBarSpaceRef} className="absolute bottom-0 left-0 w-0 h-[var(--bottom-nav-height)] pointer-events-none" />
 
-      {/* Top controls - route filter menu (opened from the header), messages, filtered stop count */}
+      {/* Top controls - messages, filtered stop count (App's route filter menu lies over them) */}
       <div ref={topControlsRef} className="absolute top-4 left-4 right-4 z-[1000] flex flex-col gap-2">
-        {/* Route filter dropdown */}
-        {showRouteFilter && (
-          <div ref={filterMenuRef} className="bg-white dark:bg-gray-800 shadow-lg rounded-lg p-4 max-h-64 overflow-y-auto border border-gray-200 dark:border-gray-700">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="font-semibold text-sm text-gray-800 dark:text-gray-200">{t('map.filterRoutes')}</h3>
-              {selectedRoutes.size > 0 && (
-                <button
-                  onClick={clearFilters}
-                  className="text-xs text-primary dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium"
-                >
-                  {t('map.clearFilters')}
-                </button>
-              )}
-            </div>
-            <div className="grid grid-cols-4 gap-2">
-              {sortedRoutes.map(route => (
-                <button
-                  key={route}
-                  onClick={() => toggleRoute(route)}
-                  className={`px-3 py-2 rounded-md text-sm font-bold transition-colors ${
-                    selectedRoutes.has(route)
-                      ? 'bg-primary dark:bg-blue-600 text-white'
-                      : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
-                  }`}
-                >
-                  {route}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
         {/* Error message */}
         {error && (
           <div className="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg p-3 text-sm text-red-700 dark:text-red-400">

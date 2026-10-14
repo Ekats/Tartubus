@@ -15,10 +15,12 @@ import BusIcon from './BusIcon';
 import StaleNotice from './StaleNotice';
 import { useVisibleInterval } from '../hooks/useVisibleInterval';
 import { usePullToRefresh } from '../hooks/usePullToRefresh';
+import { filterStopDepartures, sortRouteNames } from '../utils/routeFilter';
 
 const NO_LOCATION = { lat: null, lon: null };
+const NO_ROUTES = new Set();
 
-function NearMe({ geolocationHook, onNavigateToMap, onShowRoute, manualLocation: manualLocationProp, onClearManualLocation, customTime }) {
+function NearMe({ geolocationHook, onNavigateToMap, onShowRoute, manualLocation: manualLocationProp, onClearManualLocation, customTime, selectedRoutes = NO_ROUTES, onClearRouteFilter }) {
   const { t } = useTranslation();
   // Use shared geolocation hook from App.jsx instead of creating a new instance
   const { location, error: locationError, errorCode: locationErrorCode, loading: locationLoading, getLocation, startWatching } = geolocationHook;
@@ -368,6 +370,12 @@ function NearMe({ geolocationHook, onNavigateToMap, onShowRoute, manualLocation:
   );
   const noLocation = !activeLocation.lat && !activeLocation.lon;
 
+  // The app's route filter: only the picked routes' departures, and only stops that have some
+  const filterOn = selectedRoutes.size > 0;
+  const shownStops = filterOn
+    ? stops.map(stop => filterStopDepartures(stop, selectedRoutes)).filter(stop => stop.stoptimesWithoutPatterns?.length > 0)
+    : stops;
+
   return (
     <div ref={scrollRef} className="p-4 pb-[calc(var(--bottom-nav-height)+1rem)] h-full overflow-y-auto overscroll-y-contain dark:bg-gray-900">
       {/* Pull-to-refresh indicator: grows with the pull, arrow flips when a release will refresh */}
@@ -497,7 +505,26 @@ function NearMe({ geolocationHook, onNavigateToMap, onShowRoute, manualLocation:
         <div className="mt-6 space-y-4">
           {headingRow}
 
-          {[...stops].sort((a, b) => {
+          {filterOn && (
+            <div className="flex items-center justify-between gap-2 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-lg pl-3 text-sm text-blue-900 dark:text-blue-100" data-testid="nearme-route-filter">
+              <span className="truncate min-w-0">{t('nearMe.routeFilter', { routes: sortRouteNames(selectedRoutes).join(', ') })}</span>
+              <button
+                onClick={onClearRouteFilter}
+                className="shrink-0 w-11 h-11 flex items-center justify-center text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200"
+                title={t('map.clearFilters')}
+                aria-label={t('map.clearFilters')}
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+          )}
+          {filterOn && shownStops.length === 0 && (
+            <div className="text-sm text-gray-500 dark:text-gray-400 py-2">{t('nearMe.noFilteredStops')}</div>
+          )}
+
+          {[...shownStops].sort((a, b) => {
             // Favorites first
             const aIsFav = isFavorite(a.gtfsId);
             const bIsFav = isFavorite(b.gtfsId);

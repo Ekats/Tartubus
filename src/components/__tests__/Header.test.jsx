@@ -24,7 +24,7 @@ afterEach(() => {
 });
 
 describe('Header route filter button', () => {
-  it('is not there without a toggle (tabs other than the map)', () => {
+  it('is not there without a toggle', () => {
     render();
     expect(filterButton()).toBeNull();
   });
@@ -43,5 +43,21 @@ describe('Header route filter button', () => {
     render({ onRouteFilterToggle: vi.fn(), routeFilterOpen: true, routeFilterCount: 2 });
     expect(filterButton().textContent).toBe('2');
     expect(filterButton().getAttribute('aria-expanded')).toBe('true');
+  });
+});
+
+describe('Header size', () => {
+  // The map fit, the stop view overlay and the trip labels depend on the bar staying 60 px tall:
+  // py-2 (2 × 8 px) around 44 px buttons (p-2 around 28 px icons)
+  it('has bigger buttons and logo in a bar of the same height', () => {
+    render({ onRouteFilterToggle: vi.fn() });
+    expect(container.querySelector('[data-testid="header-bar"]').className).toContain('py-2');
+    const buttons = [...container.querySelectorAll('button')];
+    expect(buttons.length).toBe(3);
+    buttons.forEach(button => {
+      expect(button.className).toContain('p-2');
+      expect(button.querySelector('svg').getAttribute('class')).toBe('w-7 h-7');
+    });
+    expect(container.querySelector('img').className).toContain('h-9');
   });
 });

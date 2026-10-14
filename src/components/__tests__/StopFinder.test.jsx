@@ -41,7 +41,7 @@ vi.mock('../map/StopPopup', () => ({
 }));
 
 import StopFinder from '../StopFinder';
-import { getNearbyStops, getRouteShortNamesInZone, planJourney } from '../../services/digitransit';
+import { getNearbyStops, planJourney } from '../../services/digitransit';
 
 globalThis.IS_REACT_ACT_ENVIRONMENT = true;
 
@@ -172,19 +172,22 @@ describe('StopFinder stop box and back button', () => {
   });
 });
 
-// App's part of the route filter (the menu's open flag, the shown route) without App: held here
+// App's part of the route filter (the filter, the menu's open flag, the shown route) without App: held here
 const harness = {};
 function Harness({ initialOpen = false, initialRoute = null }) {
   const [open, setOpen] = useState(initialOpen);
   const [route, setRoute] = useState(initialRoute);
+  const [routes, setRoutes] = useState(() => new Set());
   harness.open = open;
   harness.route = route;
   harness.setRoute = setRoute;
+  harness.setRoutes = setRoutes;
+  harness.count = routes.size;
   return createElement(StopFinder, {
     geolocationHook: harness.geo, backHandlerRef, onStopDismiss: vi.fn(),
     routeFilterOpen: open, onRouteFilterOpenChange: setOpen,
     selectedRoute: route, onRouteChange: setRoute,
-    onRouteFilterCountChange: (n) => { harness.count = n; },
+    selectedRoutes: routes, onSelectedRoutesChange: setRoutes,
   });
 }
 async function renderHarness(props) {
@@ -196,8 +199,6 @@ async function renderHarness(props) {
   await flush();
   await flush();
 }
-const filterMenu = () => [...container.querySelectorAll('h3')].find(h => h.textContent === i18n.t('map.filterRoutes'));
-
 describe('StopFinder route filter and back button', () => {
   it('back closes the stop box, then the filter menu, then clears the route shown, then gives the press to App', async () => {
     await renderHarness({ initialOpen: true });
@@ -210,11 +211,10 @@ describe('StopFinder route filter and back button', () => {
 
     expect(await back()).toBe(true);
     expect($('#popup')).toBeNull();
-    expect(filterMenu()).toBeTruthy();
+    expect(harness.open).toBe(true);
 
     expect(await back()).toBe(true);
     expect(harness.open).toBe(false);
-    expect(filterMenu()).toBeFalsy();
     expect(harness.route).toEqual({ routeNumber: '5' });
 
     expect(await back()).toBe(true);
@@ -225,10 +225,9 @@ describe('StopFinder route filter and back button', () => {
   });
 
   it('back clears a filter picked in the menu', async () => {
-    getRouteShortNamesInZone.mockResolvedValueOnce(['5', '7']);
     await renderHarness({ initialOpen: true });
-    const route7 = [...container.querySelectorAll('button')].find(b => b.textContent === '7');
-    await click(route7);
+    await act(async () => harness.setRoutes(new Set(['7'])));
+    await flush();
     expect(harness.count).toBe(1);
 
     expect(await back()).toBe(true); // the menu
@@ -237,12 +236,10 @@ describe('StopFinder route filter and back button', () => {
     expect(await back()).toBe(false);
   });
 
-  it('the menu opens from App\'s flag; a tap on the empty map closes it', async () => {
+  it('a tap on the empty map closes App\'s filter menu', async () => {
     await renderHarness({ initialOpen: true });
-    expect(filterMenu()).toBeTruthy();
     await click($('#empty-map'));
     expect(harness.open).toBe(false);
-    expect(filterMenu()).toBeFalsy();
   });
 });
 

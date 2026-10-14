@@ -9,6 +9,7 @@ import Settings from './components/Settings'
 import InstallPrompt from './components/InstallPrompt'
 import AndroidAppPrompt from './components/AndroidAppPrompt'
 import DateTimePicker from './components/DateTimePicker'
+import RouteFilterMenu from './components/RouteFilterMenu'
 import { useDarkMode } from './hooks/useDarkMode'
 import { useGeolocation, getLocationConsent } from './hooks/useGeolocation'
 import { useKeyboardInset } from './hooks/useKeyboardInset'
@@ -39,14 +40,23 @@ function App() {
   // The map's own layers (stop view, stop popup) for the back button: set by StopFinder to a function
   // that closes the innermost one and returns true, or returns false when none is open
   const mapBackHandlerRef = useRef(null)
-  // The map's route filter menu opens from the header; the filter itself stays in StopFinder,
-  // which reports how many routes are picked for the button's badge
+  // The route filter (route short names) is shared by the whole app: it filters the map's stops and
+  // the departures in Near Me and Favorites. Its menu opens from the header on every tab.
+  const [selectedRoutes, setSelectedRoutes] = useState(() => new Set())
   const [routeFilterOpen, setRouteFilterOpen] = useState(false)
-  const [routeFilterCount, setRouteFilterCount] = useState(0)
 
-  useEffect(() => {
-    if (activeView !== 'map') setRouteFilterOpen(false)
-  }, [activeView])
+  // A route shown from search or Near Me stays shown only while the filter is exactly that route
+  const toggleFilterRoute = (route) => {
+    const next = new Set(selectedRoutes)
+    if (next.has(route)) next.delete(route)
+    else next.add(route)
+    setSelectedRoutes(next)
+    if (selectedRoute && !(next.size === 1 && next.has(selectedRoute.routeNumber))) setSelectedRoute(null)
+  }
+  const clearRouteFilter = () => {
+    setSelectedRoutes(new Set())
+    setSelectedRoute(null)
+  }
 
   // Initialize caches on app startup
   useEffect(() => {
@@ -74,8 +84,19 @@ function App() {
       backButtonListener = await CapApp.addListener('backButton', ({ canGoBack }) => {
         const now = Date.now();
 
-        // First the map's stop view, then its stop popup
+        // First the map's stop view, then its stop popup (the map also closes the filter menu and
+        // clears the filter itself, after those)
         if (activeView === 'map' && mapBackHandlerRef.current?.()) {
+          return;
+        }
+
+        // Then the route filter menu, then the route filter
+        if (routeFilterOpen) {
+          setRouteFilterOpen(false);
+          return;
+        }
+        if (selectedRoutes.size > 0) {
+          clearRouteFilter();
           return;
         }
 
@@ -139,7 +160,7 @@ function App() {
         backButtonListener.remove();
       }
     };
-  }, [selectedJourney, selectedStop, locationSelectionMode, selectedRoute, activeView, lastBackPress])
+  }, [selectedJourney, selectedStop, locationSelectionMode, selectedRoute, activeView, lastBackPress, routeFilterOpen, selectedRoutes])
 
   // Handle destination search - user searches for where they want to GO
   const handleDestinationSelect = (location) => {
@@ -177,6 +198,8 @@ function App() {
           geolocationHook={geolocationHook}
           manualLocation={manualLocation}
           customTime={customTime}
+          selectedRoutes={selectedRoutes}
+          onClearRouteFilter={clearRouteFilter}
           onShowRoute={handleRouteSelect}
           onNavigateToMap={(stop) => {
             if (stop?.selectLocation) {
@@ -207,7 +230,8 @@ function App() {
           backHandlerRef={mapBackHandlerRef}
           routeFilterOpen={routeFilterOpen}
           onRouteFilterOpenChange={setRouteFilterOpen}
-          onRouteFilterCountChange={setRouteFilterCount}
+          selectedRoutes={selectedRoutes}
+          onSelectedRoutesChange={setSelectedRoutes}
           onLocationSelected={(location) => {
             setManualLocation(location)
             setLocationSelectionMode(false)
@@ -223,6 +247,7 @@ function App() {
           geolocationHook={geolocationHook}
           manualLocation={manualLocation}
           customTime={customTime}
+          selectedRoutes={selectedRoutes}
           onShowRoute={handleRouteSelect}
           onNavigateToMap={(stop) => {
             setSelectedStop(stop)
@@ -244,11 +269,19 @@ function App() {
         customTime={customTime}
         onTimePickerOpen={() => setShowTimePicker(true)}
         routeFilterOpen={routeFilterOpen}
-        routeFilterCount={routeFilterCount}
-        onRouteFilterToggle={activeView === 'map' ? () => setRouteFilterOpen(open => !open) : undefined}
+        routeFilterCount={selectedRoutes.size}
+        onRouteFilterToggle={() => setRouteFilterOpen(open => !open)}
       />
-      <div className="flex-1 overflow-hidden">
+      <div className="flex-1 overflow-hidden relative">
         {renderView()}
+        {routeFilterOpen && (
+          <RouteFilterMenu
+            zone={mapZone}
+            selectedRoutes={selectedRoutes}
+            onToggleRoute={toggleFilterRoute}
+            onClear={clearRouteFilter}
+          />
+        )}
       </div>
       {/* Bottom stack: search bar and tab bar. While the search field is typed in, the tab bar
           steps aside and the stack sits right on the keyboard */}

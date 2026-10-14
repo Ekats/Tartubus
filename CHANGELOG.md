@@ -5,6 +5,12 @@ All notable changes to Tartu Bussid will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.5.5] - 2026-10-15
+
+### Changed
+- 🔽 **One route filter for the whole app** - the funnel button in the top bar is now on every tab, and its route menu opens on every tab. The picked lines filter the map's stops, and Near Me and Favorites too: Near Me shows only those lines' departures (stops without any are hidden) with a "Filter: 4, 7" line and an × to clear it; Favorites keeps every card but shows only those lines' departures. Switching tabs keeps the filter; the Android back button closes the menu, then clears the filter, then goes on as before
+- 🔠 **Bigger top-bar buttons and logo** - the filter, time and dark mode buttons and the bus logo are larger; the bar keeps its height
+
 ## [3.5.4] - 2026-10-15
 
 ### Changed

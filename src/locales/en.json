@@ -45,6 +45,8 @@
     "showMore": "Show more",
     "showLess": "Show less",
     "showAll": "Show all",
+    "routeFilter": "Filter: {{routes}}",
+    "noFilteredStops": "No departures of these lines nearby",
     "moreStops": "{{count}} more stops",
     "cancel": "Cancel",
     "viewTimetable": "View timetable",

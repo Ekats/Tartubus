@@ -45,6 +45,8 @@
     "showMore": "Показати більше",
     "showLess": "Показати менше",
     "showAll": "Показати всі",
+    "routeFilter": "Фільтр: {{routes}}",
+    "noFilteredStops": "Поруч немає відправлень цих маршрутів",
     "moreStops": "ще {{count}} зупинок",
     "cancel": "Скасувати",
     "viewTimetable": "Переглянути розклад",

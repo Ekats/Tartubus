@@ -45,6 +45,8 @@
     "showMore": "Показать больше",
     "showLess": "Показать меньше",
     "showAll": "Показать все",
+    "routeFilter": "Фильтр: {{routes}}",
+    "noFilteredStops": "Рядом нет отправлений этих маршрутов",
     "moreStops": "ещё {{count}} остановок",
     "cancel": "Отмена",
     "viewTimetable": "Посмотреть расписание",
