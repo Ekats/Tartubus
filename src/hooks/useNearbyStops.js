@@ -17,15 +17,18 @@ export function useNearbyStops() {
   const stopsRef = useRef(stops);
   stopsRef.current = stops;
   const requestSeqRef = useRef(0); // Ignore responses from superseded requests
+  const stopsTimeRef = useRef(null); // The planned time the shown stops are for (null = now)
 
   const fetchNearbyStops = useCallback(async (lat, lon, radius = 500, forceRefresh = false, customTime = null) => {
     const requestSeq = ++requestSeqRef.current;
+    const time = customTime ? customTime.getTime() : null;
     setLoading(true);
     setError(null);
 
     try {
       const { stops: nearbyStops, source, fetchedAt } = await getNearbyStopsWithMeta(lat, lon, radius, forceRefresh, customTime);
       if (requestSeq !== requestSeqRef.current) return; // A newer request was started
+      stopsTimeRef.current = time;
       setStops(nearbyStops);
       setStaleSince(source === 'stale' ? fetchedAt : null);
       setError(null); // Clear any previous errors on success
@@ -35,8 +38,11 @@ export function useNearbyStops() {
       console.error('Error fetching nearby stops:', err);
 
       // Only show error if we don't have any existing stops to display
-      // This prevents error from hiding existing (cached/stale) data
-      if (stopsRef.current.length === 0) {
+      // This prevents error from hiding existing (cached/stale) data.
+      // Stops for another time (the planned time was changed) are no fallback: they go
+      if (stopsRef.current.length === 0 || stopsTimeRef.current !== time) {
+        setStops([]);
+        setStaleSince(null);
         setError(err.message);
       } else {
         console.warn('Refresh failed, keeping existing stops displayed');

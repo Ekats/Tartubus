@@ -102,7 +102,9 @@
     "startTracking": "Увімкнути відстеження місцезнаходження",
     "stopTracking": "Вимкнути відстеження місцезнаходження",
     "walkDistance": "{{meters}} м пішки • ~{{minutes}} хв",
-    "mapData": "Дані карти"
+    "mapData": "Дані карти",
+    "nearestStops": "Найближчі зупинки",
+    "noStopsNearby": "Поблизу немає зупинок"
   },
   "favorites": {
     "title": "Обрані зупинки",

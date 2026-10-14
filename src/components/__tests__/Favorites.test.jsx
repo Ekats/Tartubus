@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { createElement, act } from 'react';
 import { createRoot } from 'react-dom/client';
-import '../../i18n';
+import i18n from '../../i18n';
 
 const favorites = [
   { gtfsId: 'Viro:1', name: 'Raekoja plats', code: '1', lat: 58.3781, lon: 26.7292 },
@@ -25,16 +25,20 @@ globalThis.IS_REACT_ACT_ENVIRONMENT = true;
 const gps = (lat, lon) => ({ location: { lat, lon, accuracy: 5, hasRealFix: true } });
 
 let root;
-async function render(location) {
+let container;
+async function render(location, props = {}) {
   await act(async () => root.render(createElement(Favorites, {
-    geolocationHook: gps(location.lat, location.lon), onNavigateToMap: () => {}, manualLocation: null, customTime: null,
+    geolocationHook: gps(location.lat, location.lon), onNavigateToMap: () => {}, manualLocation: null, customTime: null, ...props,
   })));
 }
 
-beforeEach(() => {
+beforeEach(async () => {
+  await i18n.changeLanguage('en');
   vi.useFakeTimers();
   vi.clearAllMocks();
-  root = createRoot(document.createElement('div'));
+  getStopById.mockImplementation(async (gtfsId) => ({ ...favorites.find(f => f.gtfsId === gtfsId), stoptimesWithoutPatterns: [] }));
+  container = document.createElement('div');
+  root = createRoot(container);
 });
 
 afterEach(() => {
@@ -49,6 +53,40 @@ describe('Favorites departures', () => {
 
     await act(async () => { vi.advanceTimersByTime(30000); });
     expect(getStopById).toHaveBeenCalledTimes(4);
+  });
+
+  it('the route number of a departure shows the bus on the map (as Near Me)', async () => {
+    const now = new Date();
+    const secs = now.getHours() * 3600 + now.getMinutes() * 60 + 600;
+    getStopById.mockImplementation(async (gtfsId) => ({
+      ...favorites.find(f => f.gtfsId === gtfsId),
+      stoptimesWithoutPatterns: gtfsId === 'Viro:1' ? [{
+        scheduledArrival: secs, realtime: false, headsign: 'Annelinn', stopPosition: 1,
+        trip: { route: { shortName: '7', longName: 'Raadi - Annelinn', gtfsId: 'Viro:r7' },
+          stoptimes: [{ stop: { gtfsId: 'Viro:1', name: 'Raekoja plats' }, stopPosition: 1, scheduledArrival: secs }] },
+      }] : [],
+    }));
+    const onShowRoute = vi.fn();
+    await render({ lat: 58.378, lon: 26.729 }, { onShowRoute });
+    await act(async () => container.querySelector('button[aria-label$=": 7"]').click());
+    expect(onShowRoute).toHaveBeenCalledWith(expect.objectContaining({ type: 'route', routeNumber: '7', gtfsId: 'Viro:r7' }));
+    expect(onShowRoute.mock.calls[0][0].trip.boardStopId).toBe('Viro:1');
+  });
+
+  it('asks for the planned time, and after a failed fetch never shows another time\'s departures as last known', async () => {
+    const customTime = new Date(Date.now() + 86400000);
+    getStopById.mockImplementation(async (gtfsId) => ({ ...favorites.find(f => f.gtfsId === gtfsId), stoptimesWithoutPatterns: [], source: 'live', fetchedAt: Date.now() }));
+    await render({ lat: 58.378, lon: 26.729 });
+
+    // Same time, offline: the last copy stays, flagged
+    getStopById.mockResolvedValue(null);
+    await act(async () => { vi.advanceTimersByTime(30000); });
+    expect(container.textContent).toContain('No connection');
+
+    // Planned time, offline: the "now" copy is not shown as its last-known data
+    await render({ lat: 58.378, lon: 26.729 }, { customTime });
+    expect(getStopById).toHaveBeenLastCalledWith(expect.any(String), customTime);
+    expect(container.textContent).not.toContain('No connection');
   });
 
   it('does not refetch departures when the user moves', async () => {

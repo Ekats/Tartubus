@@ -5,6 +5,18 @@ All notable changes to Tartu Bussid will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.5.4] - 2026-10-15
+
+### Changed
+- 🔽 **Route filter in the top bar** - the map's wide "Filter routes • Tartu" button is gone; the filter opens from a funnel button in the top bar (shown on the map tab), which carries the number of picked routes. The route menu still opens at the top of the map
+- 📍 **A searched place shows its nearest stops** - picking a place or address in the search no longer shows it as a stop ("Stop", "No departures"); it lists the three nearest stops with their distance and next departures, and a tap opens the stop. For a place without an address (a lake, a park) "How to get here" plans to those stops instead of the place's middle, so places outside town (e.g. Ropka järv) get journeys too
+- 🗺 **"Show route on map" in more places** - the route number of a departure in the map's stop view and in Favorites is now a button that shows the bus on the map, as in Near Me
+- 🔍 **Stops group later when zooming out** - stop groups are smaller (cluster radius 30 instead of 40) and stops stay single one zoom level further out
+
+### Fixed
+- ◀️ **Android back clears the route filter** - with routes picked in the filter (or a route shown from Near Me, Favorites or the stop view) back first closes the open filter menu, then clears the filter and stays on the map; the next back goes to Near Me
+- 🕗 **Planned time ("Plan ahead") everywhere on the map** - the map's 30 s stop refresh asked for departures at the current time, and the stop box showed "Arriving" / "7 min" counted from the planned time; it now asks for the planned time and shows clock times. Without a connection, Near Me and Favorites no longer show departures of the previously picked time after the time is changed
+
 ## [3.5.3] - 2026-10-15
 
 ### Fixed

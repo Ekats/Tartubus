@@ -39,6 +39,14 @@ function App() {
   // The map's own layers (stop view, stop popup) for the back button: set by StopFinder to a function
   // that closes the innermost one and returns true, or returns false when none is open
   const mapBackHandlerRef = useRef(null)
+  // The map's route filter menu opens from the header; the filter itself stays in StopFinder,
+  // which reports how many routes are picked for the button's badge
+  const [routeFilterOpen, setRouteFilterOpen] = useState(false)
+  const [routeFilterCount, setRouteFilterCount] = useState(0)
+
+  useEffect(() => {
+    if (activeView !== 'map') setRouteFilterOpen(false)
+  }, [activeView])
 
   // Initialize caches on app startup
   useEffect(() => {
@@ -141,7 +149,8 @@ function App() {
       name: location.name || location.display_name || 'Search Result',
       lat: location.lat,
       lon: location.lon,
-      isSearchResult: true
+      isSearchResult: true,
+      isPlace: !!location.isPlace
     };
 
     console.log('🎯 Destination selected:', destinationStop);
@@ -196,6 +205,9 @@ function App() {
           onRouteChange={setSelectedRoute}
           onZoneChange={setMapZone}
           backHandlerRef={mapBackHandlerRef}
+          routeFilterOpen={routeFilterOpen}
+          onRouteFilterOpenChange={setRouteFilterOpen}
+          onRouteFilterCountChange={setRouteFilterCount}
           onLocationSelected={(location) => {
             setManualLocation(location)
             setLocationSelectionMode(false)
@@ -211,6 +223,7 @@ function App() {
           geolocationHook={geolocationHook}
           manualLocation={manualLocation}
           customTime={customTime}
+          onShowRoute={handleRouteSelect}
           onNavigateToMap={(stop) => {
             setSelectedStop(stop)
             setActiveView('map')
@@ -230,6 +243,9 @@ function App() {
         toggleDarkMode={toggleDarkMode}
         customTime={customTime}
         onTimePickerOpen={() => setShowTimePicker(true)}
+        routeFilterOpen={routeFilterOpen}
+        routeFilterCount={routeFilterCount}
+        onRouteFilterToggle={activeView === 'map' ? () => setRouteFilterOpen(open => !open) : undefined}
       />
       <div className="flex-1 overflow-hidden">
         {renderView()}

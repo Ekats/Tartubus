@@ -42,6 +42,16 @@ export function buildTripView(trip, routePatterns, routeNumber) {
 }
 
 /**
+ * What a departure's route button hands to App's handleRouteSelect: the same shape as the route
+ * search (the map loads the patterns itself), plus `trip`, the tapped bus from this stop on
+ */
+export function departureRouteSelection(departure, stop) {
+  const route = departure.trip?.route;
+  const trip = buildDepartureTrip(departure, stop);
+  return { type: 'route', routeNumber: route.shortName, routeName: route.longName, gtfsId: route.gtfsId, patterns: [], ...(trip && { trip }) };
+}
+
+/**
  * The trip handed to the map for a Near Me departure: its stops from the boarding stop on.
  * The boarding stop shows the row's realtime-aware arrival; when the bus runs early or late the
  * later stops get that delay added to their scheduled time and are flagged `approx`.

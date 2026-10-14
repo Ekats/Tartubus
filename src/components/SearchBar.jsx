@@ -120,7 +120,8 @@ function SearchBar({ onDestinationSelect, onRouteSelect, routeSearchZone, keyboa
         lat: result.lat,
         lon: result.lon,
         name: result.name,
-        display_name: result.display_name
+        display_name: result.display_name,
+        isPlace: !!result.isPlace
       });
     }
     // A search still filling in must not reopen the dropdown after this

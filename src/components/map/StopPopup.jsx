@@ -1,7 +1,7 @@
 // The box of a stop tapped on the map: its name and code and the next few departures, in the look of
 // the trip / journey stop boxes. A tap on the box opens the stop's full view; its × closes it.
 import { useTranslation } from 'react-i18next';
-import { shouldShowDeparture, formatArrivalTime } from '../../utils/timeFormatter';
+import { shouldShowDeparture, formatArrivalTime, formatArrivalClock, getArrivalDate } from '../../utils/timeFormatter';
 import MapMarker from './MapMarker';
 
 const SHOWN_DEPARTURES = 3;
@@ -42,7 +42,10 @@ function StopPopup({ stop, iconSize, departures, customTime, onOpen, onClose }) 
             <div key={i} className="map-stop-popup-row">
               <span className="map-stop-popup-route">{dep.trip?.route?.shortName || '?'}</span>
               <span className="map-stop-popup-headsign">{dep.headsign}</span>
-              <span>{formatArrivalTime(dep.scheduledArrival, dep, customTime)}</span>
+              {/* A planned time shows the clock time, as Near Me does: there is nothing to count down */}
+              <span>{customTime
+                ? formatArrivalClock(getArrivalDate(dep.scheduledArrival, dep, customTime))
+                : formatArrivalTime(dep.scheduledArrival, dep, customTime)}</span>
             </div>
           ))
         )}

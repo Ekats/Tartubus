@@ -102,7 +102,9 @@
     "startTracking": "Alusta asukoha jälgimist",
     "stopTracking": "Lõpeta asukoha jälgimine",
     "walkDistance": "{{meters}} m jalgsi • ~{{minutes}} min",
-    "mapData": "Kaardiandmed"
+    "mapData": "Kaardiandmed",
+    "nearestStops": "Lähimad peatused",
+    "noStopsNearby": "Läheduses peatusi pole"
   },
   "favorites": {
     "title": "Lemmikpeatused",

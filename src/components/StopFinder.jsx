@@ -11,10 +11,10 @@ import { toAppZoom, toMapZoom, toBounds, boundsOfCoords, APP_START_ZOOM, APP_MAX
 import { stopPoints, patternLines, journeyCoords } from '../utils/mapFeatures';
 import { freeArea, paddingFor, overflowOf, hasOverflow, grownPadding, anyUnder } from '../utils/mapFit';
 import { differenceInMinutes } from 'date-fns';
-import { getDelayInfo, formatClockFromDate, roundMeters } from '../utils/timeFormatter';
+import { getDelayInfo, formatClockFromDate, roundMeters, shouldShowDeparture } from '../utils/timeFormatter';
 import CountdownTimer from './CountdownTimer';
 import StopCard from './StopCard';
-import BusIcon from './BusIcon';
+import RouteBadge from './RouteBadge';
 import MapView from './map/MapView';
 import MapMarker from './map/MapMarker';
 import MapPopup from './map/MapPopup';
@@ -68,6 +68,14 @@ function Pin({ lat, lon, image, zIndex, onClick, children }) {
 
 const NO_LOCATION = { lat: null, lon: null };
 
+// The stops nearest a searched place, with departures: the 3 nearest within 500 m, or within 2 km
+// when there are none (a place outside town)
+async function findNearestStops(lat, lon, customTime) {
+  let stops = await getNearbyStops(lat, lon, 500, false, customTime);
+  if (!stops?.length) stops = await getNearbyStops(lat, lon, 2000, false, customTime);
+  return [...(stops || [])].sort((a, b) => a.distance - b.distance).slice(0, 3);
+}
+
 function StopFinder({
   geolocationHook,
   isDarkMode,
@@ -82,6 +90,9 @@ function StopFinder({
   onRouteChange,
   onZoneChange,
   backHandlerRef,
+  routeFilterOpen,
+  onRouteFilterOpenChange,
+  onRouteFilterCountChange,
   onLocationSelected,
   onCancelLocationSelection
 }) {
@@ -105,7 +116,9 @@ function StopFinder({
   const [error, setError] = useState(null);
   const [currentZoom, setCurrentZoom] = useState(13);
   const [selectedRoutes, setSelectedRoutes] = useState(new Set());
-  const [showRouteFilter, setShowRouteFilter] = useState(false);
+  // The route filter menu opens from the header's filter button (App holds the open flag)
+  const showRouteFilter = !!routeFilterOpen;
+  const setShowRouteFilter = (open) => onRouteFilterOpenChange?.(open);
   const [zoneRouteNames, setZoneRouteNames] = useState([]); // Route numbers serving the current city zone
   const [routeStops, setRouteStops] = useState([]);
   const [routePatterns, setRoutePatterns] = useState([]);
@@ -427,6 +440,29 @@ function StopFinder({
 
   useVisibleInterval(loadSelectedStopDepartures, 30000, !!selectedStop && !selectedStop.isSearchResult);
 
+  // A searched place shows its nearest stops with their next departures (null while they load)
+  const [placeStops, setPlaceStops] = useState(null);
+  const placeStopsFetchSeqRef = useRef(0);
+  const loadPlaceStops = async () => {
+    const place = selectedStop;
+    if (!place?.isSearchResult) return;
+    const fetchSeq = ++placeStopsFetchSeqRef.current;
+    try {
+      const nearest = await findNearestStops(place.lat, place.lon, customTime);
+      if (fetchSeq === placeStopsFetchSeqRef.current) setPlaceStops(nearest);
+    } catch (error) {
+      console.error('❌ Error fetching the stops near a searched place:', error);
+      if (fetchSeq === placeStopsFetchSeqRef.current) setPlaceStops(prev => prev ?? []);
+    }
+  };
+
+  useEffect(() => {
+    setPlaceStops(null);
+    loadPlaceStops();
+  }, [selectedStop?.isSearchResult && selectedStop.gtfsId, customTime]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useVisibleInterval(loadPlaceStops, 30000, !!selectedStop?.isSearchResult);
+
   // The box of a stop tapped on the map, with its next departures (null while they load)
   const [popupStop, setPopupStop] = useState(null);
   const [popupDepartures, setPopupDepartures] = useState(null);
@@ -460,7 +496,8 @@ function StopFinder({
     onStopDismiss?.();
   };
 
-  // Android back (App asks while the map is shown): the stop view first, then the stop box
+  // Android back (App asks while the map is shown): the stop view first, then the stop box, then an
+  // open filter menu, then a route filter or trip view (cleared as with "Clear filters")
   if (backHandlerRef) {
     backHandlerRef.current = () => {
       if (selectedStop && !locationSelectionMode) {
@@ -471,12 +508,26 @@ function StopFinder({
         setPopupStop(null);
         return true;
       }
+      if (showRouteFilter) {
+        setShowRouteFilter(false);
+        return true;
+      }
+      if (selectedRoutes.size > 0 || tripActive) {
+        clearFilters();
+        return true;
+      }
       return false;
     };
   }
   useEffect(() => () => {
     if (backHandlerRef) backHandlerRef.current = null;
   }, [backHandlerRef]);
+
+  // The header's filter button shows how many routes are picked
+  useEffect(() => {
+    onRouteFilterCountChange?.(selectedRoutes.size);
+  }, [selectedRoutes.size]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => () => onRouteFilterCountChange?.(0), []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Auto-zoom map to fit the selected journey route
   // Show a route picked in the header search: filter the map to it and zoom to its stops
@@ -609,19 +660,17 @@ function StopFinder({
       try {
         console.log('🔍 Planning journeys to', selectedStop.name, 'and nearby stops');
 
-        // Get stops near the destination (300m radius for transfer flexibility)
-        const nearbyDestinationStops = await getNearbyStops(
-          selectedStop.lat,
-          selectedStop.lon,
-          300,
-          10
-        );
+        // Get stops near the destination (300m radius for transfer flexibility). A searched place
+        // without an address (a lake, a park) is planned to its nearest stops only, not its middle
+        const nearbyDestinationStops = selectedStop.isPlace
+          ? await findNearestStops(selectedStop.lat, selectedStop.lon, customTime)
+          : await getNearbyStops(selectedStop.lat, selectedStop.lon, 300, false, customTime);
 
         console.log('📍 Found', nearbyDestinationStops.length, 'stops near destination');
 
         // Plan routes to the selected stop and nearby stops
         const destinationsToTry = [
-          { lat: selectedStop.lat, lon: selectedStop.lon, name: selectedStop.name, isMain: true },
+          ...(selectedStop.isPlace ? [] : [{ lat: selectedStop.lat, lon: selectedStop.lon, name: selectedStop.name, isMain: true }]),
           ...nearbyDestinationStops.slice(0, 5).map(stop => ({
             lat: stop.lat,
             lon: stop.lon,
@@ -815,7 +864,7 @@ function StopFinder({
     setError(null);
     try {
       const radius = getRadiusForZoom(zoom);
-      const mapCenterStops = await getNearbyStops(lat, lon, radius);
+      const mapCenterStops = await getNearbyStops(lat, lon, radius, false, customTime);
 
       // If user has a location and we're not already loading from their location,
       // also load stops near the user
@@ -824,7 +873,7 @@ function StopFinder({
 
       if (location.lat && location.lon && !includeUserLocation) {
         const userRadius = getSetting('nearbyRadius') || 500;
-        const userLocationStops = await getNearbyStops(location.lat, location.lon, userRadius);
+        const userLocationStops = await getNearbyStops(location.lat, location.lon, userRadius, false, customTime);
 
         // Track which stops are nearby
         userLocationStops.forEach(stop => nearbyIds.add(stop.gtfsId));
@@ -1358,17 +1407,8 @@ function StopFinder({
       {/* As tall as the tab bar that lies over the map's bottom edge: tells the fit how much that is */}
       <div ref={tabBarSpaceRef} className="absolute bottom-0 left-0 w-0 h-[var(--bottom-nav-height)] pointer-events-none" />
 
-      {/* Top controls - Route filter */}
+      {/* Top controls - route filter menu (opened from the header), messages, filtered stop count */}
       <div ref={topControlsRef} className="absolute top-4 left-4 right-4 z-[1000] flex flex-col gap-2">
-        <button
-          onClick={() => setShowRouteFilter(!showRouteFilter)}
-          className={`bg-white dark:bg-gray-800 shadow-lg rounded-lg px-4 py-3 font-medium text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex items-center gap-2 justify-center border border-gray-200 dark:border-gray-700 ${selectedRoutes.size > 0 ? 'ring-2 ring-primary dark:ring-blue-400' : ''}`}
-        >
-          <BusIcon className="h-5" />
-          {t('map.filterRoutes')} {selectedRoutes.size > 0 ? `(${selectedRoutes.size})` : ''}
-          <span className="text-xs opacity-60">• {currentCityZone.name}</span>
-        </button>
-
         {/* Route filter dropdown */}
         {showRouteFilter && (
           <div ref={filterMenuRef} className="bg-white dark:bg-gray-800 shadow-lg rounded-lg p-4 max-h-64 overflow-y-auto border border-gray-200 dark:border-gray-700">
@@ -1872,7 +1912,58 @@ function StopFinder({
               </div>
             )}
 
-            {/* Use StopCard component for consistent UI */}
+            {/* A searched place is no stop: its nearest stops instead, each opening its stop view */}
+            {selectedStop.isSearchResult ? (
+              <div data-testid="place-stops">
+                <h3 className="font-bold text-lg text-gray-800 dark:text-gray-200 mb-2">{t('map.nearestStops')}</h3>
+                {placeStops === null ? (
+                  <p className="text-sm text-gray-500 dark:text-gray-400">{t('map.loadingStops')}</p>
+                ) : placeStops.length === 0 ? (
+                  <p className="text-sm text-gray-500 dark:text-gray-400">{t('map.noStopsNearby')}</p>
+                ) : (
+                  <div className="space-y-2">
+                    {placeStops.map(stop => {
+                      const departures = (stop.stoptimesWithoutPatterns || []).filter(dep =>
+                        shouldShowDeparture(dep.scheduledArrival, { realtimeArrival: dep.realtimeArrival, realtime: dep.realtime, serviceDay: dep.serviceDay }, customTime)
+                      ).slice(0, 3);
+                      return (
+                        <button
+                          key={stop.gtfsId}
+                          onClick={() => setSelectedStop({ ...stop, distance: undefined })} // (its distance is from the place, not the user)
+                          className="w-full text-left bg-white dark:bg-gray-800 rounded-lg p-3 border border-gray-200 dark:border-gray-700 hover:border-blue-500 dark:hover:border-blue-400 transition-colors"
+                        >
+                          <div className="flex items-baseline justify-between gap-2 mb-1">
+                            <span className="font-semibold text-gray-800 dark:text-gray-100 truncate">{stop.name}</span>
+                            <span className="text-xs text-gray-500 dark:text-gray-400 shrink-0">
+                              {stop.distance >= 1000 ? `${(stop.distance / 1000).toFixed(1)} km` : `${roundMeters(stop.distance)} m`}
+                            </span>
+                          </div>
+                          {departures.length === 0 ? (
+                            <p className="text-xs text-gray-500 dark:text-gray-400">{t('nearMe.noDepartures')}</p>
+                          ) : (
+                            <div className="space-y-1">
+                              {departures.map((dep, idx) => (
+                                <div key={idx} className="flex items-center gap-2 text-sm">
+                                  <RouteBadge routeShortName={dep.trip?.route?.shortName} />
+                                  <span className="flex-1 min-w-0 truncate text-gray-700 dark:text-gray-300">{dep.headsign}</span>
+                                  <span className="font-semibold text-gray-800 dark:text-gray-100 shrink-0">
+                                    <CountdownTimer
+                                      scheduledArrival={dep.scheduledArrival}
+                                      realtimeData={{ realtimeArrival: dep.realtimeArrival, realtime: dep.realtime, arrivalDelay: dep.arrivalDelay, serviceDay: dep.serviceDay }}
+                                      referenceTime={customTime}
+                                    />
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            ) : (
             <StopCard
               stop={selectedStop}
               distance={selectedStop.distance}
@@ -1883,7 +1974,14 @@ function StopFinder({
               customTime={customTime}
               onRefresh={loadSelectedStopDepartures}
               refreshing={refreshingSelectedStop}
+              onShowRoute={onRouteChange ? (route) => {
+                // As Near Me's route button: the stop view closes and the bus is shown on the map
+                closeStopView();
+                setPopupStop(null);
+                onRouteChange(route);
+              } : null}
             />
+            )}
           </div>
         </div>
       )}

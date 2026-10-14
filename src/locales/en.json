@@ -102,7 +102,9 @@
     "startTracking": "Start location tracking",
     "stopTracking": "Stop location tracking",
     "walkDistance": "{{meters}} m walk • ~{{minutes}} min",
-    "mapData": "Map data"
+    "mapData": "Map data",
+    "nearestStops": "Nearest stops",
+    "noStopsNearby": "No stops nearby"
   },
   "favorites": {
     "title": "Favorite Stops",

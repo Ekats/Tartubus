@@ -4,6 +4,8 @@ import { useFavorites } from '../hooks/useFavorites';
 import { getStopById, getNextStopName, getWalkingRoute } from '../services/digitransit';
 import { shouldShowDeparture, isDepartureLate, formatArrivalTime, formatClockTime, getDelayInfo, roundMeters } from '../utils/timeFormatter';
 import CountdownTimer from './CountdownTimer';
+import RouteBadge from './RouteBadge';
+import { departureRouteSelection } from '../utils/tripRoute';
 import StaleNotice from './StaleNotice';
 import { useVisibleInterval } from '../hooks/useVisibleInterval';
 import { usePullToRefresh } from '../hooks/usePullToRefresh';
@@ -11,7 +13,7 @@ import { haversineDistance } from '../utils/geo';
 
 const NO_LOCATION = { lat: null, lon: null };
 
-function Favorites({ geolocationHook, onNavigateToMap, manualLocation, customTime }) {
+function Favorites({ geolocationHook, onNavigateToMap, onShowRoute, manualLocation, customTime }) {
   const { t } = useTranslation();
   const { favorites, removeFavorite } = useFavorites();
   // Shared GPS from App.jsx (started there only if the user allowed location)
@@ -22,6 +24,7 @@ function Favorites({ geolocationHook, onNavigateToMap, manualLocation, customTim
   const location = manualLocation || (gpsLocation.hasRealFix ? gpsLocation : NO_LOCATION);
   const [departureStops, setDepartureStops] = useState([]); // Favorites with their departures, as fetched
   const departureStopsRef = useRef(departureStops); // Latest departureStops, for the fetch to fall back on
+  const departureStopsTimeRef = useRef(null); // The planned time those are for (null = now)
   const fetchSeqRef = useRef(0); // Ignore responses from superseded fetches
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -134,6 +137,7 @@ function Favorites({ geolocationHook, onNavigateToMap, manualLocation, customTim
     if (favorites.length === 0) return;
 
     const fetchSeq = ++fetchSeqRef.current;
+    const time = customTime ? customTime.getTime() : null;
     setLoading(true);
     setError(null);
 
@@ -149,7 +153,10 @@ function Favorites({ geolocationHook, onNavigateToMap, manualLocation, customTim
               return stopWithDepartures;
             }
             // Fetch failed and nothing cached: keep what this stop showed, flagged as old
-            const previous = departureStopsRef.current.find(stop => stop.gtfsId === favorite.gtfsId);
+            // (only when it was for the same time: departures for another time are no fallback)
+            const previous = departureStopsTimeRef.current === time
+              ? departureStopsRef.current.find(stop => stop.gtfsId === favorite.gtfsId)
+              : null;
             if (previous?.fetchedAt) {
               return { ...previous, source: 'stale' };
             } else {
@@ -173,6 +180,7 @@ function Favorites({ geolocationHook, onNavigateToMap, manualLocation, customTim
 
       if (fetchSeq !== fetchSeqRef.current) return; // A newer fetch was started
       departureStopsRef.current = stopsData;
+      departureStopsTimeRef.current = time;
       setDepartureStops(stopsData);
     } catch (err) {
       console.error('Error fetching favorite stops:', err);
@@ -419,18 +427,30 @@ function Favorites({ geolocationHook, onNavigateToMap, manualLocation, customTim
                       };
                       const isLate = isDepartureLate(departure.scheduledArrival, realtimeData, customTime);
                       const delayInfo = getDelayInfo(departure.scheduledArrival, realtimeData);
+                      const routeShortName = departure.trip?.route?.shortName;
+                      const showsRouteBadge = !!(routeShortName && onShowRoute);
 
                       return (
                         <div key={idx} className={isLate ? 'opacity-60' : ''}>
+                          <div className={`flex items-center gap-1 ${showsRouteBadge ? 'pl-1' : ''} ${isLate ? 'bg-gray-100 dark:bg-gray-800/50' : 'bg-gray-50 dark:bg-gray-700/50'} rounded-lg`}>
+                          {showsRouteBadge && (
+                            <RouteBadge
+                              routeShortName={routeShortName}
+                              isLate={isLate}
+                              onShowRoute={() => onShowRoute(departureRouteSelection(departure, stop))}
+                            />
+                          )}
                           <button
                             onClick={() => remainingStops.length > 0 && toggleDepartureExpanded(stop.gtfsId, idx)}
-                            className={`w-full flex items-center justify-between gap-3 p-2 ${isLate ? 'bg-gray-100 dark:bg-gray-800/50' : 'bg-gray-50 dark:bg-gray-700/50'} rounded-lg text-left ${remainingStops.length > 0 ? 'hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer' : 'cursor-default'}`}
+                            className={`flex-1 min-w-0 flex items-center justify-between gap-3 p-2 rounded-lg text-left ${remainingStops.length > 0 ? 'hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer' : 'cursor-default'}`}
                             disabled={remainingStops.length === 0}
                           >
                             <div className="flex items-center gap-3 flex-1 min-w-0">
-                              <span className={`${isLate ? 'bg-gray-400 dark:bg-gray-600' : 'bg-blue-600 dark:bg-blue-500'} text-white px-2.5 py-1 rounded font-bold text-sm shrink-0`}>
-                                {departure.trip?.route?.shortName || '?'}
-                              </span>
+                              {!showsRouteBadge && (
+                                <span className={`${isLate ? 'bg-gray-400 dark:bg-gray-600' : 'bg-blue-600 dark:bg-blue-500'} text-white px-2.5 py-1 rounded font-bold text-sm shrink-0`}>
+                                  {routeShortName || '?'}
+                                </span>
+                              )}
                               <div className="flex-1 min-w-0">
                                 <div className={`text-sm ${isLate ? 'text-gray-500 dark:text-gray-500' : 'text-gray-700 dark:text-gray-300'} truncate`}>
                                   {departure.headsign || 'Unknown'}
@@ -464,6 +484,7 @@ function Favorites({ geolocationHook, onNavigateToMap, manualLocation, customTim
                               )}
                             </div>
                           </button>
+                          </div>
                           {isDepartureExpanded && remainingStops.length > 0 && (
                             <div className="pl-12 pr-2 pb-2 mt-1 text-xs">
                               <div className="bg-gray-100 dark:bg-gray-800 rounded p-2 space-y-1">

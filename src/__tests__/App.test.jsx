@@ -16,26 +16,36 @@ vi.mock('@capacitor/app', () => ({
 }));
 vi.mock('../services/digitransit', () => ({ initializeCaches: vi.fn() }));
 vi.mock('../hooks/useKeyboardInset', () => ({ useKeyboardInset: () => false }));
-vi.mock('../components/Header', () => ({ default: () => null }));
+vi.mock('../components/Header', () => ({
+  default: ({ onRouteFilterToggle, routeFilterOpen, routeFilterCount }) => onRouteFilterToggle
+    ? createElement('button', { id: 'filter-toggle', onClick: onRouteFilterToggle }, `filter open=${routeFilterOpen} count=${routeFilterCount}`)
+    : null,
+}));
 vi.mock('../components/SearchBar', () => ({ default: () => null }));
 vi.mock('../components/InstallPrompt', () => ({ default: () => null }));
 vi.mock('../components/AndroidAppPrompt', () => ({ default: () => null }));
 vi.mock('../components/DateTimePicker', () => ({ default: () => null }));
-vi.mock('../components/Favorites', () => ({ default: () => createElement('div', null, 'FAVORITES') }));
+vi.mock('../components/Favorites', () => ({
+  default: ({ onShowRoute }) => createElement('div', null, 'FAVORITES',
+    createElement('button', { id: 'fav-show-route', onClick: () => onShowRoute({ routeNumber: '9' }) })),
+}));
 vi.mock('../components/Settings', () => ({ default: () => createElement('div', null, 'SETTINGS') }));
 vi.mock('../components/BottomNav', () => ({
-  default: ({ onViewChange }) => createElement('button', { id: 'to-map', onClick: () => onViewChange('map') }),
+  default: ({ onViewChange }) => createElement('div', null,
+    createElement('button', { id: 'to-map', onClick: () => onViewChange('map') }),
+    createElement('button', { id: 'to-favorites', onClick: () => onViewChange('favorites') })),
 }));
 vi.mock('../components/NearMe', () => ({
   default: ({ onShowRoute }) => createElement('div', null, 'NEARME',
     createElement('button', { id: 'show-route', onClick: () => onShowRoute({ routeNumber: '5' }) })),
 }));
 vi.mock('../components/StopFinder', () => ({
-  default: ({ backHandlerRef, selectedJourney, selectedRoute, onJourneyChange }) => {
+  default: ({ backHandlerRef, selectedJourney, selectedRoute, onJourneyChange, routeFilterOpen, onRouteFilterCountChange }) => {
     backHandlerRef.current = () => mocks.mapBack();
     return createElement('div', null,
-      `MAP journey=${selectedJourney ? 'yes' : 'no'} route=${selectedRoute?.routeNumber ?? 'none'}`,
-      createElement('button', { id: 'show-journey', onClick: () => onJourneyChange({ legs: [] }) }));
+      `MAP journey=${selectedJourney ? 'yes' : 'no'} route=${selectedRoute?.routeNumber ?? 'none'} menu=${!!routeFilterOpen}`,
+      createElement('button', { id: 'show-journey', onClick: () => onJourneyChange({ legs: [] }) }),
+      createElement('button', { id: 'pick-two', onClick: () => onRouteFilterCountChange(2) }));
   },
 }));
 
@@ -123,5 +133,48 @@ describe('App back button', () => {
     mocks.mapBack.mockReturnValueOnce(true);
     await back();
     expect(mocks.mapBack).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('App header route filter button', () => {
+  const has = (id) => !!container.querySelector(`#${id}`);
+
+  it('is only in the header on the map tab', async () => {
+    expect(has('filter-toggle')).toBe(false); // Near Me
+    await click('to-favorites');
+    expect(has('filter-toggle')).toBe(false);
+    await click('to-map');
+    expect(has('filter-toggle')).toBe(true);
+  });
+
+  it('opens and closes the map\'s filter menu and shows how many routes are picked', async () => {
+    await click('to-map');
+    await click('filter-toggle');
+    expect(text()).toContain('menu=true');
+    expect(text()).toContain('filter open=true count=0');
+    await click('pick-two');
+    expect(text()).toContain('count=2');
+    await click('filter-toggle');
+    expect(text()).toContain('menu=false');
+  });
+
+  it('the menu is closed again when the map is left and reopened', async () => {
+    await click('to-map');
+    await click('filter-toggle');
+    await click('to-favorites');
+    await click('to-map');
+    expect(text()).toContain('menu=false');
+  });
+});
+
+describe('App route button in Favorites', () => {
+  it('shows the route on the map, and back clears it before leaving the map', async () => {
+    await click('to-favorites');
+    await click('fav-show-route');
+    expect(text()).toContain('MAP journey=no route=9');
+    await back();
+    expect(text()).toContain('route=none');
+    await back();
+    expect(text()).toContain('NEARME');
   });
 });

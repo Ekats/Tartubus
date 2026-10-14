@@ -260,7 +260,10 @@ async function searchNominatim(query) {
         lon: parseFloat(result.lon),
         name: shortAddressLabel(result.address, placeName) || result.display_name,
         display_name: result.display_name,
-        address: result.address
+        address: result.address,
+        // A named place without an address (a lake, a park): the map plans journeys to its
+        // nearest stops rather than to its middle
+        isPlace: !result.address?.house_number && result.class !== 'highway'
       };
     });
   } catch (error) {

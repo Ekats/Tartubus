@@ -4,6 +4,8 @@ import { useFavorites } from '../hooks/useFavorites';
 import { getNextStopName, getDailyTimetable } from '../services/digitransit';
 import { shouldShowDeparture, isDepartureLate, getDelayInfo, formatClockTime, roundMeters } from '../utils/timeFormatter';
 import CountdownTimer from './CountdownTimer';
+import RouteBadge from './RouteBadge';
+import { departureRouteSelection } from '../utils/tripRoute';
 
 /**
  * Reusable StopCard component used in NearMe, Favorites, and StopFinder (map overlay)
@@ -19,6 +21,7 @@ export default function StopCard({
   customTime = null, // Planned time picked by the user (null = now)
   onRefresh = null, // Optional: show a refresh button that reloads the departures
   refreshing = false,
+  onShowRoute = null, // Optional: the route number shows the bus on the map (gets departureRouteSelection's payload)
 }) {
   const { t } = useTranslation();
   const { isFavorite, toggleFavorite } = useFavorites();
@@ -182,15 +185,25 @@ export default function StopCard({
 
               return (
                 <div key={idx} className={`border-t border-gray-100 dark:border-gray-700 ${isLate ? 'opacity-60' : ''}`}>
+                  <div className="flex items-center gap-3">
+                  {onShowRoute && departure.trip?.route?.shortName && (
+                    <RouteBadge
+                      routeShortName={departure.trip.route.shortName}
+                      isLate={isLate}
+                      onShowRoute={() => onShowRoute(departureRouteSelection(departure, stop))}
+                    />
+                  )}
                   <button
                     onClick={() => remainingStops.length > 0 && toggleDepartureExpanded(stop.gtfsId, idx)}
-                    className={`w-full flex items-center justify-between py-2 text-left ${remainingStops.length > 0 ? 'hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer' : 'cursor-default'}`}
+                    className={`flex-1 min-w-0 flex items-center justify-between py-2 text-left ${remainingStops.length > 0 ? 'hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer' : 'cursor-default'}`}
                     disabled={remainingStops.length === 0}
                   >
                     <div className="flex items-center gap-3 flex-1">
-                      <div className={`${isLate ? 'bg-gray-400 dark:bg-gray-600' : 'bg-blue-600 dark:bg-blue-600'} text-white font-bold px-3 py-1 rounded-md text-sm`}>
-                        {departure.trip?.route?.shortName || '?'}
-                      </div>
+                      {!(onShowRoute && departure.trip?.route?.shortName) && (
+                        <div className={`${isLate ? 'bg-gray-400 dark:bg-gray-600' : 'bg-blue-600 dark:bg-blue-600'} text-white font-bold px-3 py-1 rounded-md text-sm`}>
+                          {departure.trip?.route?.shortName || '?'}
+                        </div>
+                      )}
                       <div className="text-sm flex-1">
                         <div className={`${isLate ? 'text-gray-500' : 'text-gray-700 dark:text-gray-300'}`}>
                           {departure.headsign || 'Unknown destination'}
@@ -229,6 +242,7 @@ export default function StopCard({
                       )}
                     </div>
                   </button>
+                  </div>
 
                   {/* Expanded upcoming stops */}
                   {isDepartureExpanded && remainingStops.length > 0 && (

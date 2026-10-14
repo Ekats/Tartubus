@@ -66,6 +66,21 @@ describe('StopPopup', () => {
     expect(rows).toEqual(['7Annelinn5 min', '4Ränilinn12 min', '6Nõlvaku20 min']);
   });
 
+  it('with a planned time shows the clock time, not a countdown from it', () => {
+    // Service day 16.10.2026 (Tallinn midnight = 21:00 UTC the day before), 08:07 and 08:00 there
+    const serviceDay = Date.UTC(2026, 9, 15, 21) / 1000;
+    const dep = (time, route, headsign) => ({ scheduledArrival: time, serviceDay, realtime: false, headsign, trip: { route: { shortName: route } } });
+    container = document.createElement('div');
+    root = createRoot(container);
+    act(() => root.render(createElement(StopPopup, {
+      stop: STOP, iconSize: 24, onOpen, onClose,
+      departures: [dep(8 * 3600, '6', 'Roheline park'), dep(8 * 3600 + 7 * 60, '7', 'Annelinn')],
+      customTime: new Date(Date.UTC(2026, 9, 16, 5)), // 08:00 in Tallinn
+    })));
+    const rows = [...container.querySelectorAll('.map-stop-popup-row')].map(r => r.textContent);
+    expect(rows).toEqual(['6Roheline park08:00', '7Annelinn08:07']);
+  });
+
   it('a tap on the box opens the stop, a tap on the × only closes the box', () => {
     render([]);
     act(() => container.querySelector('.map-stop-popup').click());
