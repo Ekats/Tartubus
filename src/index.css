@@ -115,6 +115,31 @@ body {
 .journey-stop-close:hover {
   color: #585858;
 }
+/* The box of a stop tapped on the map: a tap on it opens the stop, so it shows it can be tapped */
+.journey-stop-box.map-stop-popup {
+  cursor: pointer;
+}
+.map-stop-popup-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 3px;
+}
+.map-stop-popup-route {
+  min-width: 22px;
+  padding: 0 4px;
+  border-radius: 4px;
+  background: #2563eb;
+  color: #fff;
+  font-weight: 700;
+  text-align: center;
+}
+.map-stop-popup-headsign {
+  flex: 1;
+  max-width: 45vw;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 
 /* Fade in and out animation for exit prompt */
 @keyframes fade-in-out {

@@ -98,7 +98,11 @@
     "transferPoint": "Transfer Point",
     "estimatedTime": "Estimated time",
     "exitRouteView": "Exit Route View",
-    "unavailable": "The map cannot be shown on this device. The rest of the app works as usual."
+    "unavailable": "The map cannot be shown on this device. The rest of the app works as usual.",
+    "startTracking": "Start location tracking",
+    "stopTracking": "Stop location tracking",
+    "walkDistance": "{{meters}} m walk • ~{{minutes}} min",
+    "mapData": "Map data"
   },
   "favorites": {
     "title": "Favorite Stops",

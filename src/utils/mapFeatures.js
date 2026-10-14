@@ -74,9 +74,6 @@ export function patternLines(patterns) {
   return patterns.map(pattern => ({
     positions: pattern.coordinates?.length > 0 ? pattern.coordinates : pattern.stops.map(stop => [stop.lat, stop.lon]),
     color: directionColor(pattern.directionId),
-    headsign: pattern.headsign,
-    routeName: pattern.routeShortName,
-    stopCount: pattern.stops.length,
   }));
 }
 

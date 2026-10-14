@@ -98,7 +98,11 @@
     "transferPoint": "Ümberistumiskoht",
     "estimatedTime": "Eeldatav aeg",
     "exitRouteView": "Välju marsruudi vaatest",
-    "unavailable": "Selles seadmes ei saa kaarti kuvada. Ülejäänud äpp töötab nagu tavaliselt."
+    "unavailable": "Selles seadmes ei saa kaarti kuvada. Ülejäänud äpp töötab nagu tavaliselt.",
+    "startTracking": "Alusta asukoha jälgimist",
+    "stopTracking": "Lõpeta asukoha jälgimine",
+    "walkDistance": "{{meters}} m jalgsi • ~{{minutes}} min",
+    "mapData": "Kaardiandmed"
   },
   "favorites": {
     "title": "Lemmikpeatused",

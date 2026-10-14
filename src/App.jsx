@@ -1,4 +1,4 @@
-import { useState, useEffect, lazy, Suspense } from 'react'
+import { useState, useEffect, useRef, lazy, Suspense } from 'react'
 import { App as CapApp } from '@capacitor/app'
 import Header from './components/Header'
 import SearchBar from './components/SearchBar'
@@ -36,6 +36,9 @@ function App() {
   const [customTime, setCustomTime] = useState(null) // null = use current time, otherwise use Date object
   const [showTimePicker, setShowTimePicker] = useState(false)
   const [mapZone, setMapZone] = useState(CITY_ZONES.tartu) // City zone the map shows; route search uses it
+  // The map's own layers (stop view, stop popup) for the back button: set by StopFinder to a function
+  // that closes the innermost one and returns true, or returns false when none is open
+  const mapBackHandlerRef = useRef(null)
 
   // Initialize caches on app startup
   useEffect(() => {
@@ -57,10 +60,16 @@ function App() {
   // Android back button handler
   useEffect(() => {
     let backButtonListener;
+    let removed = false;
 
     const setupBackButton = async () => {
       backButtonListener = await CapApp.addListener('backButton', ({ canGoBack }) => {
         const now = Date.now();
+
+        // First the map's stop view, then its stop popup
+        if (activeView === 'map' && mapBackHandlerRef.current?.()) {
+          return;
+        }
 
         // Priority 1: Close journey route view
         if (selectedJourney) {
@@ -109,10 +118,15 @@ function App() {
       });
     };
 
-    setupBackButton();
+    // (The effect re-runs on every state change: a listener that arrives after its cleanup ran is
+    // removed at once, or two listeners would each handle the press)
+    setupBackButton().then(() => {
+      if (removed) backButtonListener?.remove();
+    });
 
     // Cleanup
     return () => {
+      removed = true;
       if (backButtonListener) {
         backButtonListener.remove();
       }
@@ -181,6 +195,7 @@ function App() {
           onJourneyChange={setSelectedJourney}
           onRouteChange={setSelectedRoute}
           onZoneChange={setMapZone}
+          backHandlerRef={mapBackHandlerRef}
           onLocationSelected={(location) => {
             setManualLocation(location)
             setLocationSelectionMode(false)

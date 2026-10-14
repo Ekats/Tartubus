@@ -2,6 +2,7 @@
 // with the stop's name and time - always shown for the stops marked `permanent`, and for one other
 // stop at a time after a tap on it (that box has a ×; a tap on the map closes it too).
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { pointCollection, stopIconName, STOP_COLOR_TRIP } from '../../utils/mapFeatures';
 import { useMapContext, useGeoJsonLayers, useMapEvent, useClickableLayers, useStableValue } from './mapContext';
 import MapMarker from './MapMarker';
@@ -18,6 +19,7 @@ const tappedOffset = (large) => [0, -(large ? 16 : 12) - 6];
  * @param onLabelsDrawn() - the always-shown boxes are on the map (again, after a change)
  */
 function StopBoxesLayer({ id, markers, renderBody, onLabelsDrawn }) {
+  const { t } = useTranslation();
   const { map } = useMapContext();
   const [openKey, setOpenKey] = useState(null);
   const layerId = `${id}-stops`;
@@ -90,7 +92,7 @@ function StopBoxesLayer({ id, markers, renderBody, onLabelsDrawn }) {
           onClick={() => {}}
         >
           <div className="text-xs font-semibold">{renderBody(open)}</div>
-          <button type="button" className="journey-stop-close" aria-label="Close" onClick={() => setOpenKey(null)}>×</button>
+          <button type="button" className="journey-stop-close" aria-label={t('common.close')} onClick={() => setOpenKey(null)}>×</button>
         </MapMarker>
       )}
     </>

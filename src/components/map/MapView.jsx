@@ -52,7 +52,7 @@ function MapView({ isDarkMode, center, zoom, maxZoom, mapRef, onMoveEnd, onMapCl
     mapInstance.touchZoomRotate.disableRotation();
     mapInstance.keyboard.disableRotation();
     // Bottom left: the map's round buttons sit in the bottom right corner
-    mapInstance.addControl(new CollapsedAttributionControl(), 'bottom-left');
+    mapInstance.addControl(new CollapsedAttributionControl({ label: t('map.mapData') }), 'bottom-left');
 
     let removed = false;
     // Nothing to show beyond the bundled data: keep the view inside Estonia

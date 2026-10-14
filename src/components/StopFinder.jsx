@@ -22,6 +22,7 @@ import StopsLayer from './map/StopsLayer';
 import RouteLinesLayer from './map/RouteLinesLayer';
 import TripLayer from './map/TripLayer';
 import JourneyLayer from './map/JourneyLayer';
+import StopPopup from './map/StopPopup';
 import { useVisibleInterval } from '../hooks/useVisibleInterval';
 
 // The pin of the user's location (orange) and of a search destination (green)
@@ -80,6 +81,7 @@ function StopFinder({
   onJourneyChange,
   onRouteChange,
   onZoneChange,
+  backHandlerRef,
   onLocationSelected,
   onCancelLocationSelection
 }) {
@@ -424,6 +426,57 @@ function StopFinder({
   }, [selectedStop?.gtfsId, customTime]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useVisibleInterval(loadSelectedStopDepartures, 30000, !!selectedStop && !selectedStop.isSearchResult);
+
+  // The box of a stop tapped on the map, with its next departures (null while they load)
+  const [popupStop, setPopupStop] = useState(null);
+  const [popupDepartures, setPopupDepartures] = useState(null);
+  const popupFetchSeqRef = useRef(0);
+
+  const loadPopupDepartures = async () => {
+    const stop = popupStop;
+    if (!stop) return;
+    const fetchSeq = ++popupFetchSeqRef.current;
+    try {
+      const stopWithDepartures = await getStopById(stop.gtfsId, customTime);
+      if (fetchSeq !== popupFetchSeqRef.current) return;
+      setPopupDepartures(stopWithDepartures?.stoptimesWithoutPatterns || []);
+    } catch (error) {
+      console.error('❌ Error fetching departures for the stop box:', error);
+      if (fetchSeq === popupFetchSeqRef.current) setPopupDepartures(prev => prev ?? []);
+    }
+  };
+
+  useEffect(() => {
+    setPopupDepartures(null);
+    loadPopupDepartures();
+  }, [popupStop?.gtfsId, customTime]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useVisibleInterval(loadPopupDepartures, 30000, !!popupStop);
+
+  // The stop view closes as with its ×
+  const closeStopView = () => {
+    setSelectedStop(null);
+    // Also drop App's selection, or remounting the map tab reopens this overlay
+    onStopDismiss?.();
+  };
+
+  // Android back (App asks while the map is shown): the stop view first, then the stop box
+  if (backHandlerRef) {
+    backHandlerRef.current = () => {
+      if (selectedStop && !locationSelectionMode) {
+        closeStopView();
+        return true;
+      }
+      if (popupStop) {
+        setPopupStop(null);
+        return true;
+      }
+      return false;
+    };
+  }
+  useEffect(() => () => {
+    if (backHandlerRef) backHandlerRef.current = null;
+  }, [backHandlerRef]);
 
   // Auto-zoom map to fit the selected journey route
   // Show a route picked in the header search: filter the map to it and zoom to its stops
@@ -911,12 +964,12 @@ function StopFinder({
   const handleToggleLocationTracking = () => {
     if (watching) {
       stopWatching();
-      setLocationMessage('Location tracking stopped');
+      setLocationMessage(t('map.trackingStopped'));
     } else {
       setLocationConsent('granted'); // Tapping the tracking button is an explicit opt-in
       getLocation();
       startWatching();
-      setLocationMessage('Location tracking started');
+      setLocationMessage(t('map.trackingStarted'));
 
       // Center map on current location if available
       if (location.lat && location.lon && mapRef.current) {
@@ -1101,19 +1154,26 @@ function StopFinder({
     setPendingLocationAddress(null);
   };
 
-  // A tap on a stop: in location selection mode it picks the stop's place, otherwise it opens the stop
+  // A tap on a stop: in location selection mode it picks the stop's place, otherwise it opens the
+  // stop's box (a tap on the box opens the stop)
   const handleStopClick = (stopId) => {
     const stop = filteredStops.find(s => s.gtfsId === stopId);
     if (!stop) return;
     if (locationSelectionMode) {
       setPendingLocation({ lat: stop.lat, lon: stop.lon });
     } else {
-      setSelectedStop(stop);
+      setPopupStop(stop);
     }
   };
 
+  // The stop box belongs to the stop markers: a trip or journey replaces them
+  useEffect(() => {
+    if (selectedJourney || tripView) setPopupStop(null);
+  }, [!!selectedJourney, !!tripView]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Handler for map clicks - close popups and filter
   const handleMapClick = () => {
+    setPopupStop(null);
     // Clear selected stop. While a journey is drawn the overlay is already closed and the
     // destination pin belongs to the journey, so don't drop App's selection then.
     setSelectedStop(null);
@@ -1228,7 +1288,7 @@ function StopFinder({
 
         {/* User location marker */}
         {location.lat && !locationSelectionMode && (
-          <Pin lat={location.lat} lon={location.lon} image={LOCATION_PIN}>You are here</Pin>
+          <Pin lat={location.lat} lon={location.lon} image={LOCATION_PIN}>{t('map.youAreHere')}</Pin>
         )}
 
         {/* Destination marker for search results */}
@@ -1270,6 +1330,27 @@ function StopFinder({
             })}
             clusterMaxZoom={toMapZoom(APP_NO_CLUSTER_ZOOM) - 1}
             onStopClick={handleStopClick}
+          />
+        )}
+
+        {/* The box of the tapped stop; a tap on it opens the stop view (the box stays, for back) */}
+        {popupStop && !selectedJourney && !tripView && (
+          <StopPopup
+            stop={{
+              lat: popupStop.adjustedLat ?? popupStop.lat,
+              lon: popupStop.adjustedLon ?? popupStop.lon,
+              name: popupStop.name,
+              code: popupStop.code,
+            }}
+            iconSize={isFavorite(popupStop.gtfsId)
+              ? (nearbyStopIds.has(popupStop.gtfsId) ? 48 : 36)
+              : (nearbyStopIds.has(popupStop.gtfsId) ? 32 : 24)}
+            departures={popupDepartures}
+            customTime={customTime}
+            onOpen={() => setSelectedStop(popupDepartures
+              ? { ...popupStop, stoptimesWithoutPatterns: popupDepartures }
+              : popupStop)}
+            onClose={() => setPopupStop(null)}
           />
         )}
       </MapView>
@@ -1330,7 +1411,7 @@ function StopFinder({
         {/* Loading indicator for map stops */}
         {loading && (
           <div className="bg-white dark:bg-gray-800 shadow-lg rounded-lg px-4 py-3 text-sm text-gray-600 dark:text-gray-300 text-center border border-gray-200 dark:border-gray-700">
-            Loading stops...
+            {t('map.loadingStops')}
           </div>
         )}
 
@@ -1341,7 +1422,7 @@ function StopFinder({
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
             </svg>
-            <span>Loading route...</span>
+            <span>{t('map.loadingRoute')}</span>
           </div>
         )}
 
@@ -1400,7 +1481,7 @@ function StopFinder({
               ? 'bg-green-500 hover:bg-green-600 text-white'
               : 'bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200'
           }`}
-          title={watching ? 'Click to stop tracking' : 'Click to start tracking'}
+          title={watching ? t('map.stopTracking') : t('map.startTracking')}
         >
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
@@ -1474,7 +1555,7 @@ function StopFinder({
               {selectedStop.isSearchResult ? (
                 <p className="text-sm text-green-100">{t('map.searchDestination') || 'Search destination'}</p>
               ) : (
-                <p className="text-sm text-blue-100">Stop {selectedStop.code}</p>
+                <p className="text-sm text-blue-100">{t('map.stop')} {selectedStop.code}</p>
               )}
             </div>
             <div className="flex items-center gap-2">
@@ -1493,11 +1574,7 @@ function StopFinder({
                 </button>
               )}
               <button
-                onClick={() => {
-                  setSelectedStop(null);
-                  // Also drop App's selection, or remounting the map tab reopens this overlay
-                  onStopDismiss?.();
-                }}
+                onClick={closeStopView}
                 className="p-2 rounded-lg bg-white/20 hover:bg-white/30 transition-colors"
               >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1720,7 +1797,7 @@ function StopFinder({
                                 {item.stop.name}
                               </div>
                               <div className="text-xs text-gray-500 dark:text-gray-400">
-                                🚶 {roundMeters(item.walkingDistance)}m walk • ~{Math.ceil(item.walkingDistance / 80)} min
+                                🚶 {t('map.walkDistance', { meters: roundMeters(item.walkingDistance), minutes: Math.ceil(item.walkingDistance / 80) })}
                               </div>
                             </div>
                           </div>
@@ -1773,7 +1850,7 @@ function StopFinder({
             {/* Show route directions if filtered */}
             {stopToPatterns.has(selectedStop.gtfsId) && (
               <div className="bg-blue-50 dark:bg-blue-900/30 rounded-lg p-4 border border-blue-200 dark:border-blue-700">
-                <p className="font-semibold text-sm text-gray-700 dark:text-gray-300 mb-2">Routes at this stop:</p>
+                <p className="font-semibold text-sm text-gray-700 dark:text-gray-300 mb-2">{t('map.routesAtStop')}</p>
                 <div className="space-y-2">
                   {stopToPatterns.get(selectedStop.gtfsId).map((pattern, patternIdx) => {
                     const colors = ['#0066CC', '#FBBF24', '#10B981', '#F59E0B'];

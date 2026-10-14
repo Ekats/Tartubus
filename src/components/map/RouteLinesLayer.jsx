@@ -1,9 +1,8 @@
 // The lines of the filtered routes: one per pattern, in its direction's colour on a white casing,
-// with arrows along it. A tap on a line tells which route and direction it is.
-import { useEffect, useMemo, useRef } from 'react';
-import { Popup } from 'maplibre-gl';
+// with arrows along it. A tap on a line is a tap on the map (lines take no taps of their own).
+import { useMemo } from 'react';
 import { lineCollection } from '../../utils/mapFeatures';
-import { useMapContext, useGeoJsonLayers, useMapEvent, ABOVE_LINES } from './mapContext';
+import { useGeoJsonLayers, ABOVE_LINES } from './mapContext';
 import { arrowIconName } from './mapIcons';
 
 const SOURCE = 'route-lines';
@@ -25,17 +24,8 @@ const LAYERS = [
 ];
 const icons = (data) => data.features.map(feature => feature.properties.arrow);
 
-const line = (className, text, color) => {
-  const div = document.createElement('div');
-  div.className = className;
-  div.textContent = text;
-  if (color) div.style.color = color;
-  return div;
-};
-
-/** @param lines - [{ positions: [[lat, lon]], color, headsign, routeName, stopCount }] (see patternLines) */
+/** @param lines - [{ positions: [[lat, lon]], color }] (see patternLines) */
 function RouteLinesLayer({ lines }) {
-  const { map } = useMapContext();
   // `lines` is long (road geometry): the caller keeps it the same object while nothing changed
   const data = useMemo(
     () => lineCollection(lines.map(l => ({ ...l, arrow: arrowIconName(l.color) }))),
@@ -43,23 +33,6 @@ function RouteLinesLayer({ lines }) {
   );
 
   useGeoJsonLayers({ sourceId: SOURCE, data, layers: LAYERS, below: ABOVE_LINES, icons });
-
-  // The open popup goes when the lines do
-  const popupRef = useRef(null);
-  useEffect(() => () => popupRef.current?.remove(), []);
-
-  useMapEvent('click', 'route-line', (e) => {
-    const { color, routeName, headsign, stopCount } = e.features[0].properties;
-    const content = document.createElement('div');
-    content.className = 'text-sm';
-    content.append(
-      line('font-bold', `Route ${routeName}`, color),
-      line('text-gray-700 font-semibold', `→ ${headsign}`),
-      line('text-xs text-gray-500 mt-1', `${stopCount} stops`),
-    );
-    popupRef.current?.remove();
-    popupRef.current = new Popup({ focusAfterOpen: false }).setLngLat(e.lngLat).setDOMContent(content).addTo(map);
-  });
 
   return null;
 }

@@ -84,8 +84,8 @@ describe('patternLines', () => {
       { routeShortName: '1', headsign: 'Kesklinn', directionId: 1, coordinates: [], stops: [{ lat: 5, lon: 6 }, { lat: 1, lon: 2 }] },
     ]);
     expect(lines).toEqual([
-      { positions: [[1, 2], [3, 4], [5, 6]], color: '#0066CC', headsign: 'Nõlvaku', routeName: '1', stopCount: 2 },
-      { positions: [[5, 6], [1, 2]], color: '#FBBF24', headsign: 'Kesklinn', routeName: '1', stopCount: 2 },
+      { positions: [[1, 2], [3, 4], [5, 6]], color: '#0066CC' },
+      { positions: [[5, 6], [1, 2]], color: '#FBBF24' },
     ]);
   });
 });

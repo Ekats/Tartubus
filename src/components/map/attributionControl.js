@@ -9,6 +9,11 @@ import { MAP_ATTRIBUTION } from '../../utils/mapData';
 const SHOWN = 'maplibregl-compact-show';
 
 export class CollapsedAttributionControl {
+  /** @param label - the (i) button's title, in the app's language */
+  constructor({ label = 'Map data' } = {}) {
+    this._label = label;
+  }
+
   onAdd(map) {
     this._map = map;
     this._container = document.createElement('div');
@@ -16,8 +21,8 @@ export class CollapsedAttributionControl {
     this._button = document.createElement('button');
     this._button.type = 'button';
     this._button.className = 'maplibregl-ctrl-attrib-button';
-    this._button.title = 'Map data';
-    this._button.setAttribute('aria-label', 'Map data');
+    this._button.title = this._label;
+    this._button.setAttribute('aria-label', this._label);
     this._button.setAttribute('aria-expanded', 'false');
     this._inner = document.createElement('div');
     this._inner.className = 'maplibregl-ctrl-attrib-inner';
