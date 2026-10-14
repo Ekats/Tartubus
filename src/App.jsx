@@ -1,6 +1,7 @@
 import { useState, useEffect, lazy, Suspense } from 'react'
 import { App as CapApp } from '@capacitor/app'
 import Header from './components/Header'
+import SearchBar from './components/SearchBar'
 import NearMe from './components/NearMe'
 import Favorites from './components/Favorites'
 import BottomNav from './components/BottomNav'
@@ -10,6 +11,7 @@ import AndroidAppPrompt from './components/AndroidAppPrompt'
 import DateTimePicker from './components/DateTimePicker'
 import { useDarkMode } from './hooks/useDarkMode'
 import { useGeolocation, getLocationConsent } from './hooks/useGeolocation'
+import { useKeyboardInset } from './hooks/useKeyboardInset'
 import { initializeCaches } from './services/digitransit'
 import { CITY_ZONES } from './utils/geo'
 
@@ -19,6 +21,7 @@ const StopFinder = lazy(() => import('./components/StopFinder'))
 function App() {
   const [activeView, setActiveView] = useState('nearme')
   const { isDarkMode, toggleDarkMode } = useDarkMode()
+  const keyboardOpen = useKeyboardInset()
 
   // Shared GPS location across all tabs - single source of truth
   const geolocationHook = useGeolocation()
@@ -210,17 +213,23 @@ function App() {
       <Header
         isDarkMode={isDarkMode}
         toggleDarkMode={toggleDarkMode}
-        onDestinationSelect={handleDestinationSelect}
-        onRouteSelect={handleRouteSelect}
-        routeSearchZone={mapZone}
         customTime={customTime}
         onTimePickerOpen={() => setShowTimePicker(true)}
       />
       <div className="flex-1 overflow-hidden">
         {renderView()}
       </div>
-      {/* Bottom navigation */}
-      <BottomNav activeView={activeView} onViewChange={setActiveView} />
+      {/* Bottom stack: search bar and tab bar. While the search field is typed in, the tab bar
+          steps aside and the stack sits right on the keyboard */}
+      <div className="fixed left-0 right-0 bottom-[var(--keyboard-inset,0px)] z-[1500]">
+        <SearchBar
+          onDestinationSelect={handleDestinationSelect}
+          onRouteSelect={handleRouteSelect}
+          routeSearchZone={mapZone}
+          keyboardOpen={keyboardOpen}
+        />
+        {!keyboardOpen && <BottomNav activeView={activeView} onViewChange={setActiveView} />}
+      </div>
 
       {/* Install prompts */}
       <InstallPrompt />

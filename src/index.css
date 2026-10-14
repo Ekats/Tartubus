@@ -13,13 +13,23 @@ body {
 }
 
 :root {
+  /* Search bar right above the tab bar */
+  --search-bar-height: 3.25rem;
   /* Bottom tab bar: 3.5rem of content plus any system inset below it */
-  --bottom-nav-height: calc(3.5rem + env(safe-area-inset-bottom, 0px));
+  --tab-bar-height: calc(3.5rem + env(safe-area-inset-bottom, 0px));
+  /* Everything fixed at the bottom: what the pages and the map keep clear */
+  --bottom-nav-height: calc(var(--search-bar-height) + var(--tab-bar-height));
+}
+
+/* While the Android app's WebView is shrunk by the keyboard, #root keeps its height
+   (--app-height, useKeyboardInset): nothing should scroll the page itself up */
+body {
+  overflow: hidden;
 }
 
 #root {
   width: 100vw;
-  height: 100vh;
+  height: var(--app-height, 100vh);
   overflow: hidden;
 }
 

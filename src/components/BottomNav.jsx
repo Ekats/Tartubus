@@ -11,7 +11,7 @@ function BottomNav({ activeView, onViewChange }) {
   ];
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-[1500] h-[var(--bottom-nav-height)] pb-[env(safe-area-inset-bottom,0px)] bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 transition-colors">
+    <nav className="h-[var(--tab-bar-height)] pb-[env(safe-area-inset-bottom,0px)] bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 transition-colors">
       <div className="flex h-full items-stretch justify-around">
         {navItems.map((item) => (
           <button

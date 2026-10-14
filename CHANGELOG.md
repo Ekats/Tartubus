@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - 🗺 **Stops split up sooner when zooming in** - stop groups are smaller (cluster radius 40 instead of 60) and every stop is shown on its own from one zoom level earlier
 - 🇪🇪 **Estonian wording** - the feedback button reads "Saada tagasisidet"
+- 🔎 **Search bar at the bottom** - the address / route search moved from the top bar to just above the tab bar, within thumb reach. Results pop up above the field with the best match closest to it (rows filled in later appear on top, the shown ones don't move), and while typing the field sits right on the keyboard, the tab bar steps aside and the page behind doesn't jump
 
 ### Fixed
 - 📍 **"Near Me" no longer gets stuck on "Timeout expired"** - when the app was sent to the background while it was still looking for your location, coming back showed only the error with nothing to tap. The search now starts again by itself when you return, the error box has a "Proovi uuesti" (retry) button, and the timeout and "position unavailable" errors are shown in the app's language

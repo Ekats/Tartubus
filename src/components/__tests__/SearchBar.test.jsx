@@ -9,7 +9,7 @@ vi.mock('../../utils/geocoding', () => ({
   forwardGeocode: vi.fn().mockResolvedValue([]),
 }));
 
-import Header from '../Header';
+import SearchBar from '../SearchBar';
 import { searchRouteByNumber } from '../../services/digitransit';
 import { forwardGeocode } from '../../utils/geocoding';
 
@@ -18,8 +18,12 @@ globalThis.IS_REACT_ACT_ENVIRONMENT = true;
 let root;
 let container;
 
+const list = () => container.querySelector('.absolute.bottom-full');
+const rows = () => [...container.querySelectorAll('.absolute.bottom-full button p')].map(p => p.textContent);
+const spinning = () => !!container.querySelector('svg.animate-spin');
+
 function type(value) {
-  const input = container.querySelector('header input');
+  const input = container.querySelector('input');
   // Set the value the way a user would, so React's onChange fires
   const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set;
   act(() => {
@@ -33,9 +37,8 @@ beforeEach(async () => {
   vi.clearAllMocks();
   container = document.createElement('div');
   root = createRoot(container);
-  await act(async () => root.render(createElement(Header, {
-    isDarkMode: false, toggleDarkMode: () => {}, onDestinationSelect: () => {}, onRouteSelect: () => {},
-    customTime: null, onTimePickerOpen: () => {},
+  await act(async () => root.render(createElement(SearchBar, {
+    onDestinationSelect: () => {}, onRouteSelect: () => {}, keyboardOpen: false,
   })));
 });
 
@@ -44,7 +47,7 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
-describe('Header search', () => {
+describe('SearchBar search', () => {
   it('searches single-digit route numbers', async () => {
     type('4');
     await act(async () => { vi.advanceTimersByTime(600); });
@@ -76,9 +79,6 @@ describe('Header search', () => {
     const second = deferred();
     forwardGeocode.mockReturnValueOnce(first.promise).mockReturnValueOnce(second.promise);
 
-    const rows = () => [...container.querySelectorAll('header .absolute.top-full button p')].map(p => p.textContent);
-    const spinning = () => !!container.querySelector('header svg.animate-spin');
-
     type('Võru tn 30');
     await act(async () => { vi.advanceTimersByTime(600); });
     type('Riia tn 2');
@@ -96,10 +96,8 @@ describe('Header search', () => {
   });
 });
 
-describe('Header search in two steps', () => {
+describe('SearchBar search in two steps', () => {
   const place = (name) => ({ lat: 58.37, lon: 26.72, name, display_name: name });
-  const rows = () => [...container.querySelectorAll('header .absolute.top-full button p')].map(p => p.textContent);
-  const spinning = () => !!container.querySelector('header svg.animate-spin');
 
   // A search whose In-ADS rows can be shown (partial) and whose fill can be resolved later
   function pendingSearch() {
@@ -117,7 +115,7 @@ describe('Header search in two steps', () => {
     await act(async () => { vi.advanceTimersByTime(600); });
   }
 
-  it('shows the partial rows while the fill is pending, then appends the fillers below', async () => {
+  it('shows the partial rows while the fill is pending, then appends the fillers', async () => {
     const search = pendingSearch();
     await startSearch('Riia');
 
@@ -128,6 +126,24 @@ describe('Header search in two steps', () => {
     await act(async () => { search.finish([place('A'), place('B'), place('C'), place('D'), place('E')]); });
     expect(rows()).toEqual(['A', 'B', 'C', 'D', 'E']);
     expect(spinning()).toBe(false);
+  });
+
+  it('pops the list up from the field, best result closest to it, and the fill lands above the shown rows', async () => {
+    const search = pendingSearch();
+    await startSearch('Riia');
+
+    act(() => search.partial([place('A'), place('B')]));
+    // Anchored on the field's top and laid out bottom-up: the first row sits right above the field
+    expect(list().classList).toContain('bottom-full');
+    expect(list().classList).toContain('flex-col-reverse');
+    const shown = [...list().children];
+
+    await act(async () => { search.finish([place('A'), place('B'), place('C'), place('D'), place('E')]); });
+    const filled = [...list().children];
+    // The rows already shown are the same elements in the same place; the fillers come after them
+    // in the DOM, which column-reverse puts above them
+    expect(filled.slice(0, 2)).toEqual(shown);
+    expect(filled).toHaveLength(5);
   });
 
   it('ignores the partial rows of a superseded search', async () => {
@@ -145,21 +161,20 @@ describe('Header search in two steps', () => {
 
   it('stays closed when the fill lands after a partial row was clicked', async () => {
     const onDestinationSelect = vi.fn();
-    await act(async () => root.render(createElement(Header, {
-      isDarkMode: false, toggleDarkMode: () => {}, onDestinationSelect, onRouteSelect: () => {},
-      customTime: null, onTimePickerOpen: () => {},
+    await act(async () => root.render(createElement(SearchBar, {
+      onDestinationSelect, onRouteSelect: () => {}, keyboardOpen: false,
     })));
     const search = pendingSearch();
     await startSearch('Riia');
     act(() => search.partial([place('A')]));
 
-    act(() => { container.querySelector('header .absolute.top-full button').click(); });
+    act(() => { list().querySelector('button').click(); });
     expect(onDestinationSelect).toHaveBeenCalledWith(expect.objectContaining({ name: 'A' }));
     expect(rows()).toEqual([]);
     expect(spinning()).toBe(false);
 
     await act(async () => { search.finish([place('A'), place('B')]); });
     expect(rows()).toEqual([]);
-    expect(container.querySelector('header input').value).toBe('');
+    expect(container.querySelector('input').value).toBe('');
   });
 });
