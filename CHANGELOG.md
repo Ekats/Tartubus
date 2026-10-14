@@ -5,6 +5,17 @@ All notable changes to Tartu Bussid will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.5.2] - 2026-10-14
+
+### Changed
+- 🗺 **A tap on a stop on the map opens a small box first** - in the look of the trip and journey stop boxes: the stop's name and code and its next three departures (route, destination, minutes). A tap on the box opens the full stop view; its × or a tap on the empty map closes it, and a tap on another stop moves it there. A stop opened from Near Me, Favorites or the search still opens the full view directly
+- 🛣 **Route lines no longer take taps** - a tap on a line used to open a different-looking route popup, mostly by accident; it now acts like a tap on the map (or on the stop under it)
+
+### Fixed
+- ◀️ **Android back on the map** - back from a stop view now returns to the map (it used to jump to "Near Me", and with a stop opened from another tab the view stayed open); the next back closes the stop box, then back works as before
+- 🌐 **Map texts in the app's language** - "Location tracking started / stopped", the tracking button's hint, "You are here", "Loading stops / route...", "Stop", "Routes at this stop" and the map credits button were always in English
+- 📍 **"Nearby stops not found" no longer lingers** - a GPS timeout while the app already had your location showed the error box above the stop list, and after turning location tracking off on the map nothing ever cleared it. Such a timeout is now ignored while the last location is still in use, and turning tracking off clears the error
+
 ## [3.5.1] - 2026-10-14
 
 ### Changed
