@@ -5,6 +5,15 @@ All notable changes to Tartu Bussid will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.5.1] - 2026-10-14
+
+### Changed
+- 🗺 **Stops split up sooner when zooming in** - stop groups are smaller (cluster radius 40 instead of 60) and every stop is shown on its own from one zoom level earlier
+- 🇪🇪 **Estonian wording** - the feedback button reads "Saada tagasisidet"
+
+### Fixed
+- 📍 **"Near Me" no longer gets stuck on "Timeout expired"** - when the app was sent to the background while it was still looking for your location, coming back showed only the error with nothing to tap. The search now starts again by itself when you return, the error box has a "Proovi uuesti" (retry) button, and the timeout and "position unavailable" errors are shown in the app's language
+
 ## [3.5.0] - 2026-10-14
 
 ### Changed
