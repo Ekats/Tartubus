@@ -330,8 +330,19 @@ function NearMe({ geolocationHook, onNavigateToMap, onShowRoute, manualLocation:
   const loading = locationLoading || stopsLoading;
   // A GPS error (e.g. permission denied) is irrelevant once the user picked a manual location
   // Show a translated message for a denied permission instead of the browser's own text
-  const gpsError = locationErrorCode === 1 ? t('nearMe.locationDenied') : locationError;
-  const error = (manualLocationProp ? null : gpsError) || stopsError;
+  const gpsErrorKeys = { 1: 'nearMe.locationDenied', 2: 'nearMe.locationUnavailable', 3: 'nearMe.locationTimeout' };
+  const gpsError = gpsErrorKeys[locationErrorCode] ? t(gpsErrorKeys[locationErrorCode]) : locationError;
+  const showGpsError = !manualLocationProp && !!gpsError;
+  const error = (showGpsError ? gpsError : null) || stopsError;
+  // A location error with no usable fix is a dead end unless the user can try again
+  const canRetryLocation = showGpsError && !location.hasRealFix;
+
+  const handleRetryLocation = () => {
+    // An explicit request counts as consent
+    setLocationConsent('granted');
+    getLocation();
+    startWatching();
+  };
 
   // Pull down at the top of the list to refresh (same as the refresh button).
   // Only with a location: without one, "find nearby" would start GPS, which a pull must not do
@@ -447,6 +458,14 @@ function NearMe({ geolocationHook, onNavigateToMap, onShowRoute, manualLocation:
               <div className="text-sm">{error}</div>
             </div>
           </div>
+          {canRetryLocation && (
+            <button
+              onClick={handleRetryLocation}
+              className="mt-3 px-3 py-1.5 text-sm bg-red-600 dark:bg-red-500 text-white rounded hover:bg-red-700 dark:hover:bg-red-600 transition-colors"
+            >
+              {t('common.retry')}
+            </button>
+          )}
         </div>
       )}
 

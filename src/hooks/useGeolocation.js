@@ -61,12 +61,26 @@ export function useGeolocation() {
   });
   const hasReceivedFirstFix = useRef(false); // Track if we've ever received a GPS fix
 
+  // Location is in use once a request was made; errors that arrive while the page was
+  // hidden (the browser can't answer then) must not strand the user on a stale error.
+  const errorRef = useRef(null);
+  errorRef.current = error;
+  const requestedRef = useRef(false);
+  const hiddenDuringRequestRef = useRef(false);
+  const pendingRetryRef = useRef(false);
+  const getLocationRef = useRef(null);
+
   const getLocation = () => {
     if (!navigator.geolocation) {
       setError('Geolocation is not supported by your browser');
       return;
     }
 
+    requestedRef.current = true;
+    hiddenDuringRequestRef.current = document.visibilityState === 'hidden';
+    pendingRetryRef.current = false;
+    setError(null);
+    setErrorCode(null);
     setLoading(true);
     navigator.geolocation.getCurrentPosition(
       (position) => {
@@ -98,10 +112,21 @@ export function useGeolocation() {
         setLoading(false);
       },
       (err) => {
-        setError(err.message);
-        setErrorCode(err.code);
         setLoading(false);
         // Keep default location
+        if (!hasReceivedFirstFix.current && hiddenDuringRequestRef.current) {
+          // The request ran (partly) while the page was hidden: retry once visible
+          // instead of surfacing the timeout
+          if (document.visibilityState === 'hidden') {
+            pendingRetryRef.current = true;
+          } else {
+            hiddenDuringRequestRef.current = false;
+            getLocationRef.current?.();
+          }
+          return;
+        }
+        setError(err.message);
+        setErrorCode(err.code);
       },
       {
         enableHighAccuracy: true,
@@ -181,6 +206,24 @@ export function useGeolocation() {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, [watching]);
+
+  getLocationRef.current = getLocation;
+
+  // Back from the background without a real fix: look again (the watch effect above
+  // restarts itself, but a one-shot request that failed or never answered does not)
+  useEffect(() => {
+    const handleVisible = () => {
+      if (document.visibilityState === 'hidden') {
+        hiddenDuringRequestRef.current = true;
+        return;
+      }
+      if (requestedRef.current && !hasReceivedFirstFix.current && (pendingRetryRef.current || errorRef.current)) {
+        getLocationRef.current?.();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisible);
+    return () => document.removeEventListener('visibilitychange', handleVisible);
+  }, []);
 
   const startWatching = () => setWatching(true);
   const stopWatching = () => setWatching(false);

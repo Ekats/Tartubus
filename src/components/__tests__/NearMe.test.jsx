@@ -161,10 +161,23 @@ describe('NearMe with location permission denied', () => {
     expect(container.textContent).not.toContain('Location permission denied');
   });
 
-  it('shows the browser message for other GPS errors, such as a timeout', async () => {
+  it('shows a translated message for a GPS timeout, with a retry button', async () => {
     const hook = { ...deniedGeolocationHook(), error: 'Timeout expired', errorCode: 3 };
     const container = await render({ geolocationHook: hook, manualLocation: null });
-    expect(container.textContent).toContain('Timeout expired');
+    expect(container.textContent).toContain('Finding your location took too long');
+    expect(container.textContent).not.toContain('Timeout expired');
+    const retry = [...container.querySelectorAll('button')].find(b => b.textContent === 'Retry');
+    expect(retry).toBeTruthy();
+    await act(async () => retry.click());
+    expect(hook.getLocation).toHaveBeenCalled();
+    expect(hook.startWatching).toHaveBeenCalled();
+  });
+
+  it('shows a translated message when the position is unavailable', async () => {
+    const hook = { ...deniedGeolocationHook(), error: 'Position unavailable', errorCode: 2 };
+    const container = await render({ geolocationHook: hook, manualLocation: null });
+    expect(container.textContent).toContain('Location is not available');
+    expect(container.textContent).not.toContain('Position unavailable');
   });
 });
 

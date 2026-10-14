@@ -86,3 +86,63 @@ describe('useGeolocation watch', () => {
     root = createRoot(document.createElement('div')); // for afterEach
   });
 });
+
+describe('useGeolocation one-shot request', () => {
+  const timeout = { code: 3, message: 'Timeout expired' };
+  const getCurrentPosition = () => navigator.geolocation.getCurrentPosition;
+  const fail = (call, err) => act(() => getCurrentPosition().mock.calls[call][1](err));
+
+  it('surfaces an error that arrives while the page is visible', () => {
+    render();
+    act(() => api.getLocation());
+    fail(0, timeout);
+    expect(api.error).toBe('Timeout expired');
+    expect(api.errorCode).toBe(3);
+    expect(api.loading).toBe(false);
+    expect(getCurrentPosition()).toHaveBeenCalledTimes(1);
+  });
+
+  it('retries on visible instead of surfacing an error that arrived while hidden', () => {
+    render();
+    act(() => api.getLocation());
+    setVisibility('hidden');
+    fail(0, timeout);
+    expect(api.error).toBeNull();
+
+    setVisibility('visible');
+    expect(getCurrentPosition()).toHaveBeenCalledTimes(2);
+    expect(api.error).toBeNull();
+    expect(api.loading).toBe(true);
+  });
+
+  it('retries once when the timeout arrives after returning from the background', () => {
+    render();
+    act(() => api.getLocation());
+    setVisibility('hidden');
+    setVisibility('visible');
+    fail(0, timeout);
+    expect(getCurrentPosition()).toHaveBeenCalledTimes(2);
+    expect(api.error).toBeNull();
+
+    fail(1, timeout); // a foreground timeout is then shown, not retried forever
+    expect(getCurrentPosition()).toHaveBeenCalledTimes(2);
+    expect(api.errorCode).toBe(3);
+  });
+
+  it('retries on visible when an error is showing and there is no fix', () => {
+    render();
+    act(() => api.getLocation());
+    fail(0, timeout);
+    setVisibility('hidden');
+    setVisibility('visible');
+    expect(getCurrentPosition()).toHaveBeenCalledTimes(2);
+    expect(api.error).toBeNull();
+  });
+
+  it('does not request location on visible when none was requested', () => {
+    render();
+    setVisibility('hidden');
+    setVisibility('visible');
+    expect(getCurrentPosition()).not.toHaveBeenCalled();
+  });
+});

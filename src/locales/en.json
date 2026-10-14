@@ -22,6 +22,8 @@
     "noLocation": "Location not found",
     "requestingLocation": "Requesting location...",
     "locationDenied": "Location permission denied",
+    "locationTimeout": "Finding your location took too long",
+    "locationUnavailable": "Location is not available",
     "noStops": "No stops nearby",
     "distance": "{{distance}} meters away",
     "nextBuses": "Next buses:",
