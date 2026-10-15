@@ -137,6 +137,9 @@ function SearchBar({ onDestinationSelect, onRouteSelect, routeSearchZone, keyboa
   return (
     <div ref={searchRef} data-keyboard-anchor className="relative h-[var(--search-bar-height)] px-2 flex items-center bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 transition-colors">
       <div className="relative flex-1 min-w-0">
+        <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+        </svg>
         <input
           ref={inputRef}
           type="text"
@@ -146,7 +149,7 @@ function SearchBar({ onDestinationSelect, onRouteSelect, routeSearchZone, keyboa
           placeholder={t('header.searchAddress') || 'Search address...'}
           // Room on the right only while the clear button / spinner is there, so the
           // placeholder isn't cut off 40 px early
-          className={`w-full pl-3 py-2 ${searchQuery ? 'pr-10' : 'pr-3'} text-sm text-ellipsis rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 border border-gray-200 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500/50 dark:focus:ring-blue-500 transition-all`}
+          className={`w-full pl-10 py-2 ${searchQuery ? 'pr-10' : 'pr-3'} text-sm text-ellipsis rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 border border-gray-200 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500/50 dark:focus:ring-blue-500 transition-all`}
         />
         {isSearching && (
           <div className="absolute right-3 top-1/2 -translate-y-1/2">
