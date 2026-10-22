@@ -84,6 +84,13 @@
     "lon": 26.6431716
   },
   {
+    "gtfsId": "Viro:418181",
+    "name": "Tartu bussijaam",
+    "code": "7820271-1",
+    "lat": 58.3779553,
+    "lon": 26.7321419
+  },
+  {
     "gtfsId": "Viro:423097",
     "name": "Uhti",
     "code": "7890031-1",
