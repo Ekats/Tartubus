@@ -70,6 +70,13 @@
     "lon": 26.787719
   },
   {
+    "gtfsId": "Viro:411792",
+    "name": "Linnamuuseum",
+    "code": "7820093-1",
+    "lat": 58.3825316,
+    "lon": 26.7280689
+  },
+  {
     "gtfsId": "Viro:412293",
     "name": "Lõkketule",
     "code": "7820137-1",
